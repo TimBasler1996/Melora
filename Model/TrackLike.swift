@@ -12,6 +12,7 @@ struct TrackLike: Identifiable, Codable, Equatable {
     var trackId: String
     var trackTitle: String
     var trackArtist: String
+    var trackAlbum: String?
     var trackArtworkURL: String?
 
     var fromUserId: String
@@ -38,6 +39,7 @@ struct TrackLike: Identifiable, Codable, Equatable {
             trackId: trackId,
             trackTitle: trackTitle,
             trackArtist: trackArtist,
+            trackAlbum: data["trackAlbum"] as? String,
             trackArtworkURL: data["trackArtworkURL"] as? String,
             fromUserId: fromUserId,
             createdAt: ts.dateValue()
