@@ -183,7 +183,7 @@ struct AppUser: Identifiable, Codable, Equatable {
             spotifyId: stringValue("spotifyId") ?? "",
             displayName: stringValue("displayName") ?? "Unknown",
             avatarURL: stringValue("avatarURL"),
-            avatarSource: stringValue("avatarSource").flatMap(AvatarSource.init(rawValue:)) ?? .unknown,
+            avatarSource: stringValue("avatarSource"),
             age: intValue("age"),
             hometown: stringValue("hometown"),
             musicTaste: stringValue("musicTaste"),
