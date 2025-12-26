@@ -77,7 +77,7 @@ struct LikesInboxView: View {
                 VStack(spacing: 12) {
                     ForEach(vm.clusters) { cluster in
                         NavigationLink {
-                            TrackLikesDetailView(user: user, track: cluster.track, likes: cluster.likes)
+                            TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
                         } label: {
                             TrackLikesClusterRowView(cluster: cluster)
                         }
