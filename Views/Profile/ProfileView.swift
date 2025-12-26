@@ -298,7 +298,7 @@ struct ProfileView: View {
         }()
         
         return User(
-            id: appUser.spotifyId,
+            id: appUser.spotifyId ?? <#default value#>,
             displayName: appUser.displayName,
             avatarURL: avatarURL,
             age: appUser.age,
