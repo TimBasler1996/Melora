@@ -13,6 +13,7 @@ final class UserApiService {
     private init() {}
 
     private let db = Firestore.firestore()
+    private var broadcastingListener: ListenerRegistration?
 
     // MARK: - Create / Ensure User
 
@@ -84,6 +85,11 @@ final class UserApiService {
         }
     }
 
+    /// Convenience wrapper used by view models (aliases `fetchUser`).
+    func getUser(uid: String, completion: @escaping (Result<AppUser, Error>) -> Void) {
+        fetchUser(uid: uid, completion: completion)
+    }
+
     // MARK: - Discover (Broadcasting users)
 
     /// Live list of broadcasting users (excluding my own uid).
@@ -118,6 +124,13 @@ final class UserApiService {
         }
     }
 
+    /// Observe broadcasting users and retain the listener for later teardown.
+    func observeBroadcastingUsers(_ onChange: @escaping (Result<[AppUser], Error>) -> Void) {
+        stopListening()
+        let myUID = Auth.auth().currentUser?.uid
+        broadcastingListener = listenToBroadcastingUsers(excludeUID: myUID, onChange: onChange)
+    }
+
     // MARK: - Presence / Broadcasting state
 
     func setBroadcasting(uid: String, isBroadcasting: Bool, completion: ((Error?) -> Void)? = nil) {
@@ -126,6 +139,11 @@ final class UserApiService {
             "lastActiveAt": Timestamp(date: Date()),
             "updatedAt": Timestamp(date: Date())
         ], merge: true, completion: completion)
+    }
+
+    func stopListening() {
+        broadcastingListener?.remove()
+        broadcastingListener = nil
     }
 
     func updateLastLocation(uid: String, location: LocationPoint, completion: ((Error?) -> Void)? = nil) {
