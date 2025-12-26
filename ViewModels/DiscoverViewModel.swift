@@ -1,26 +1,47 @@
+//
+//  DiscoverViewModel.swift
+//  SocialSound
+//
+
 import Foundation
-import FirebaseFirestore
+import FirebaseAuth
 
 @MainActor
 final class DiscoverViewModel: ObservableObject {
 
+    @Published var broadcasters: [AppUser] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    @Published var broadcasters: [AppUser] = []
 
     private let userService: UserApiService
-    private var listener: ListenerRegistration?
+    private var isListening = false
 
     init(userService: UserApiService = .shared) {
         self.userService = userService
     }
 
+    deinit {
+        // deinit is nonisolated, so hop to main actor safely
+        Task { @MainActor in
+            self.stopListening()
+        }
+    }
+
+    func refresh() {
+        startListening()
+    }
+
     func startListening() {
+        if isListening { return }
+        isListening = true
+
         errorMessage = nil
         isLoading = true
 
-        listener?.remove()
-        listener = userService.listenToBroadcastingUsers(limit: 50) { [weak self] result in
+        let myUID = Auth.auth().currentUser?.uid ?? "nil"
+        print("🟣 [Discover] startListening() myUID=\(myUID)")
+
+        userService.observeBroadcastingUsers { [weak self] result in
             guard let self else { return }
             self.isLoading = false
 
@@ -29,15 +50,18 @@ final class DiscoverViewModel: ObservableObject {
                 self.errorMessage = error.localizedDescription
                 self.broadcasters = []
             case .success(let users):
-                self.errorMessage = nil
-                self.broadcasters = users
+                // Optional: sort by lastActiveAt desc
+                self.broadcasters = users.sorted {
+                    ($0.lastActiveAt ?? .distantPast) > ($1.lastActiveAt ?? .distantPast)
+                }
             }
         }
     }
 
     func stopListening() {
-        listener?.remove()
-        listener = nil
+        guard isListening else { return }
+        isListening = false
+        userService.stopListening()
     }
 }
 

@@ -1,3 +1,8 @@
+//
+//  ProfileGateViewModel.swift
+//  SocialSound
+//
+
 import Foundation
 
 @MainActor
@@ -20,43 +25,43 @@ final class ProfileGateViewModel: ObservableObject {
 
         Task {
             do {
-                let spotify = try await SpotifyService.shared.fetchCurrentUserProfile()
+                // 1) Spotify /me
+                let spotifyProfile = try await SpotifyService.shared.fetchCurrentUserProfile()
 
-                let ensuredUser = try await ensureUserFromSpotifyAsync(
-                    spotifyId: spotify.id,
-                    displayName: spotify.displayName,
-                    avatarURL: spotify.imageURL?.absoluteString,   // ✅ avatarURL BEFORE countryCode
-                    countryCode: spotify.countryCode
-                )
+                // Werte VOR der Closure rausziehen (sonst "spotify not in scope" / Capture-Probleme)
+                let spotifyId = spotifyProfile.id
+                let displayName = spotifyProfile.displayName
+                let countryCode = spotifyProfile.countryCode
+                let avatarURL = spotifyProfile.imageURL?.absoluteString
 
-                self.appUser = ensuredUser
-                let completed = ensuredUser.profileCompleted ?? ensuredUser.isCompleteDerived
-                self.needsOnboarding = !completed
-                self.isLoading = false
+                // 2) Ensure Firestore user exists (uid doc) + return AppUser
+                userService.ensureCurrentUserExistsFromSpotify(
+                    spotifyId: spotifyId,
+                    displayName: displayName,
+                    countryCode: countryCode,
+                    avatarURL: avatarURL
+                ) { [weak self] result in
+                    guard let self else { return }
+
+                    self.isLoading = false
+                    switch result {
+                    case .failure(let error):
+                        self.errorMessage = "Failed to load profile: \(error.localizedDescription)"
+                        self.appUser = nil
+                        self.needsOnboarding = false
+
+                    case .success(let user):
+                        self.errorMessage = nil
+                        self.appUser = user
+                        let completed = user.profileCompleted ?? user.isCompleteDerived
+                        self.needsOnboarding = !completed
+                    }
+                }
 
             } catch {
-                self.isLoading = false
-                self.errorMessage = "Failed to load profile: \(error.localizedDescription)"
-            }
-        }
-    }
-
-    private func ensureUserFromSpotifyAsync(
-        spotifyId: String,
-        displayName: String,
-        avatarURL: String?,
-        countryCode: String?
-    ) async throws -> AppUser {
-        try await withCheckedThrowingContinuation { continuation in
-            userService.ensureCurrentUserExistsFromSpotify(
-                spotifyId: spotifyId,
-                displayName: displayName,
-                avatarURL: avatarURL,
-                countryCode: countryCode
-            ) { result in
-                continuation.resume(with: result)
+                isLoading = false
+                errorMessage = "Spotify profile fetch failed."
             }
         }
     }
 }
-

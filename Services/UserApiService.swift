@@ -1,3 +1,8 @@
+//
+//  UserApiService.swift
+//  SocialSound
+//
+
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -5,236 +10,156 @@ import FirebaseFirestore
 final class UserApiService {
 
     static let shared = UserApiService()
-
-    private let db = Firestore.firestore()
-    private var usersRef: CollectionReference { db.collection("users") }
-
     private init() {}
 
-    // MARK: - Public: Ensure user exists from Spotify
+    private let db = Firestore.firestore()
 
-    /// Ensures a user document exists for the current Firebase UID using Spotify data.
-    /// - Important: Document ID is Firebase UID (NOT spotifyId).
+    // MARK: - Create / Ensure User
+
+    /// Ensures a Firestore user doc exists for the current Firebase user (uid).
+    /// If missing -> creates it using Spotify fields.
     func ensureCurrentUserExistsFromSpotify(
         spotifyId: String,
         displayName: String,
-        avatarURL: String?,
         countryCode: String?,
+        avatarURL: String?,
         completion: @escaping (Result<AppUser, Error>) -> Void
     ) {
         guard let uid = Auth.auth().currentUser?.uid else {
-            completion(.failure(NSError(domain: "UserApiService", code: 401, userInfo: [
-                NSLocalizedDescriptionKey: "No Firebase user signed in."
-            ])))
+            completion(.failure(NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "No Firebase user."])))
             return
         }
 
-        // If doc exists -> merge/update Spotify fields
-        usersRef.document(uid).getDocument { [weak self] snap, error in
-            guard let self else { return }
+        let ref = db.collection("users").document(uid)
 
-            if let error = error {
+        ref.getDocument { snapshot, error in
+            if let error {
                 completion(.failure(error))
                 return
             }
 
-            let now = Date()
+            if let snap = snapshot, snap.exists, let data = snap.data() {
+                completion(.success(AppUser.fromFirestore(uid: uid, data: data)))
+                return
+            }
 
-            if let data = snap?.data(), let existing = Self.mapToUser(uid: uid, data: data) {
-                var updated = existing
-                updated.displayName = displayName
-                updated.avatarURL = avatarURL
-                updated.avatarSource = .spotify
-                updated.updatedAt = now
-                updated.lastActiveAt = now
+            // Create fresh doc
+            var payload: [String: Any] = [
+                "spotifyId": spotifyId,
+                "displayName": displayName,
+                "createdAt": Timestamp(date: Date()),
+                "updatedAt": Timestamp(date: Date()),
+                "lastActiveAt": Timestamp(date: Date()),
+                "isBroadcasting": false,
+                "profileCompleted": false,
+                "avatarSource": "spotify"
+            ]
 
-                if let countryCode, !countryCode.isEmpty {
-                    // If you keep countryCode on user, store it here
-                    // (AppUser currently doesn't have it — if you want it, add it.)
-                    // We'll still persist it in Firestore for later.
+            if let countryCode { payload["countryCode"] = countryCode }
+            if let avatarURL { payload["avatarURL"] = avatarURL }
+
+            ref.setData(payload, merge: true) { err in
+                if let err {
+                    completion(.failure(err))
+                    return
                 }
-
-                self.usersRef.document(uid).setData(Self.mapToDict(updated, countryCode: countryCode), merge: true) { err in
-                    if let err = err {
-                        completion(.failure(err))
-                    } else {
-                        completion(.success(updated))
-                    }
-                }
-            } else {
-                // Create new minimal profile (wizard will fill the rest)
-                let newUser = AppUser(
-                    id: uid,
-                    spotifyId: spotifyId,
-                    displayName: displayName,
-                    age: nil,
-                    hometown: nil,
-                    musicTaste: nil,
-                    photoURLs: [],
-                    avatarURL: avatarURL,
-                    avatarSource: .spotify,
-                    profileCompleted: false,
-                    isBroadcasting: false,
-                    lastLocation: nil,
-                    lastActiveAt: now,
-                    createdAt: now,
-                    updatedAt: now
-                )
-
-                self.usersRef.document(uid).setData(Self.mapToDict(newUser, countryCode: countryCode), merge: true) { err in
-                    if let err = err {
-                        completion(.failure(err))
-                    } else {
-                        completion(.success(newUser))
-                    }
-                }
+                completion(.success(AppUser.fromFirestore(uid: uid, data: payload)))
             }
         }
     }
 
-    // MARK: - Read
+    // MARK: - Fetch
 
-    func getUser(uid: String, completion: @escaping (Result<AppUser?, Error>) -> Void) {
-        usersRef.document(uid).getDocument { snap, error in
-            if let error = error {
+    func fetchUser(uid: String, completion: @escaping (Result<AppUser, Error>) -> Void) {
+        db.collection("users").document(uid).getDocument { snap, error in
+            if let error {
                 completion(.failure(error))
                 return
             }
             guard let data = snap?.data() else {
-                completion(.success(nil))
+                completion(.failure(NSError(domain: "User", code: 404, userInfo: [NSLocalizedDescriptionKey: "User not found."])))
                 return
             }
-            completion(.success(Self.mapToUser(uid: uid, data: data)))
+            completion(.success(AppUser.fromFirestore(uid: uid, data: data)))
         }
     }
 
-    func getCurrentUser(completion: @escaping (Result<AppUser?, Error>) -> Void) {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            completion(.failure(NSError(domain: "UserApiService", code: 401, userInfo: [
-                NSLocalizedDescriptionKey: "No Firebase user signed in."
-            ])))
-            return
-        }
-        getUser(uid: uid, completion: completion)
-    }
+    // MARK: - Discover (Broadcasting users)
 
-    // MARK: - Discover (Realtime)
-
+    /// Live list of broadcasting users (excluding my own uid).
     func listenToBroadcastingUsers(
-        limit: Int = 50,
+        excludeUID: String?,
         onChange: @escaping (Result<[AppUser], Error>) -> Void
     ) -> ListenerRegistration {
-
-        let myUID = Auth.auth().currentUser?.uid
-
-        return usersRef
+        var q: Query = db.collection("users")
             .whereField("isBroadcasting", isEqualTo: true)
-            .limit(to: limit)
-            .addSnapshotListener { snap, error in
-                if let error = error {
-                    onChange(.failure(error))
-                    return
-                }
 
-                let docs = snap?.documents ?? []
-                let users: [AppUser] = docs.compactMap { doc in
-                    if let myUID, doc.documentID == myUID { return nil }
-                    return Self.mapToUser(uid: doc.documentID, data: doc.data())
-                }
+        if let excludeUID {
+            // Firestore can't "where != uid" reliably for doc id here, so we filter client-side
+            // (fine for MVP).
+            // no-op on query
+        }
 
-                onChange(.success(users))
+        return q.addSnapshotListener { snapshot, error in
+            if let error {
+                onChange(.failure(error))
+                return
             }
-    }
 
-    // MARK: - Save / Update
-
-    func saveUser(_ user: AppUser, completion: @escaping (Result<AppUser, Error>) -> Void) {
-        usersRef.document(user.id).setData(Self.mapToDict(user, countryCode: nil), merge: true) { error in
-            if let error = error {
-                completion(.failure(error))
-            } else {
-                completion(.success(user))
+            let docs = snapshot?.documents ?? []
+            let users: [AppUser] = docs.map { doc in
+                AppUser.fromFirestore(uid: doc.documentID, data: doc.data())
+            }.filter { u in
+                if let excludeUID { return u.uid != excludeUID }
+                return true
             }
+
+            onChange(.success(users))
         }
     }
 
-    func updateUser(_ user: AppUser, completion: @escaping (Result<Void, Error>) -> Void) {
-        var updated = user
-        updated.updatedAt = Date()
-        updated.lastActiveAt = Date()
+    // MARK: - Presence / Broadcasting state
 
-        usersRef.document(updated.id).setData(Self.mapToDict(updated, countryCode: nil), merge: true) { error in
-            if let error = error {
-                completion(.failure(error))
-            } else {
-                completion(.success(()))
-            }
-        }
+    func setBroadcasting(uid: String, isBroadcasting: Bool, completion: ((Error?) -> Void)? = nil) {
+        db.collection("users").document(uid).setData([
+            "isBroadcasting": isBroadcasting,
+            "lastActiveAt": Timestamp(date: Date()),
+            "updatedAt": Timestamp(date: Date())
+        ], merge: true, completion: completion)
     }
 
-    // MARK: - Mapping
-
-    private static func mapToUser(uid: String, data: [String: Any]) -> AppUser? {
-        guard
-            let spotifyId = data["spotifyId"] as? String,
-            let displayName = data["displayName"] as? String
-        else { return nil }
-
-        var user = AppUser(
-            id: uid,
-            spotifyId: spotifyId,
-            displayName: displayName,
-            age: data["age"] as? Int,
-            hometown: data["hometown"] as? String,
-            musicTaste: data["musicTaste"] as? String,
-            photoURLs: data["photoURLs"] as? [String],
-            avatarURL: data["avatarURL"] as? String,
-            avatarSource: (data["avatarSource"] as? String).flatMap(AppUser.AvatarSource.init(rawValue:)),
-            profileCompleted: data["profileCompleted"] as? Bool,
-            isBroadcasting: data["isBroadcasting"] as? Bool,
-            lastLocation: (data["lastLocation"] as? [String: Any]).flatMap(LocationPoint.fromDict),
-            lastActiveAt: (data["lastActiveAt"] as? Timestamp)?.dateValue(),
-            createdAt: (data["createdAt"] as? Timestamp)?.dateValue(),
-            updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue()
-        )
-
-        if user.profileCompleted == nil {
-            user.profileCompleted = user.isCompleteDerived
-        }
-
-        return user
+    func updateLastLocation(uid: String, location: LocationPoint, completion: ((Error?) -> Void)? = nil) {
+        db.collection("users").document(uid).setData([
+            "lastLocation": [
+                "latitude": location.latitude,
+                "longitude": location.longitude
+            ],
+            "lastActiveAt": Timestamp(date: Date()),
+            "updatedAt": Timestamp(date: Date())
+        ], merge: true, completion: completion)
     }
 
-    private static func mapToDict(_ user: AppUser, countryCode: String?) -> [String: Any] {
-        var dict: [String: Any] = [
-            "spotifyId": user.spotifyId,
-            "displayName": user.displayName,
-            "profileCompleted": user.profileCompleted ?? user.isCompleteDerived,
-            "isBroadcasting": user.isBroadcasting ?? false,
-            "updatedAt": Timestamp(date: user.updatedAt ?? Date()),
-            "lastActiveAt": Timestamp(date: user.lastActiveAt ?? Date())
+    func updateCurrentTrack(uid: String, track: Track?, completion: ((Error?) -> Void)? = nil) {
+        var payload: [String: Any] = [
+            "lastActiveAt": Timestamp(date: Date()),
+            "updatedAt": Timestamp(date: Date())
         ]
 
-        // Optional: keep countryCode in Firestore even if AppUser doesn't store it yet
-        if let countryCode, !countryCode.isEmpty {
-            dict["countryCode"] = countryCode
-        }
-
-        dict["age"] = user.age as Any
-        dict["hometown"] = user.hometown as Any
-        dict["musicTaste"] = user.musicTaste as Any
-        dict["photoURLs"] = user.photoURLs ?? []
-        dict["avatarURL"] = user.avatarURL as Any
-        dict["avatarSource"] = user.avatarSource?.rawValue as Any
-        dict["lastLocation"] = user.lastLocation?.toDict() as Any
-
-        if let createdAt = user.createdAt {
-            dict["createdAt"] = Timestamp(date: createdAt)
+        if let track {
+            payload["currentTrack"] = [
+                "id": track.id,
+                "title": track.title,
+                "artist": track.artist,
+                "album": track.album as Any,
+                "artworkURL": track.artworkURL?.absoluteString as Any,
+                "durationMs": track.durationMs as Any
+            ]
         } else {
-            dict["createdAt"] = Timestamp(date: Date())
+            // remove currentTrack
+            payload["currentTrack"] = FieldValue.delete()
         }
 
-        return dict
+        db.collection("users").document(uid).setData(payload, merge: true, completion: completion)
     }
 }
 
