@@ -22,12 +22,12 @@ struct TrackLikesClusterRowView: View {
             artwork
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(cluster.track.title)
+                Text(cluster.trackTitle)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
 
-                Text(cluster.track.artist)
+                Text(cluster.trackArtist)
                     .font(AppFonts.footnote())
                     .foregroundColor(AppColors.secondaryText)
                     .lineLimit(1)
@@ -52,7 +52,7 @@ struct TrackLikesClusterRowView: View {
 
     private var artwork: some View {
         Group {
-            if let urlString = cluster.track.artworkURL,
+            if let urlString = cluster.trackArtworkURL,
                let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
                     switch phase {
