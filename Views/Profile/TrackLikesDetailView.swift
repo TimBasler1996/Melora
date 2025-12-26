@@ -127,8 +127,7 @@ struct TrackLikesDetailView: View {
 
     private var artwork: some View {
         Group {
-            if let urlString = track.artworkURL,
-               let url = URL(string: urlString) {
+            if let url = track.artworkURL {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
@@ -175,7 +174,7 @@ struct TrackLikesDetailView: View {
             } else {
                 ForEach(likes) { like in
                     HStack {
-                        Text(like.displayName)
+                        Text(like.fromUserDisplayName ?? "Unknown")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.white)
 
