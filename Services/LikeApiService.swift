@@ -95,14 +95,14 @@ actor LikeApiService {
             trackTitle: track.title,
             trackArtist: track.artist,
             trackAlbum: track.album,
+            trackArtworkURL: trackArtworkURLString,
             sessionId: sessionId,
             createdAt: now,
             placeLabel: placeLabel,
             latitude: sessionLocation?.latitude,
             longitude: sessionLocation?.longitude,
             fromUserDisplayName: fromUser.displayName,
-            fromUserAvatarURL: fromUserAvatarURLString,
-            trackArtworkURL: trackArtworkURLString
+            fromUserAvatarURL: fromUserAvatarURLString
         )
         
         print("💜 Created like from \(fromUser.id) → \(toUser.id) on track \(track.title)")
@@ -179,7 +179,7 @@ actor LikeApiService {
         let fromUserAvatarURL = data["fromUserAvatarURL"] as? String
         
         let trackArtworkURL = data["trackArtworkURL"] as? String
-        
+
         return TrackLike(
             id: id,
             fromUserId: fromUserId,
@@ -188,14 +188,14 @@ actor LikeApiService {
             trackTitle: trackTitle,
             trackArtist: trackArtist,
             trackAlbum: trackAlbum,
-            sessionId: data["sessionId"] as? String ?? "",
+            trackArtworkURL: trackArtworkURL,
+            sessionId: data["sessionId"] as? String,
             createdAt: createdAt,
             placeLabel: placeLabel,
             latitude: latitude,
             longitude: longitude,
             fromUserDisplayName: fromUserDisplayName,
-            fromUserAvatarURL: fromUserAvatarURL,
-            trackArtworkURL: trackArtworkURL
+            fromUserAvatarURL: fromUserAvatarURL
         )
     }
 }
