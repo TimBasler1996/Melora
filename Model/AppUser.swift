@@ -178,12 +178,17 @@ struct AppUser: Identifiable, Codable, Equatable {
             return nil
         }()
 
+        // Normalize avatar source into the enum. Some branches store the string directly,
+        // so we keep the raw value but still fall back to `.unknown` when the value is
+        // missing or unrecognized to avoid compile-time merge conflicts.
+        let avatarSourceRaw = stringValue("avatarSource")
+
         return AppUser(
             uid: uid,
             spotifyId: stringValue("spotifyId") ?? "",
             displayName: stringValue("displayName") ?? "Unknown",
             avatarURL: stringValue("avatarURL"),
-            avatarSource: stringValue("avatarSource").flatMap(AvatarSource.init(rawValue:)) ?? .unknown,
+            avatarSource: avatarSourceRaw.flatMap(AvatarSource.init(rawValue:)) ?? .unknown,
             age: intValue("age"),
             hometown: stringValue("hometown"),
             musicTaste: stringValue("musicTaste"),
