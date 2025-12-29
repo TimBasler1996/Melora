@@ -135,7 +135,7 @@ actor SessionApiService {
     }
     
     /// Decodes a Firestore document dictionary into a `Session` model.
-    nonisolated(unsafe) private func decodeSession(from data: [String: Any], id: String) -> Session? {
+    private func decodeSession(from data: [String: Any], id: String) -> Session? {
         guard
             let userData = data["user"] as? [String: Any],
             let trackData = data["track"] as? [String: Any],
