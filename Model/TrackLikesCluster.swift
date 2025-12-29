@@ -22,7 +22,19 @@ struct TrackLikesCluster: Identifiable {
     
     /// Alle einzelnen Likes für diesen Track.
     let likes: [TrackLike]
-    
+
     /// Optional: Artwork-URL für den Track (z. B. vom ersten Like übernommen).
     let trackArtworkURL: String?
+
+    /// Convenience: Baut ein `Track` Modell für Detail-Views.
+    var asTrack: Track {
+        Track(
+            id: id,
+            title: trackTitle,
+            artist: trackArtist,
+            album: trackAlbum,
+            artworkURL: trackArtworkURL.flatMap(URL.init(string:)),
+            durationMs: nil
+        )
+    }
 }

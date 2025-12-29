@@ -64,12 +64,7 @@ final class ProfileViewModel: ObservableObject {
             case .failure(let error):
                 self.errorMessage = "Failed to load profile: \(error.localizedDescription)"
                 
-            case .success(let maybeUser):
-                guard let user = maybeUser else {
-                    self.errorMessage = "No profile found."
-                    return
-                }
-                
+            case .success(let user):
                 self.appUser = user
                 self.applyUserToFields(user)
             }

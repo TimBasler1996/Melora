@@ -26,7 +26,6 @@
 		756E44A72EFE8C2400F49C30 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44A52EFE8C2400F49C30 /* DiscoverView.swift */; };
 		756E44AA2EFE8FA300F49C30 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44A92EFE8FA300F49C30 /* FirebaseAuth */; };
 		756E44AC2EFE8FB300F49C30 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44AB2EFE8FB300F49C30 /* FirebaseStorage */; };
-		757B182C2EFEF5EF00801991 /* AppUser&Firestore.swift in Resources */ = {isa = PBXBuildFile; fileRef = 757B182B2EFEF5EF00801991 /* AppUser&Firestore.swift */; };
 		757B182E2EFEF8D500801991 /* TrackLikesClusterRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */; };
 		759F7ADF2EC779740012A549 /* SocialSoundApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7ADE2EC779740012A549 /* SocialSoundApp.swift */; };
 		759F7AFE2EC781A70012A549 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AF92EC77D5B0012A549 /* MainView.swift */; };
@@ -82,7 +81,6 @@
 		756E449C2EFE8C1000F49C30 /* ProfileSetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSetupWizardView.swift; sourceTree = "<group>"; };
 		756E449D2EFE8C1000F49C30 /* UserProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileDetailView.swift; sourceTree = "<group>"; };
 		756E44A52EFE8C2400F49C30 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
-		757B182B2EFEF5EF00801991 /* AppUser&Firestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppUser&Firestore.swift"; sourceTree = "<group>"; };
 		757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesClusterRowView.swift; sourceTree = "<group>"; };
 		759F7ADB2EC779740012A549 /* SocialSound.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SocialSound.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		759F7ADE2EC779740012A549 /* SocialSoundApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialSoundApp.swift; sourceTree = "<group>"; };
@@ -187,7 +185,6 @@
 		759F7AED2EC77A4C0012A549 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				757B182B2EFEF5EF00801991 /* AppUser&Firestore.swift */,
 				756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */,
 				75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */,
 				75A174112ECBB68900CEB48F /* User.swift */,
@@ -359,7 +356,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				759F7B232EC79EC30012A549 /* GoogleService-Info.plist in Resources */,
-				757B182C2EFEF5EF00801991 /* AppUser&Firestore.swift in Resources */,
 				75A174022EC7BC2100CEB48F /* seestrasse_location.gpx in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
