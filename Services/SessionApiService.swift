@@ -1,6 +1,14 @@
 import Foundation
 import FirebaseFirestore
 
+// Firestore dictionaries use `[String: Any]`, which is not `Sendable` by default.
+// The service runs inside an actor, but the dictionaries need to cross async
+// boundaries when talking to Firebase. Marking these specializations as
+// `@unchecked Sendable` quiets Swift 6's stricter checks while keeping the
+// actor for serialization.
+extension Dictionary: @unchecked Sendable where Key == String, Value == Any {}
+extension Dictionary: @unchecked Sendable where Key == AnyHashable, Value == Any {}
+
 /// Cloud-based session backend using Firebase Firestore.
 /// Stores and loads sessions in the "sessions" collection.
 actor SessionApiService {
@@ -128,7 +136,7 @@ actor SessionApiService {
     }
     
     /// Decodes a Firestore document dictionary into a `Session` model.
-    nonisolated(unsafe) private func decodeSession(from data: [String: Any], id: String) -> Session? {
+    private func decodeSession(from data: [String: Any], id: String) -> Session? {
         guard
             let userData = data["user"] as? [String: Any],
             let trackData = data["track"] as? [String: Any],
