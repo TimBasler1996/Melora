@@ -3,11 +3,10 @@ import FirebaseFirestore
 
 // Firestore dictionaries use `[String: Any]`, which is not `Sendable` by default.
 // The service runs inside an actor, but the dictionaries need to cross async
-// boundaries when talking to Firebase. Marking these specializations as
+// boundaries when talking to Firebase. Marking this specific specialization as
 // `@unchecked Sendable` quiets Swift 6's stricter checks while keeping the
 // actor for serialization.
 extension Dictionary: @unchecked Sendable where Key == String, Value == Any {}
-extension Dictionary: @unchecked Sendable where Key == AnyHashable, Value == Any {}
 
 /// Cloud-based session backend using Firebase Firestore.
 /// Stores and loads sessions in the "sessions" collection.
