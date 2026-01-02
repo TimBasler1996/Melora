@@ -1,16 +1,14 @@
 import SwiftUI
-import FirebaseAuth
 
 /// Shows and edits the current SocialSound profile backed by Firestore `users/{uid}`.
 struct ProfileView: View {
-    
+
     @EnvironmentObject private var broadcast: BroadcastManager
     @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
     @StateObject private var viewModel = ProfileViewModel()
-    
+
     @State private var didLoadProfile = false
-    
-    // Gender-Optionen für das Ultra-Light-Profil
+
     private let genderOptions: [String] = [
         "",
         "Female",
@@ -18,7 +16,7 @@ struct ProfileView: View {
         "Non-binary",
         "Other"
     ]
-    
+
     var body: some View {
         ZStack {
             LinearGradient(
@@ -27,15 +25,13 @@ struct ProfileView: View {
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            
+
             VStack(spacing: 16) {
-                // Header
                 header
-                
+
                 if viewModel.isLoading {
                     Spacer()
-                    ProgressView()
-                        .tint(.white)
+                    ProgressView().tint(.white)
                     Spacer()
                 } else if let error = viewModel.errorMessage {
                     Spacer()
@@ -56,31 +52,31 @@ struct ProfileView: View {
                 }
             }
         }
-        .onAppear {
+        .onAppear { loadProfileIfNeeded() }
+        .onChange(of: spotifyAuth.isAuthorized) { _ in
+            // bei Spotify connect/disconnect ggf. neu laden
+            didLoadProfile = false
             loadProfileIfNeeded()
         }
-        .onChange(of: spotifyAuth.isAuthorized) { _, _ in
-            loadProfileIfNeeded()
-        }
-        // sobald ein AppUser geladen ist, direkt den Broadcast-User updaten
-        .onChange(of: viewModel.appUser) { _, appUser in
+        // sobald AppUser geladen → BroadcastManager updaten
+        .onChange(of: viewModel.appUser) { appUser in
             guard let appUser else { return }
             broadcast.updateCurrentUser(userFrom(appUser: appUser))
         }
-        .onChange(of: viewModel.saveSucceeded) { _, succeeded in
+        .onChange(of: viewModel.saveSucceeded) { succeeded in
             guard succeeded, let appUser = viewModel.appUser else { return }
             broadcast.updateCurrentUser(userFrom(appUser: appUser))
         }
     }
-    
+
     // MARK: - Header
-    
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Your Profile")
                 .font(AppFonts.title())
                 .foregroundColor(.white)
-            
+
             if spotifyAuth.isAuthorized {
                 Text("Based on your Spotify account · tap fields to customize")
                     .font(AppFonts.footnote())
@@ -95,41 +91,43 @@ struct ProfileView: View {
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.top, 20)
     }
-    
+
     // MARK: - Main Card
-    
+
     private var mainCard: some View {
         VStack(spacing: 20) {
+
             // Avatar + Name
             HStack(spacing: 16) {
                 avatarCircle
-                
+
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Display name", text: $viewModel.displayName)
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
                         .foregroundColor(AppColors.primaryText)
                         .textInputAutocapitalization(.words)
-                    
+
                     if let user = viewModel.appUser {
-                        Text("Spotify ID: \(user.spotifyId)")
+                        // ✅ FIX: kein "default value" im String
+                        Text("Spotify ID: \(user.spotifyId ?? "—")")
                             .font(.system(size: 12, weight: .regular, design: .rounded))
                             .foregroundColor(AppColors.mutedText)
                             .lineLimit(1)
                     }
                 }
-                
+
                 Spacer()
             }
-            
+
             Divider()
-            
+
             // Country + Age
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Country")
                         .font(.caption)
                         .foregroundColor(AppColors.mutedText)
-                    
+
                     TextField("CH", text: $viewModel.countryCode)
                         .font(AppFonts.body())
                         .foregroundColor(AppColors.primaryText)
@@ -137,28 +135,28 @@ struct ProfileView: View {
                         .disableAutocorrection(true)
                         .frame(width: 80)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Age")
                         .font(.caption)
                         .foregroundColor(AppColors.mutedText)
-                    
+
                     TextField("Age", text: $viewModel.ageString)
                         .font(AppFonts.body())
                         .foregroundColor(AppColors.primaryText)
                         .keyboardType(.numberPad)
                         .frame(width: 80)
                 }
-                
+
                 Spacer()
             }
-            
+
             // Gender
             VStack(alignment: .leading, spacing: 6) {
                 Text("Gender")
                     .font(.caption)
                     .foregroundColor(AppColors.mutedText)
-                
+
                 Menu {
                     ForEach(genderOptions, id: \.self) { option in
                         Button(option.isEmpty ? "Not specified" : option) {
@@ -181,27 +179,26 @@ struct ProfileView: View {
                     )
                 }
             }
-            
+
             // Hometown
             VStack(alignment: .leading, spacing: 6) {
                 Text("Hometown")
                     .font(.caption)
                     .foregroundColor(AppColors.mutedText)
-                
+
                 TextField("Where are you from?", text: $viewModel.hometown)
                     .font(AppFonts.body())
                     .foregroundColor(AppColors.primaryText)
                     .textInputAutocapitalization(.words)
             }
-            
+
             // Save button
             Button {
                 viewModel.saveProfile()
             } label: {
                 HStack(spacing: 8) {
                     if viewModel.isSaving {
-                        ProgressView()
-                            .tint(.white)
+                        ProgressView().tint(.white)
                     }
                     Text(viewModel.isSaving ? "Saving…" : "Save profile")
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
@@ -215,7 +212,7 @@ struct ProfileView: View {
                 .foregroundColor(.white)
             }
             .disabled(viewModel.isSaving)
-            
+
             if viewModel.saveSucceeded {
                 Text("Profile saved ✅")
                     .font(AppFonts.footnote())
@@ -232,9 +229,9 @@ struct ProfileView: View {
                         y: 10)
         )
     }
-    
+
     // MARK: - Avatar
-    
+
     private var avatarCircle: some View {
         Group {
             if let urlString = viewModel.appUser?.avatarURL,
@@ -261,7 +258,7 @@ struct ProfileView: View {
         .frame(width: 64, height: 64)
         .clipShape(Circle())
     }
-    
+
     private var initialsCircle: some View {
         ZStack {
             Circle().fill(AppColors.tintedBackground)
@@ -270,39 +267,40 @@ struct ProfileView: View {
                 .foregroundColor(AppColors.primaryText)
         }
     }
-    
+
     // MARK: - Loading helper
-    
+
     private func loadProfileIfNeeded() {
         guard !didLoadProfile else { return }
         guard spotifyAuth.isAuthorized else { return }
-        
-        // ✅ Firestore nutzt bei dir "users/{uid}" (aus deinen Screenshots)
-        let uid = Auth.auth().currentUser?.uid ?? broadcast.currentUser.id
-        
+
+        // Dein bestehender Flow: load über spotifyId-string
+        let spotifyId = broadcast.currentUser.id
         didLoadProfile = true
+
         viewModel.loadProfile(
-            spotifyId: uid,
+            spotifyId: spotifyId,
             createFromSpotifyIfMissing: true
         )
     }
-    
+
     // MARK: - Helper to map AppUser -> User (für BroadcastManager)
-    
+
     private func userFrom(appUser: AppUser) -> User {
         let avatarURL: URL? = {
-            if let urlString = appUser.avatarURL {
-                return URL(string: urlString)
-            }
+            if let s = appUser.avatarURL { return URL(string: s) }
             return nil
         }()
-        
+
+        // ✅ FIX: User.id muss String sein → fallback auf uid, falls spotifyId nil
+        let stableId = appUser.spotifyId ?? appUser.uid
+
         return User(
-            id: appUser.spotifyId ?? <#default value#>,
+            id: stableId,
             displayName: appUser.displayName,
             avatarURL: avatarURL,
             age: appUser.age,
-            countryCode: viewModel.countryCode.isEmpty ? nil : viewModel.countryCode
+            countryCode: appUser.countryCode
         )
     }
 }
