@@ -2,65 +2,47 @@ import Foundation
 import FirebaseAuth
 import FirebaseFirestore
 
-/// Handles "likes" on tracks between users.
-/// Structure in Firestore:
-///
-/// users/{userId}/likesReceived/{likeId}
-/// users/{userId}/likesGiven/{likeId}
-///
-/// Beide Collections enthalten im Prinzip die gleichen Felder,
-/// nur aus Sicht des jeweiligen Users.
 actor LikeApiService {
 
     static let shared = LikeApiService()
 
     private let db = Firestore.firestore()
-
     private let usersCollection = "users"
 
-    // MARK: - Public API (Broadcast use-case)
+    // MARK: - Create Like (Broadcast)
 
-    /// Creates a like from the current Firebase user to `toUser` for the currently broadcasted track.
-    ///
-    /// - Important:
-    ///   - Uses likesReceived/likesGiven collections (compatible with LikesInboxViewModel).
-    ///   - Prevents self-like.
-    ///   - Prevents duplicate likes (same fromUserId + same trackId) with a small query.
-    ///
     func likeBroadcastTrack(
-        fromUser: AppUser?,                 // optional (if you have it)
-        toUser: AppUser,                    // broadcaster
+        fromUser: AppUser?,
+        toUser: AppUser,
         track: Track,
         sessionLocation: LocationPoint?,
-        placeLabel: String? = nil
+        placeLabel: String? = nil,
+        message: String? = nil
     ) async throws -> TrackLike {
 
         guard let authedUid = Auth.auth().currentUser?.uid else {
             throw NSError(domain: "LikeApiService", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
         }
 
-        // If fromUser not provided, we still can write with authed uid
         let fromUserId = fromUser?.uid ?? authedUid
 
-        // Prevent self-like
         guard fromUserId != toUser.uid else {
             throw NSError(domain: "LikeApiService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Cannot like yourself"])
         }
 
-        // Anti-duplicate: check if user already liked this track for this broadcaster
-        let receivedRef = db.collection(usersCollection)
+        let receivedCollection = db.collection(usersCollection)
             .document(toUser.uid)
             .collection("likesReceived")
 
-        let dupCheck = try await receivedRef
+        // Prevent duplicates: same liker + same track
+        let dupCheck = try await receivedCollection
             .whereField("fromUserId", isEqualTo: fromUserId)
             .whereField("trackId", isEqualTo: track.id)
             .limit(to: 1)
             .getDocuments()
 
         if !dupCheck.documents.isEmpty {
-            // Already liked this track
-            // Return a lightweight model (or throw). We'll return a synthetic TrackLike for UI.
+            // already liked -> return a local-ish model
             return TrackLike(
                 id: dupCheck.documents.first?.documentID ?? UUID().uuidString,
                 fromUserId: fromUserId,
@@ -76,15 +58,20 @@ actor LikeApiService {
                 latitude: sessionLocation?.latitude,
                 longitude: sessionLocation?.longitude,
                 fromUserDisplayName: fromUser?.displayName,
-                fromUserAvatarURL: fromUser?.avatarURL
+                fromUserAvatarURL: fromUser?.avatarURL,
+                message: message,
+                status: .pending
             )
         }
 
         let now = Date()
 
-        // Firestore kann keine URL speichern → wir speichern Strings.
         let trackArtworkURLString = track.artworkURL?.absoluteString
-        let fromUserAvatarURLString = fromUser?.avatarURL
+
+        let trimmedMessage: String? = {
+            let t = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : String(t.prefix(160))
+        }()
 
         let payload: [String: Any] = [
             "fromUserId": fromUserId,
@@ -100,29 +87,29 @@ actor LikeApiService {
             "latitude": sessionLocation?.latitude as Any,
             "longitude": sessionLocation?.longitude as Any,
 
-            // Liker-Infos direkt im Like speichern (optional)
+            // ✅ Important: store display name + avatar directly in like doc
             "fromUserDisplayName": fromUser?.displayName as Any,
-            "fromUserAvatarURL": fromUserAvatarURLString as Any,
+            "fromUserAvatarURL": fromUser?.avatarURL as Any,
 
-            // Track-Artwork (als String)
             "trackArtworkURL": trackArtworkURLString as Any,
+            "sessionId": NSNull(),
 
-            // sessionId ist im Broadcast-Fall nicht vorhanden
-            "sessionId": NSNull()
+            "message": trimmedMessage as Any,
+            "status": TrackLike.Status.pending.rawValue
         ]
 
-        // 1) likesReceived for the target user
-        let createdReceivedRef = receivedRef.document()
+        // likesReceived
+        let createdReceivedRef = receivedCollection.document()
         try await createdReceivedRef.setData(payload)
 
-        // 2) likesGiven for the liking user (gleicher Payload)
+        // likesGiven mirror (owner = liker)
         let givenRef = db.collection(usersCollection)
             .document(fromUserId)
             .collection("likesGiven")
-            .document(createdReceivedRef.documentID) // gleiche likeId verwenden
+            .document(createdReceivedRef.documentID)
         try await givenRef.setData(payload)
 
-        let like = TrackLike(
+        return TrackLike(
             id: createdReceivedRef.documentID,
             fromUserId: fromUserId,
             toUserId: toUser.uid,
@@ -137,16 +124,34 @@ actor LikeApiService {
             latitude: sessionLocation?.latitude,
             longitude: sessionLocation?.longitude,
             fromUserDisplayName: fromUser?.displayName,
-            fromUserAvatarURL: fromUserAvatarURLString
+            fromUserAvatarURL: fromUser?.avatarURL,
+            message: trimmedMessage,
+            status: .pending
         )
-
-        print("💜 Created broadcast-like from \(fromUserId) → \(toUser.uid) on track \(track.title)")
-        return like
     }
 
-    // MARK: - Fetching (unchanged)
+    // MARK: - Update Like Status (Receiver-side only)
 
-    /// Fetches all likes that the given user has received (most recent first).
+    /// Receiver can reliably update ONLY their own likesReceived due to Firestore rules.
+    func setLikeStatusReceivedOnly(
+        likeId: String,
+        toUserId: String,
+        status: TrackLike.Status
+    ) async throws {
+
+        let receivedRef = db.collection(usersCollection)
+            .document(toUserId)
+            .collection("likesReceived")
+            .document(likeId)
+
+        try await receivedRef.updateData([
+            "status": status.rawValue,
+            "respondedAt": Timestamp(date: Date())
+        ])
+    }
+
+    // MARK: - Fetching
+
     func fetchLikesReceived(for userId: String) async throws -> [TrackLike] {
         let snapshot = try await db.collection(usersCollection)
             .document(userId)
@@ -155,11 +160,10 @@ actor LikeApiService {
             .getDocuments()
 
         return snapshot.documents.compactMap { doc in
-            Self.decodeTrackLike(from: doc.data(), id: doc.documentID)
+            TrackLike.fromFirestore(id: doc.documentID, data: doc.data())
         }
     }
 
-    /// Fetches all likes that the given user has given to others.
     func fetchLikesGiven(by userId: String) async throws -> [TrackLike] {
         let snapshot = try await db.collection(usersCollection)
             .document(userId)
@@ -168,62 +172,8 @@ actor LikeApiService {
             .getDocuments()
 
         return snapshot.documents.compactMap { doc in
-            Self.decodeTrackLike(from: doc.data(), id: doc.documentID)
+            TrackLike.fromFirestore(id: doc.documentID, data: doc.data())
         }
-    }
-
-    // MARK: - Decoding helper
-
-    private static func decodeTrackLike(from data: [String: Any], id: String) -> TrackLike? {
-
-        guard
-            let fromUserId = data["fromUserId"] as? String,
-            let toUserId = data["toUserId"] as? String,
-            let trackId = data["trackId"] as? String,
-            let trackTitle = data["trackTitle"] as? String,
-            let trackArtist = data["trackArtist"] as? String
-        else {
-            return nil
-        }
-
-        // createdAt handling: Timestamp oder Date
-        let createdAt: Date
-        if let ts = data["createdAt"] as? Timestamp {
-            createdAt = ts.dateValue()
-        } else if let date = data["createdAt"] as? Date {
-            createdAt = date
-        } else {
-            createdAt = Date()
-        }
-
-        let trackAlbum = data["trackAlbum"] as? String
-        let placeLabel = data["placeLabel"] as? String
-
-        let latitude = data["latitude"] as? Double
-        let longitude = data["longitude"] as? Double
-
-        let fromUserDisplayName = data["fromUserDisplayName"] as? String
-        let fromUserAvatarURL = data["fromUserAvatarURL"] as? String
-
-        let trackArtworkURL = data["trackArtworkURL"] as? String
-
-        return TrackLike(
-            id: id,
-            fromUserId: fromUserId,
-            toUserId: toUserId,
-            trackId: trackId,
-            trackTitle: trackTitle,
-            trackArtist: trackArtist,
-            trackAlbum: trackAlbum,
-            trackArtworkURL: trackArtworkURL,
-            sessionId: data["sessionId"] as? String,
-            createdAt: createdAt,
-            placeLabel: placeLabel,
-            latitude: latitude,
-            longitude: longitude,
-            fromUserDisplayName: fromUserDisplayName,
-            fromUserAvatarURL: fromUserAvatarURL
-        )
     }
 }
 
