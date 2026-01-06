@@ -6,10 +6,14 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct NowPlayingView: View {
 
     @EnvironmentObject private var currentUserStore: CurrentUserStore
+    @EnvironmentObject private var broadcast: BroadcastManager
+    @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
+
     @StateObject private var vm = NowPlayingViewModel()
 
     var body: some View {
@@ -34,39 +38,53 @@ struct NowPlayingView: View {
                 }
             }
         }
-        .onAppear { vm.start() }
-        .onDisappear { vm.stop() }
+        .onAppear {
+            // keep Spotify auth “automatic”
+            spotifyAuth.ensureAuthorized()
+            vm.start()
+        }
+        .onDisappear {
+            vm.stop()
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             vm.handleWillEnterForeground()
+        }
+        // ✅ Auto-sync to Firestore when broadcasting
+        .onChange(of: vm.currentTrack) { newTrack in
+            broadcast.updateCurrentTrack(newTrack)
         }
     }
 
     @ViewBuilder
     private var content: some View {
-        VStack(spacing: 14) {
+        ScrollView {
+            VStack(spacing: 14) {
 
-            if let err = vm.errorMessage, !err.isEmpty {
-                InfoBanner(text: err)
+                // ✅ Broadcast Toggle UI (back)
+                BroadcastToggleCard()
+
+                if let err = vm.errorMessage, !err.isEmpty {
+                    InfoBanner(text: err)
+                }
+
+                if let track = vm.currentTrack {
+                    TrackCard(track: track)
+
+                    ControlsRow(
+                        isPlaying: vm.isPlaying,
+                        isBusy: vm.isLoading,
+                        onPrevious: { Task { await vm.previous() } },
+                        onToggle: { Task { await vm.togglePlayPause() } },
+                        onNext: { Task { await vm.next() } }
+                    )
+                } else {
+                    EmptyStateCard()
+                }
             }
-
-            if let track = vm.currentTrack {
-                TrackCard(track: track)
-
-                ControlsRow(
-                    isPlaying: vm.isPlaying,
-                    isBusy: vm.isLoading,
-                    onPrevious: { Task { await vm.previous() } },
-                    onToggle: { Task { await vm.togglePlayPause() } },
-                    onNext: { Task { await vm.next() } }
-                )
-            } else {
-                EmptyStateCard()
-            }
-
-            Spacer()
+            .padding(.horizontal, AppLayout.screenPadding)
+            .padding(.vertical, 12)
         }
-        .padding(.horizontal, AppLayout.screenPadding)
-        .padding(.top, 12)
+        .scrollIndicators(.hidden)
     }
 }
 

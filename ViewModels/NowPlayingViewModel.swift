@@ -15,7 +15,7 @@ final class NowPlayingViewModel: ObservableObject {
 
     func start() {
         startPolling()
-        Task { await refreshNowPlaying() } // sofort beim Start einmal
+        Task { await refreshNowPlaying() }
     }
 
     func stop() {
@@ -43,7 +43,7 @@ final class NowPlayingViewModel: ObservableObject {
         pollTask = nil
     }
 
-    // MARK: - Refresh
+    // MARK: - Now Playing
 
     func refreshNowPlaying() async {
         isLoading = true
@@ -55,14 +55,9 @@ final class NowPlayingViewModel: ObservableObject {
             isPlaying = state.isPlaying
             errorMessage = nil
         } catch SpotifyAPIError.noActiveDevice {
-            // Not fatal. User can open Spotify and start playing.
             currentTrack = nil
             isPlaying = false
             errorMessage = "No active Spotify device."
-        } catch SpotifyAuthError.notAuthorized {
-            currentTrack = nil
-            isPlaying = false
-            errorMessage = "Spotify not authorized."
         } catch {
             currentTrack = nil
             isPlaying = false
@@ -70,7 +65,6 @@ final class NowPlayingViewModel: ObservableObject {
         }
     }
 
-    /// Wird vom View beim App-Return aufgerufen.
     func handleWillEnterForeground() {
         Task { await refreshNowPlaying() }
     }
@@ -84,7 +78,6 @@ final class NowPlayingViewModel: ObservableObject {
             } else {
                 try await SpotifyService.shared.play()
             }
-            // Immediately refresh to sync UI state
             await refreshNowPlaying()
         } catch {
             errorMessage = error.localizedDescription

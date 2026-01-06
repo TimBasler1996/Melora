@@ -33,7 +33,7 @@ struct SpotifyImage: Codable {
     let width: Int?
 }
 
-// MARK: - Currently Playing response models
+// MARK: - Now Playing Models
 
 private struct SpotifyCurrentlyPlayingResponse: Codable {
     let item: SpotifyTrackItem?
@@ -72,7 +72,7 @@ private struct SpotifyAlbum: Codable {
     let images: [SpotifyImage]
 }
 
-// MARK: - SpotifyService
+// MARK: - Errors + State
 
 enum SpotifyAPIError: Error {
     case notAuthorized
@@ -87,6 +87,8 @@ struct NowPlayingState: Equatable {
     let progressMs: Int?
 }
 
+// MARK: - SpotifyService
+
 final class SpotifyService {
 
     static let shared = SpotifyService()
@@ -94,7 +96,7 @@ final class SpotifyService {
 
     private let apiBaseURL = URL(string: "https://api.spotify.com/v1")!
 
-    // MARK: - Public API
+    // MARK: - Now Playing
 
     /// Fetches full now-playing state (track + isPlaying).
     func fetchNowPlayingState() async throws -> NowPlayingState {
@@ -111,15 +113,12 @@ final class SpotifyService {
             throw SpotifyAPIError.invalidResponse
         }
 
-        // 204 = no content (no track playing OR no active device)
+        // 204 = No Content (no active device OR nothing playing)
         if http.statusCode == 204 {
             return NowPlayingState(track: nil, isPlaying: false, progressMs: nil)
         }
 
         guard (200..<300).contains(http.statusCode) else {
-            // Some common cases:
-            // 401 -> token invalid
-            // 403/404 -> no active device, depending on context
             let body = String(data: data, encoding: .utf8) ?? ""
             print("❌ Spotify now playing HTTP \(http.statusCode): \(body)")
             if http.statusCode == 404 {
@@ -137,8 +136,7 @@ final class SpotifyService {
             return NowPlayingState(track: nil, isPlaying: false, progressMs: progress)
         }
 
-        // id can be nil (ads/podcast/local files) -> fallback safe id
-        let safeId = item.id ?? "unknown-\(item.name)"
+        let safeId = item.id ?? "unknown-\(item.name)" // ads/podcast/local files may have nil id
         let artistName = item.artists.first?.name ?? "Unknown Artist"
         let albumName = item.album.name
 
@@ -159,7 +157,7 @@ final class SpotifyService {
         return NowPlayingState(track: track, isPlaying: isPlaying, progressMs: progress)
     }
 
-    /// Backwards compatible helper: returns Track or throws noTrackPlaying
+    /// Backwards compatible helper.
     func fetchCurrentlyPlaying() async throws -> Track {
         let state = try await fetchNowPlayingState()
         guard let track = state.track else {
@@ -167,6 +165,8 @@ final class SpotifyService {
         }
         return track
     }
+
+    // MARK: - Profile
 
     /// Fetches the Spotify user profile (/me).
     func fetchCurrentUserProfile() async throws -> SpotifyUserProfile {
@@ -223,13 +223,12 @@ final class SpotifyService {
             throw SpotifyAPIError.invalidResponse
         }
 
-        // Spotify often returns 204 for success
+        // Spotify often returns 204 on success
         if (200..<300).contains(http.statusCode) || http.statusCode == 204 {
             return
         }
 
         if http.statusCode == 404 {
-            // typically "No active device found"
             throw SpotifyAPIError.noActiveDevice
         }
 
