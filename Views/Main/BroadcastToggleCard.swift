@@ -1,3 +1,11 @@
+//
+//  BroadcastToggleCard.swift
+//  SocialSound
+//
+//  Created by Tim Basler on 03.01.2026.
+//
+
+
 import SwiftUI
 
 struct BroadcastToggleCard: View {

@@ -1,3 +1,11 @@
+//
+//  LikesInboxButton.swift
+//  SocialSound
+//
+//  Created by Tim Basler on 05.01.2026.
+//
+
+
 import SwiftUI
 
 struct LikesInboxButton: View {

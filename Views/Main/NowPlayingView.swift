@@ -1,222 +1,145 @@
+//
+//  NowPlayingView.swift
+//  SocialSound
+//
+//  Created by Tim Basler on 05.01.2026.
+//
+
 import SwiftUI
 
 struct NowPlayingView: View {
 
-    @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
-    @EnvironmentObject private var broadcast: BroadcastManager
-    @EnvironmentObject private var locationService: LocationService
-
-    @StateObject private var vm = NowPlayingViewModel()
+    @EnvironmentObject private var currentUserStore: CurrentUserStore
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                LinearGradient(
+                    colors: [AppColors.primary, AppColors.secondary],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
 
-            VStack(spacing: 16) {
-
-                header
-
-                if !spotifyAuth.isAuthorized {
-                    connectCard
-                } else {
-                    contentCard
+                content
+            }
+            .navigationTitle("Now Playing")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let user = currentUserStore.user {
+                        LikesInboxButton(user: user)
+                    }
                 }
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, AppLayout.screenPadding)
-            .padding(.top, 20)
-            .padding(.bottom, 14)
-        }
-        .onAppear {
-            // ✅ richtige Methode in deinem LocationService
-            locationService.requestAuthorizationIfNeeded()
-
-            if spotifyAuth.isAuthorized {
-                vm.fetchCurrentTrack()
-            }
-        }
-        .onChange(of: spotifyAuth.isAuthorized) { _ in
-            if spotifyAuth.isAuthorized {
-                vm.fetchCurrentTrack()
-            } else {
-                vm.currentTrack = nil
             }
         }
     }
 
-    // MARK: - UI
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Now Playing")
-                .font(AppFonts.title())
-                .foregroundColor(.white)
-
-            Text(spotifyAuth.isAuthorized ? "Connected to Spotify" : "Not connected")
-                .font(AppFonts.footnote())
-                .foregroundColor(.white.opacity(0.85))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var connectCard: some View {
-        VStack(spacing: 12) {
-            Text("Connect Spotify")
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(AppColors.primaryText)
-
-            Text("To see your current track and broadcast it nearby.")
-                .font(AppFonts.body())
-                .foregroundColor(AppColors.mutedText)
-                .multilineTextAlignment(.center)
-
-            Button {
-                // ✅ public API (startAuthFlow ist private)
-                spotifyAuth.ensureAuthorized()
-            } label: {
-                Text("Connect")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(AppColors.primary)
-                    )
-                    .foregroundColor(.white)
-            }
-        }
-        .padding(AppLayout.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                .fill(AppColors.cardBackground.opacity(0.98))
-        )
-    }
-
-    private var contentCard: some View {
+    @ViewBuilder
+    private var content: some View {
         VStack(spacing: 14) {
 
-            if vm.isLoading {
-                ProgressView()
-                    .tint(.white)
-                    .padding(.top, 10)
-            } else if let err = vm.errorMessage {
-                Text(err)
-                    .font(AppFonts.body())
-                    .foregroundColor(.white)
-            } else if let track = vm.currentTrack {
-                trackRow(track)
+            if let user = currentUserStore.user, let track = user.currentTrack {
+                TrackCard(track: track)
             } else {
-                Text("No track playing right now.")
-                    .font(AppFonts.body())
-                    .foregroundColor(.white.opacity(0.9))
-            }
-
-            HStack(spacing: 10) {
-                Button {
-                    vm.fetchCurrentTrack()
-                } label: {
-                    Text("Refresh")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.white.opacity(0.14))
-                        .foregroundColor(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-
-                Button {
-                    toggleBroadcast()
-                } label: {
-                    Text(broadcast.isBroadcasting ? "Stop Broadcast" : "Start Broadcast")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.white.opacity(0.22))
-                        .foregroundColor(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .disabled(vm.currentTrack == nil)
-                .opacity(vm.currentTrack == nil ? 0.5 : 1)
-            }
-        }
-        .padding(AppLayout.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                .fill(Color.white.opacity(0.16))
-        )
-    }
-
-    private func trackRow(_ track: Track) -> some View {
-        HStack(spacing: 12) {
-
-            artwork(track.artworkURL)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(track.title)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-
-                Text(track.artist)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.85))
-                    .lineLimit(1)
+                EmptyStateCard()
             }
 
             Spacer()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, AppLayout.screenPadding)
+        .padding(.top, 12)
+    }
+}
+
+// MARK: - Components
+
+private struct TrackCard: View {
+
+    let track: Track
+
+    var body: some View {
+        HStack(spacing: 12) {
+            artwork
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(track.title)
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .foregroundColor(AppColors.primaryText)
+                    .lineLimit(1)
+
+                Text(track.artist)
+                    .font(AppFonts.footnote())
+                    .foregroundColor(AppColors.secondaryText)
+                    .lineLimit(1)
+
+                if let album = track.album, !album.isEmpty {
+                    Text(album)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppColors.mutedText)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(AppColors.cardBackground.opacity(0.98))
+                .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 8)
+        )
     }
 
-    private func artwork(_ url: URL?) -> some View {
+    private var artwork: some View {
         Group {
-            if let url {
+            if let url = track.artworkURL {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(Color.white.opacity(0.15))
-                            ProgressView().tint(.white)
-                        }
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(AppColors.tintedBackground)
+                            .overlay(ProgressView().tint(.white))
+                    case .success(let img):
+                        img.resizable().scaledToFill()
                     default:
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.white.opacity(0.15))
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(AppColors.tintedBackground)
+                            .overlay(Image(systemName: "music.note").foregroundColor(.white))
                     }
                 }
             } else {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.15))
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(AppColors.tintedBackground)
+                    .overlay(Image(systemName: "music.note").foregroundColor(.white))
             }
         }
         .frame(width: 64, height: 64)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
+}
 
-    // MARK: - Broadcast
+private struct EmptyStateCard: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "music.note")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundColor(.white.opacity(0.9))
 
-    private func toggleBroadcast() {
-        if broadcast.isBroadcasting {
-            broadcast.stopBroadcasting()
-            return
+            Text("Nothing playing")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
+
+            Text("Start a song on Spotify and come back here.")
+                .font(AppFonts.footnote())
+                .foregroundColor(.white.opacity(0.85))
+                .multilineTextAlignment(.center)
         }
-
-        guard let track = vm.currentTrack else { return }
-        let loc = locationService.currentLocation
-
-        broadcast.startBroadcasting(
-            currentTrack: track,
-            location: loc
+        .padding(14)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.14))
         )
     }
 }

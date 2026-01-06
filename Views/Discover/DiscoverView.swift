@@ -68,12 +68,7 @@ struct DiscoverView: View {
             ScrollView {
                 VStack(spacing: 12) {
                     ForEach(vm.broadcasters, id: \.id) { user in
-                        NavigationLink {
-                            UserProfileDetailView(userId: user.id)
-                        } label: {
-                            DiscoverUserCard(user: user)
-                        }
-                        .buttonStyle(.plain)
+                        DiscoverUserRow(user: user)
                     }
                 }
                 .padding(.horizontal, AppLayout.screenPadding)
@@ -84,7 +79,73 @@ struct DiscoverView: View {
     }
 }
 
-private struct DiscoverUserCard: View {
+private struct DiscoverUserRow: View {
+
+    let user: AppUser
+
+    var body: some View {
+        HStack(spacing: 10) {
+
+            // Left side navigates
+            NavigationLink {
+                UserProfileDetailView(userId: user.id)
+            } label: {
+                DiscoverUserCardContent(user: user)
+            }
+            .buttonStyle(.plain)
+
+            // Right side is the like button
+            DiscoverLikeButton(user: user)
+        }
+    }
+}
+
+private struct DiscoverLikeButton: View {
+
+    let user: AppUser
+
+    @State private var didLike = false
+    @State private var isSending = false
+
+    var body: some View {
+        Button {
+            Task { await like() }
+        } label: {
+            Image(systemName: didLike ? "heart.fill" : "heart")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(didLike ? .red : AppColors.primaryText)
+                .frame(width: 44, height: 44)
+                .background(
+                    Circle().fill(AppColors.cardBackground.opacity(0.98))
+                )
+                .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 6)
+        }
+        .buttonStyle(.plain)
+        .disabled(isSending || didLike || user.currentTrack == nil)
+    }
+
+    private func like() async {
+        guard let track = user.currentTrack else { return }
+
+        isSending = true
+        defer { isSending = false }
+
+        do {
+            _ = try await LikeApiService.shared.likeBroadcastTrack(
+                fromUser: nil,                 // optional; we can wire it later if you have it globally
+                toUser: user,
+                track: track,
+                sessionLocation: user.lastLocation,
+                placeLabel: nil
+            )
+            didLike = true
+        } catch {
+            print("❌ Like failed:", error.localizedDescription)
+        }
+    }
+}
+
+private struct DiscoverUserCardContent: View {
 
     let user: AppUser
 
@@ -103,7 +164,12 @@ private struct DiscoverUserCard: View {
                     .foregroundColor(AppColors.secondaryText)
                     .lineLimit(1)
 
-                if let taste = user.musicTaste, !taste.isEmpty {
+                if let track = user.currentTrack {
+                    Text("🎵 \(track.title) · \(track.artist)")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppColors.mutedText)
+                        .lineLimit(1)
+                } else if let taste = user.musicTaste, !taste.isEmpty {
                     Text(taste)
                         .font(.system(size: 12, weight: .regular, design: .rounded))
                         .foregroundColor(AppColors.mutedText)

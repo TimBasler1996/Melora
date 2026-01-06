@@ -13,24 +13,25 @@ final class CurrentUserStore: ObservableObject {
     private var listener: ListenerRegistration?
 
     deinit {
-        stopListening()
+        // deinit is nonisolated → don't call MainActor methods here
+        listener?.remove()
+        listener = nil
     }
 
     func startListening() {
         stopListening()
+
         isLoading = true
         errorMessage = nil
 
         guard let uid = Auth.auth().currentUser?.uid else {
-            self.user = nil
-            self.isLoading = false
-            self.errorMessage = "Not authenticated."
+            user = nil
+            isLoading = false
+            errorMessage = "Not authenticated."
             return
         }
 
-        let ref = db.collection("users").document(uid)
-
-        listener = ref.addSnapshotListener { [weak self] snap, err in
+        listener = db.collection("users").document(uid).addSnapshotListener { [weak self] snap, err in
             guard let self else { return }
 
             if let err {
@@ -56,3 +57,4 @@ final class CurrentUserStore: ObservableObject {
         listener = nil
     }
 }
+

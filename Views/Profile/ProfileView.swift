@@ -54,11 +54,9 @@ struct ProfileView: View {
         }
         .onAppear { loadProfileIfNeeded() }
         .onChange(of: spotifyAuth.isAuthorized) { _ in
-            // bei Spotify connect/disconnect ggf. neu laden
             didLoadProfile = false
             loadProfileIfNeeded()
         }
-        // sobald AppUser geladen → BroadcastManager updaten
         .onChange(of: viewModel.appUser) { appUser in
             guard let appUser else { return }
             broadcast.updateCurrentUser(userFrom(appUser: appUser))
@@ -97,7 +95,6 @@ struct ProfileView: View {
     private var mainCard: some View {
         VStack(spacing: 20) {
 
-            // Avatar + Name
             HStack(spacing: 16) {
                 avatarCircle
 
@@ -108,7 +105,6 @@ struct ProfileView: View {
                         .textInputAutocapitalization(.words)
 
                     if let user = viewModel.appUser {
-                        // ✅ FIX: kein "default value" im String
                         Text("Spotify ID: \(user.spotifyId ?? "—")")
                             .font(.system(size: 12, weight: .regular, design: .rounded))
                             .foregroundColor(AppColors.mutedText)
@@ -121,7 +117,6 @@ struct ProfileView: View {
 
             Divider()
 
-            // Country + Age
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Country")
@@ -151,7 +146,6 @@ struct ProfileView: View {
                 Spacer()
             }
 
-            // Gender
             VStack(alignment: .leading, spacing: 6) {
                 Text("Gender")
                     .font(.caption)
@@ -180,7 +174,6 @@ struct ProfileView: View {
                 }
             }
 
-            // Hometown
             VStack(alignment: .leading, spacing: 6) {
                 Text("Hometown")
                     .font(.caption)
@@ -192,7 +185,6 @@ struct ProfileView: View {
                     .textInputAutocapitalization(.words)
             }
 
-            // Save button
             Button {
                 viewModel.saveProfile()
             } label: {
@@ -233,8 +225,12 @@ struct ProfileView: View {
     // MARK: - Avatar
 
     private var avatarCircle: some View {
-        Group {
-            if let urlString = viewModel.appUser?.avatarURL,
+        let bestURLString =
+            viewModel.appUser?.avatarURL
+            ?? viewModel.appUser?.photoURLs?.first
+
+        return Group {
+            if let urlString = bestURLString,
                let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
                     switch phase {
@@ -274,7 +270,6 @@ struct ProfileView: View {
         guard !didLoadProfile else { return }
         guard spotifyAuth.isAuthorized else { return }
 
-        // Dein bestehender Flow: load über spotifyId-string
         let spotifyId = broadcast.currentUser.id
         didLoadProfile = true
 
@@ -289,10 +284,10 @@ struct ProfileView: View {
     private func userFrom(appUser: AppUser) -> User {
         let avatarURL: URL? = {
             if let s = appUser.avatarURL { return URL(string: s) }
+            if let s = appUser.photoURLs?.first { return URL(string: s) }
             return nil
         }()
 
-        // ✅ FIX: User.id muss String sein → fallback auf uid, falls spotifyId nil
         let stableId = appUser.spotifyId ?? appUser.uid
 
         return User(

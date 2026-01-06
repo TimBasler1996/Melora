@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		756E44842EFE8BC000F49C30 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44832EFE8BC000F49C30 /* AppDelegate.swift */; };
 		756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */; };
 		756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */; };
 		756E448C2EFE8BE500F49C30 /* PhotoUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */; };
@@ -27,6 +26,10 @@
 		756E44AA2EFE8FA300F49C30 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44A92EFE8FA300F49C30 /* FirebaseAuth */; };
 		756E44AC2EFE8FB300F49C30 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44AB2EFE8FB300F49C30 /* FirebaseStorage */; };
 		757B182E2EFEF8D500801991 /* TrackLikesClusterRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */; };
+		75834A802F091CC0008C51F8 /* BroadcastToggleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */; };
+		75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */; };
+		75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */; };
+		75834A862F0C2E3D008C51F8 /* CurrentUserStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */; };
 		759F7ADF2EC779740012A549 /* SocialSoundApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7ADE2EC779740012A549 /* SocialSoundApp.swift */; };
 		759F7AFE2EC781A70012A549 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AF92EC77D5B0012A549 /* MainView.swift */; };
 		759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AFD2EC77D9A0012A549 /* ProfileView.swift */; };
@@ -64,7 +67,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		756E44832EFE8BC000F49C30 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastPresenceManager.swift; sourceTree = "<group>"; };
 		756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthBootstrap.swift; sourceTree = "<group>"; };
 		756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploader.swift; sourceTree = "<group>"; };
@@ -82,6 +84,10 @@
 		756E449D2EFE8C1000F49C30 /* UserProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileDetailView.swift; sourceTree = "<group>"; };
 		756E44A52EFE8C2400F49C30 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesClusterRowView.swift; sourceTree = "<group>"; };
+		75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastToggleCard.swift; sourceTree = "<group>"; };
+		75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesBadgeViewModel.swift; sourceTree = "<group>"; };
+		75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxButton.swift; sourceTree = "<group>"; };
+		75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentUserStore.swift; sourceTree = "<group>"; };
 		759F7ADB2EC779740012A549 /* SocialSound.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SocialSound.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		759F7ADE2EC779740012A549 /* SocialSoundApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialSoundApp.swift; sourceTree = "<group>"; };
 		759F7AF72EC77CD80012A549 /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
@@ -176,7 +182,6 @@
 		759F7AEC2EC77A2C0012A549 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				756E44832EFE8BC000F49C30 /* AppDelegate.swift */,
 				759F7ADE2EC779740012A549 /* SocialSoundApp.swift */,
 			);
 			path = App;
@@ -185,6 +190,8 @@
 		759F7AED2EC77A4C0012A549 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */,
+				75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */,
 				756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */,
 				75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */,
 				75A174112ECBB68900CEB48F /* User.swift */,
@@ -250,6 +257,7 @@
 		759F7AF32EC77A8D0012A549 /* Main */ = {
 			isa = PBXGroup;
 			children = (
+				75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */,
 				759F7AFA2EC77D6B0012A549 /* NowPlayingView.swift */,
 				759F7AF92EC77D5B0012A549 /* MainView.swift */,
 			);
@@ -269,6 +277,7 @@
 		759F7AF52EC77A9D0012A549 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */,
 				757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */,
 				756E44972EFE8C1000F49C30 /* PhotoPickerBridge.swift */,
 				756E44982EFE8C1000F49C30 /* ProfileBasicsStepView.swift */,
@@ -379,15 +388,18 @@
 				75A174042EC7E40D00CEB48F /* AppTheme.swift in Sources */,
 				759F7B082EC783C70012A549 /* Track.swift in Sources */,
 				759F7B002EC782D30012A549 /* NearbyView.swift in Sources */,
+				75834A802F091CC0008C51F8 /* BroadcastToggleCard.swift in Sources */,
 				759F7B0C2EC784920012A549 /* BroadcastManager.swift in Sources */,
 				759F7B1D2EC797210012A549 /* SessionApiService.swift in Sources */,
 				75A1740E2ECA158400CEB48F /* TrackLike.swift in Sources */,
 				759F7B0A2EC783CF0012A549 /* LocationPoint.swift in Sources */,
+				75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */,
 				759F7B212EC799900012A549 /* LocationService.swift in Sources */,
 				756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */,
 				756E448C2EFE8BE500F49C30 /* PhotoUploader.swift in Sources */,
 				75A1740C2EC8C0FA00CEB48F /* ProfileViewModel.swift in Sources */,
 				759F7B012EC782D30012A549 /* SessionRowView.swift in Sources */,
+				75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */,
 				75A1741C2ECE59E300CEB48F /* TrackLikesDetailView.swift in Sources */,
 				75A1740A2EC8BBFA00CEB48F /* AppUser.swift in Sources */,
 				756E44922EFE8BF600F49C30 /* ProfileSetupWizardViewModel.swift in Sources */,
@@ -399,13 +411,13 @@
 				759F7B022EC782D30012A549 /* NowPlayingView.swift in Sources */,
 				75A174102ECA159900CEB48F /* LikeApiService.swift in Sources */,
 				759F7B102EC78B5C0012A549 /* SpotifyService.swift in Sources */,
+				75834A862F0C2E3D008C51F8 /* CurrentUserStore.swift in Sources */,
 				759F7B042EC782D30012A549 /* Session.swift in Sources */,
 				756E44A72EFE8C2400F49C30 /* DiscoverView.swift in Sources */,
 				75A174182ECE548000CEB48F /* OtherUserProfileView.swift in Sources */,
 				759F7B1F2EC7974A0012A549 /* NearbyViewModel.swift in Sources */,
 				75A174252ED107AF00CEB48F /* SpotifyConnectionSection.swift in Sources */,
 				75A174082EC8B0E400CEB48F /* UserApiService.swift in Sources */,
-				756E44842EFE8BC000F49C30 /* AppDelegate.swift in Sources */,
 				75A174162ECE547500CEB48F /* LikesInboxView.swift in Sources */,
 				759F7ADF2EC779740012A549 /* SocialSoundApp.swift in Sources */,
 				75A174122ECBB68900CEB48F /* User.swift in Sources */,

@@ -1,8 +1,3 @@
-//
-//  LikesInboxView.swift
-//  SocialSound
-//
-
 import SwiftUI
 
 struct LikesInboxView: View {
@@ -25,6 +20,9 @@ struct LikesInboxView: View {
         .navigationBarTitleDisplayMode(.large)
         .onAppear {
             vm.loadLikes(for: user.uid)
+        }
+        .onDisappear {
+            vm.markAllAsSeen()
         }
         .refreshable {
             vm.loadLikes(for: user.uid)

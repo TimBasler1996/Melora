@@ -1,84 +1,216 @@
-//
-//  BroadcastManager.swift
-//  SocialSound
-//
-
 import Foundation
+import FirebaseAuth
 
 @MainActor
 final class BroadcastManager: ObservableObject {
 
-    @Published private(set) var isBroadcasting: Bool = false
-    @Published private(set) var currentUser: User
+    // MARK: - Public State
+
+    @Published private(set) var currentUser: User = User(
+        id: "unknown",
+        displayName: "Unknown",
+        avatarURL: nil,
+        age: nil,
+        countryCode: nil
+    )
+
+    /// UI bindet daran (Toggle)
+    @Published var isBroadcasting: Bool = false
+
+    /// UI kann das anzeigen
+    @Published var currentTrack: Track? = nil
+
+    @Published var errorMessage: String? = nil
+
+    // MARK: - Dependencies
 
     private let userService: UserApiService
+    private var locationService: LocationService?
+
+    // MARK: - Timers (throttle sync)
+
+    private var locationSyncTask: Task<Void, Never>?
+    private var trackSyncTask: Task<Void, Never>?
+
+    // MARK: - Init
 
     init(userService: UserApiService = .shared) {
         self.userService = userService
-
-        #if targetEnvironment(simulator)
-        currentUser = User(
-            id: "sim-\(UUID().uuidString)",
-            displayName: "Guest (Simulator)",
-            avatarURL: nil,
-            age: nil,
-            countryCode: nil
-        )
-        #else
-        currentUser = User(
-            id: "device-\(UUID().uuidString)",
-            displayName: "Guest",
-            avatarURL: nil,
-            age: nil,
-            countryCode: nil
-        )
-        #endif
     }
 
-    // MARK: - User
+    deinit {
+        locationSyncTask?.cancel()
+        trackSyncTask?.cancel()
+    }
 
+    // MARK: - Wiring
+
+    /// Call once after you have a LocationService available (e.g. in App / MainView onAppear)
+    func attachLocationService(_ service: LocationService) {
+        self.locationService = service
+    }
+
+    /// Call whenever Profile/User loaded so BroadcastManager knows the correct user displayName/avatar etc.
     func updateCurrentUser(_ user: User) {
         self.currentUser = user
     }
 
+    func updateCurrentTrack(_ track: Track?) {
+        self.currentTrack = track
+
+        // If broadcasting, sync track (throttled)
+        guard isBroadcasting else { return }
+        scheduleTrackSync()
+    }
+
+    // MARK: - Toggle helpers
+
+    func setBroadcasting(_ newValue: Bool) async {
+        if newValue {
+            await startBroadcasting()
+        } else {
+            await stopBroadcasting()
+        }
+    }
+
     // MARK: - Broadcasting
 
-    /// Start: marks user as broadcasting + pushes initial track + location
-    func startBroadcasting(currentTrack: Track?, location: LocationPoint?) {
-        guard !isBroadcasting else { return }
-        isBroadcasting = true
+    func startBroadcasting() async {
+        errorMessage = nil
 
-        let uid = currentUser.id
-        userService.setBroadcasting(uid: uid, isBroadcasting: true)
-
-        if let location {
-            userService.updateLastLocation(uid: uid, location: location)
+        guard let uid = Auth.auth().currentUser?.uid else {
+            errorMessage = "No Firebase user."
+            isBroadcasting = false
+            return
         }
 
-        // also set currentTrack (can be nil if unknown)
-        userService.updateCurrentTrack(uid: uid, track: currentTrack)
+        isBroadcasting = true
+
+        // 1) Set broadcasting=true in Firestore
+        await withCheckedContinuation { cont in
+            userService.setBroadcasting(uid: uid, isBroadcasting: true) { err in
+                if let err { self.errorMessage = "Broadcast start failed: \(err.localizedDescription)" }
+                cont.resume()
+            }
+        }
+
+        // 2) Push initial location (if available) + start periodic sync
+        scheduleLocationSync(immediate: true)
+
+        // 3) Push initial track (if available) + start periodic sync
+        scheduleTrackSync(immediate: true)
     }
 
-    /// Stop: marks user not broadcasting + clears currentTrack (optional)
-    func stopBroadcasting() {
-        guard isBroadcasting else { return }
+    func stopBroadcasting() async {
+        errorMessage = nil
+
+        guard let uid = Auth.auth().currentUser?.uid else {
+            errorMessage = "No Firebase user."
+            isBroadcasting = false
+            return
+        }
+
+        // stop periodic sync first
+        locationSyncTask?.cancel()
+        locationSyncTask = nil
+
+        trackSyncTask?.cancel()
+        trackSyncTask = nil
+
         isBroadcasting = false
 
-        let uid = currentUser.id
-        userService.setBroadcasting(uid: uid, isBroadcasting: false)
-        userService.updateCurrentTrack(uid: uid, track: nil)
+        // set broadcasting=false and clear currentTrack if you want
+        await withCheckedContinuation { cont in
+            userService.setBroadcasting(uid: uid, isBroadcasting: false) { err in
+                if let err { self.errorMessage = "Broadcast stop failed: \(err.localizedDescription)" }
+                cont.resume()
+            }
+        }
+
+        // Optional: remove currentTrack server-side when stopping
+        await withCheckedContinuation { cont in
+            userService.updateCurrentTrack(uid: uid, track: nil) { _ in
+                cont.resume()
+            }
+        }
     }
 
-    // MARK: - Live updates
+    // MARK: - Sync scheduling
 
-    func updateTrack(_ newTrack: Track) {
-        guard isBroadcasting else { return }
-        userService.updateCurrentTrack(uid: currentUser.id, track: newTrack)
+    private func scheduleLocationSync(immediate: Bool = false) {
+        locationSyncTask?.cancel()
+
+        locationSyncTask = Task { [weak self] in
+            guard let self else { return }
+            guard let uid = Auth.auth().currentUser?.uid else { return }
+
+            if immediate {
+                await self.syncLocation(uid: uid)
+            }
+
+            // periodic
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 20 * 1_000_000_000) // 20s
+                await self.syncLocation(uid: uid)
+            }
+        }
     }
 
-    func updateLocation(_ newLocation: LocationPoint) {
+    private func scheduleTrackSync(immediate: Bool = false) {
+        // cancel only if not running; otherwise keep running and just do immediate push below
+        if trackSyncTask == nil {
+            trackSyncTask = Task { [weak self] in
+                guard let self else { return }
+                guard let uid = Auth.auth().currentUser?.uid else { return }
+
+                if immediate {
+                    await self.syncTrack(uid: uid)
+                }
+
+                while !Task.isCancelled {
+                    try? await Task.sleep(nanoseconds: 15 * 1_000_000_000) // 15s
+                    await self.syncTrack(uid: uid)
+                }
+            }
+        } else if immediate {
+            Task { [weak self] in
+                guard let self else { return }
+                guard let uid = Auth.auth().currentUser?.uid else { return }
+                await self.syncTrack(uid: uid)
+            }
+        }
+    }
+
+    // MARK: - Actual sync
+
+    private func syncLocation(uid: String) async {
         guard isBroadcasting else { return }
-        userService.updateLastLocation(uid: currentUser.id, location: newLocation)
+        guard let locationService else { return }
+
+        // expects your LocationService to expose currentLocation
+        guard let loc = locationService.currentLocation else { return }
+
+        await withCheckedContinuation { cont in
+            userService.updateLastLocation(uid: uid, location: loc) { err in
+                if let err {
+                    self.errorMessage = "Location update failed: \(err.localizedDescription)"
+                }
+                cont.resume()
+            }
+        }
+    }
+
+    private func syncTrack(uid: String) async {
+        guard isBroadcasting else { return }
+
+        await withCheckedContinuation { cont in
+            userService.updateCurrentTrack(uid: uid, track: currentTrack) { err in
+                if let err {
+                    self.errorMessage = "Track update failed: \(err.localizedDescription)"
+                }
+                cont.resume()
+            }
+        }
     }
 }
 
