@@ -10,6 +10,7 @@ import SwiftUI
 struct NowPlayingView: View {
 
     @EnvironmentObject private var currentUserStore: CurrentUserStore
+    @StateObject private var vm = NowPlayingViewModel()
 
     var body: some View {
         NavigationStack {
@@ -33,14 +34,31 @@ struct NowPlayingView: View {
                 }
             }
         }
+        .onAppear { vm.start() }
+        .onDisappear { vm.stop() }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            vm.handleWillEnterForeground()
+        }
     }
 
     @ViewBuilder
     private var content: some View {
         VStack(spacing: 14) {
 
-            if let user = currentUserStore.user, let track = user.currentTrack {
+            if let err = vm.errorMessage, !err.isEmpty {
+                InfoBanner(text: err)
+            }
+
+            if let track = vm.currentTrack {
                 TrackCard(track: track)
+
+                ControlsRow(
+                    isPlaying: vm.isPlaying,
+                    isBusy: vm.isLoading,
+                    onPrevious: { Task { await vm.previous() } },
+                    onToggle: { Task { await vm.togglePlayPause() } },
+                    onNext: { Task { await vm.next() } }
+                )
             } else {
                 EmptyStateCard()
             }
@@ -53,6 +71,21 @@ struct NowPlayingView: View {
 }
 
 // MARK: - Components
+
+private struct InfoBanner: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(AppFonts.footnote())
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.14))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
 
 private struct TrackCard: View {
 
@@ -116,6 +149,52 @@ private struct TrackCard: View {
         }
         .frame(width: 64, height: 64)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+private struct ControlsRow: View {
+
+    let isPlaying: Bool
+    let isBusy: Bool
+
+    let onPrevious: () -> Void
+    let onToggle: () -> Void
+    let onNext: () -> Void
+
+    var body: some View {
+        HStack(spacing: 18) {
+
+            Button(action: onPrevious) {
+                Image(systemName: "backward.fill")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .frame(width: 54, height: 54)
+                    .background(Circle().fill(Color.white.opacity(0.18)))
+            }
+            .buttonStyle(.plain)
+            .disabled(isBusy)
+
+            Button(action: onToggle) {
+                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .frame(width: 64, height: 64)
+                    .background(Circle().fill(Color.white.opacity(0.22)))
+            }
+            .buttonStyle(.plain)
+            .disabled(isBusy)
+
+            Button(action: onNext) {
+                Image(systemName: "forward.fill")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .frame(width: 54, height: 54)
+                    .background(Circle().fill(Color.white.opacity(0.18)))
+            }
+            .buttonStyle(.plain)
+            .disabled(isBusy)
+        }
+        .padding(.top, 6)
     }
 }
 

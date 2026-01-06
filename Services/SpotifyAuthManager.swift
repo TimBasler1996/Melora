@@ -33,6 +33,9 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
 
     private let defaults = UserDefaults.standard
 
+    /// Prevents concurrent refresh requests.
+    private var refreshTask: Task<SpotifyTokens, Error>?
+
     // MARK: - Init
 
     private override init() {
@@ -42,22 +45,23 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
 
     // MARK: - Public API
 
+    /// Call this from views to make sure user is authorized.
     func ensureAuthorized() {
         print("🔵 [Auth] ensureAuthorized() called")
 
-        // Token noch gültig?
+        // Token still valid?
         if let t = tokens, t.expiresAt > Date().addingTimeInterval(30) {
             print("🟢 [Auth] Already authorized")
             isAuthorized = true
             return
         }
 
-        // Refresh möglich?
-        if let refresh = tokens?.refreshToken {
+        // Try refresh if possible (single-flight)
+        if tokens?.refreshToken != nil {
             print("🟡 [Auth] Trying refresh…")
             Task {
                 do {
-                    try await self.refreshAccessToken(refreshToken: refresh)
+                    _ = try await getValidAccessToken()
                     print("🟢 [Auth] Refresh successful")
                     self.isAuthorized = true
                 } catch {
@@ -68,7 +72,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
             return
         }
 
-        // Kein Token → Full Login Flow
+        // No token → Full Login Flow
         print("🟠 [Auth] No tokens → starting auth flow")
         startAuthFlow()
     }
@@ -83,25 +87,28 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
         defaults.removeObject(forKey: "spotify_exp")
     }
 
+    /// Returns a valid access token.
+    /// If expired, refresh will be performed, but never concurrently.
     func getValidAccessToken() async throws -> String {
         if let t = tokens, t.expiresAt > Date().addingTimeInterval(30) {
             return t.accessToken
         }
 
-        if let refresh = tokens?.refreshToken {
-            do {
-                try await refreshAccessToken(refreshToken: refresh)
-                if let t = tokens { return t.accessToken }
-            } catch {
-                print("❌ [Auth] Refresh in getValidAccessToken() failed: \(error)")
-                tokens = nil
-                isAuthorized = false
-                throw SpotifyAuthError.notAuthorized
-            }
+        guard let refresh = tokens?.refreshToken else {
+            isAuthorized = false
+            throw SpotifyAuthError.noRefreshToken
         }
 
-        isAuthorized = false
-        throw SpotifyAuthError.notAuthorized
+        do {
+            let updated = try await refreshAccessTokenSingleFlight(refreshToken: refresh)
+            self.isAuthorized = true
+            return updated.accessToken
+        } catch {
+            print("❌ [Auth] Refresh in getValidAccessToken() failed: \(error)")
+            tokens = nil
+            isAuthorized = false
+            throw SpotifyAuthError.notAuthorized
+        }
     }
 
     // MARK: - Auth Flow (Login)
@@ -205,7 +212,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
 
         let tokenModel = SpotifyTokens(
             accessToken: decoded.access_token,
-            refreshToken: decoded.refresh_token,
+            refreshToken: decoded.refresh_token, // can be nil
             expiresAt: expiresAt
         )
 
@@ -213,45 +220,66 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
         print("💾 [Auth] Tokens stored (login)")
     }
 
-    // MARK: - Token Refresh
+    // MARK: - Token Refresh (Single flight)
 
-    private func refreshAccessToken(refreshToken: String) async throws {
-        print("🔵 [Auth] refreshing access token…")
-
-        var request = URLRequest(url: tokenURL)
-        request.httpMethod = "POST"
-        request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-
-        let body: [String: String] = [
-            "client_id": clientId,
-            "grant_type": "refresh_token",
-            "refresh_token": refreshToken
-        ]
-
-        request.httpBody = body
-            .map { "\($0.key)=\($0.value)" }
-            .joined(separator: "&")
-            .data(using: .utf8)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let http = response as? HTTPURLResponse,
-              (200..<300).contains(http.statusCode) else {
-            print("❌ [Auth] Refresh failed: \(String(data: data, encoding: .utf8) ?? "")")
-            throw SpotifyAuthError.invalidResponse
+    private func refreshAccessTokenSingleFlight(refreshToken: String) async throws -> SpotifyTokens {
+        // If a refresh is already running, await it.
+        if let task = refreshTask {
+            return try await task.value
         }
 
-        let decoded = try JSONDecoder().decode(SpotifyRefreshResponse.self, from: data)
-        let expiresAt = Date().addingTimeInterval(TimeInterval(decoded.expires_in))
+        // Otherwise create a new refresh task.
+        let task = Task<SpotifyTokens, Error> { [tokenURL, clientId] in
+            print("🔵 [Auth] refreshing access token…")
 
-        let updated = SpotifyTokens(
-            accessToken: decoded.access_token,
-            refreshToken: decoded.refresh_token ?? refreshToken,
-            expiresAt: expiresAt
-        )
+            var request = URLRequest(url: tokenURL)
+            request.httpMethod = "POST"
+            request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 
-        saveTokens(updated)
-        print("💾 [Auth] Tokens stored (refresh)")
+            let body: [String: String] = [
+                "client_id": clientId,
+                "grant_type": "refresh_token",
+                "refresh_token": refreshToken
+            ]
+
+            request.httpBody = body
+                .map { "\($0.key)=\($0.value)" }
+                .joined(separator: "&")
+                .data(using: .utf8)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let http = response as? HTTPURLResponse,
+                  (200..<300).contains(http.statusCode) else {
+                print("❌ [Auth] Refresh failed: \(String(data: data, encoding: .utf8) ?? "")")
+                throw SpotifyAuthError.invalidResponse
+            }
+
+            let decoded = try JSONDecoder().decode(SpotifyRefreshResponse.self, from: data)
+            let expiresAt = Date().addingTimeInterval(TimeInterval(decoded.expires_in))
+
+            // Spotify may rotate refresh tokens. If present, replace it.
+            let newRefresh = decoded.refresh_token ?? refreshToken
+
+            return SpotifyTokens(
+                accessToken: decoded.access_token,
+                refreshToken: newRefresh,
+                expiresAt: expiresAt
+            )
+        }
+
+        refreshTask = task
+
+        do {
+            let updated = try await task.value
+            saveTokens(updated)
+            print("💾 [Auth] Tokens stored (refresh)")
+            refreshTask = nil
+            return updated
+        } catch {
+            refreshTask = nil
+            throw error
+        }
     }
 
     // MARK: - Token Storage
@@ -280,7 +308,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
 
         tokens = loaded
 
-        // ✅ Connected wenn refreshToken vorhanden (auch wenn access abgelaufen ist)
+        // ✅ Connected if refreshToken exists (even if access expired)
         if loaded.refreshToken != nil {
             isAuthorized = true
         } else {

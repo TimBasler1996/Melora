@@ -5,6 +5,7 @@ import UIKit
 final class NowPlayingViewModel: ObservableObject {
 
     @Published var currentTrack: Track?
+    @Published var isPlaying: Bool = false
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
@@ -14,7 +15,7 @@ final class NowPlayingViewModel: ObservableObject {
 
     func start() {
         startPolling()
-        Task { await fetchCurrentTrack() } // sofort beim Start einmal
+        Task { await refreshNowPlaying() } // sofort beim Start einmal
     }
 
     func stop() {
@@ -30,7 +31,7 @@ final class NowPlayingViewModel: ObservableObject {
             guard let self else { return }
 
             while !Task.isCancelled {
-                await self.fetchCurrentTrack()
+                await self.refreshNowPlaying()
                 let ns = UInt64(intervalSeconds * 1_000_000_000)
                 try? await Task.sleep(nanoseconds: ns)
             }
@@ -42,32 +43,70 @@ final class NowPlayingViewModel: ObservableObject {
         pollTask = nil
     }
 
-    // MARK: - Fetch
+    // MARK: - Refresh
 
-    func fetchCurrentTrack() async {
+    func refreshNowPlaying() async {
         isLoading = true
         defer { isLoading = false }
 
         do {
-            let track = try await SpotifyService.shared.fetchCurrentlyPlaying()
-            currentTrack = track
+            let state = try await SpotifyService.shared.fetchNowPlayingState()
+            currentTrack = state.track
+            isPlaying = state.isPlaying
             errorMessage = nil
-        } catch SpotifyAPIError.noTrackPlaying {
-            // 204 ist normal → nicht als Fehler darstellen
+        } catch SpotifyAPIError.noActiveDevice {
+            // Not fatal. User can open Spotify and start playing.
             currentTrack = nil
-            errorMessage = nil
+            isPlaying = false
+            errorMessage = "No active Spotify device."
         } catch SpotifyAuthError.notAuthorized {
             currentTrack = nil
+            isPlaying = false
             errorMessage = "Spotify not authorized."
         } catch {
             currentTrack = nil
+            isPlaying = false
             errorMessage = error.localizedDescription
         }
     }
 
     /// Wird vom View beim App-Return aufgerufen.
     func handleWillEnterForeground() {
-        Task { await fetchCurrentTrack() }
+        Task { await refreshNowPlaying() }
+    }
+
+    // MARK: - Controls
+
+    func togglePlayPause() async {
+        do {
+            if isPlaying {
+                try await SpotifyService.shared.pause()
+            } else {
+                try await SpotifyService.shared.play()
+            }
+            // Immediately refresh to sync UI state
+            await refreshNowPlaying()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func next() async {
+        do {
+            try await SpotifyService.shared.next()
+            await refreshNowPlaying()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func previous() async {
+        do {
+            try await SpotifyService.shared.previous()
+            await refreshNowPlaying()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }
 

@@ -37,6 +37,14 @@ struct SpotifyImage: Codable {
 
 private struct SpotifyCurrentlyPlayingResponse: Codable {
     let item: SpotifyTrackItem?
+    let isPlaying: Bool?
+    let progressMs: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case item
+        case isPlaying = "is_playing"
+        case progressMs = "progress_ms"
+    }
 }
 
 private struct SpotifyTrackItem: Codable {
@@ -44,6 +52,15 @@ private struct SpotifyTrackItem: Codable {
     let name: String
     let artists: [SpotifyArtist]
     let album: SpotifyAlbum
+    let durationMs: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case artists
+        case album
+        case durationMs = "duration_ms"
+    }
 }
 
 private struct SpotifyArtist: Codable {
@@ -61,6 +78,13 @@ enum SpotifyAPIError: Error {
     case notAuthorized
     case noTrackPlaying
     case invalidResponse
+    case noActiveDevice
+}
+
+struct NowPlayingState: Equatable {
+    let track: Track?
+    let isPlaying: Bool
+    let progressMs: Int?
 }
 
 final class SpotifyService {
@@ -72,8 +96,8 @@ final class SpotifyService {
 
     // MARK: - Public API
 
-    /// Fetches the currently playing track from Spotify and maps it to our `Track` model.
-    func fetchCurrentlyPlaying() async throws -> Track {
+    /// Fetches full now-playing state (track + isPlaying).
+    func fetchNowPlayingState() async throws -> NowPlayingState {
         let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
         let url = apiBaseURL.appendingPathComponent("me/player/currently-playing")
 
@@ -87,26 +111,34 @@ final class SpotifyService {
             throw SpotifyAPIError.invalidResponse
         }
 
-        print("🎧 /currently-playing status=\(http.statusCode)")
-
-        // 204 = no content (no track currently playing OR spotify has no active device)
+        // 204 = no content (no track playing OR no active device)
         if http.statusCode == 204 {
-            throw SpotifyAPIError.noTrackPlaying
+            return NowPlayingState(track: nil, isPlaying: false, progressMs: nil)
         }
 
         guard (200..<300).contains(http.statusCode) else {
-            print("❌ Spotify currently playing HTTP \(http.statusCode): \(String(data: data, encoding: .utf8) ?? "")")
+            // Some common cases:
+            // 401 -> token invalid
+            // 403/404 -> no active device, depending on context
+            let body = String(data: data, encoding: .utf8) ?? ""
+            print("❌ Spotify now playing HTTP \(http.statusCode): \(body)")
+            if http.statusCode == 404 {
+                throw SpotifyAPIError.noActiveDevice
+            }
             throw SpotifyAPIError.invalidResponse
         }
 
         let decoded = try JSONDecoder().decode(SpotifyCurrentlyPlayingResponse.self, from: data)
+
+        let isPlaying = decoded.isPlaying ?? false
+        let progress = decoded.progressMs
+
         guard let item = decoded.item else {
-            throw SpotifyAPIError.noTrackPlaying
+            return NowPlayingState(track: nil, isPlaying: false, progressMs: progress)
         }
 
-        // ✅ id kann nil sein (z.B. Ads/Podcast/Local files) -> fallback statt fail
+        // id can be nil (ads/podcast/local files) -> fallback safe id
         let safeId = item.id ?? "unknown-\(item.name)"
-
         let artistName = item.artists.first?.name ?? "Unknown Artist"
         let albumName = item.album.name
 
@@ -115,13 +147,25 @@ final class SpotifyService {
             return URL(string: firstImageURL)
         }()
 
-        return Track(
+        let track = Track(
             id: safeId,
             title: item.name,
             artist: artistName,
             album: albumName,
-            artworkURL: artworkURL
+            artworkURL: artworkURL,
+            durationMs: item.durationMs
         )
+
+        return NowPlayingState(track: track, isPlaying: isPlaying, progressMs: progress)
+    }
+
+    /// Backwards compatible helper: returns Track or throws noTrackPlaying
+    func fetchCurrentlyPlaying() async throws -> Track {
+        let state = try await fetchNowPlayingState()
+        guard let track = state.track else {
+            throw SpotifyAPIError.noTrackPlaying
+        }
+        return track
     }
 
     /// Fetches the Spotify user profile (/me).
@@ -139,14 +183,57 @@ final class SpotifyService {
             throw SpotifyAPIError.invalidResponse
         }
 
-        print("👤 /me status=\(http.statusCode)")
-
         guard (200..<300).contains(http.statusCode) else {
             print("❌ Spotify /me HTTP \(http.statusCode): \(String(data: data, encoding: .utf8) ?? "")")
             throw SpotifyAPIError.invalidResponse
         }
 
         return try JSONDecoder().decode(SpotifyUserProfile.self, from: data)
+    }
+
+    // MARK: - Player Controls
+
+    func play() async throws {
+        try await sendPlayerCommand(path: "me/player/play", method: "PUT")
+    }
+
+    func pause() async throws {
+        try await sendPlayerCommand(path: "me/player/pause", method: "PUT")
+    }
+
+    func next() async throws {
+        try await sendPlayerCommand(path: "me/player/next", method: "POST")
+    }
+
+    func previous() async throws {
+        try await sendPlayerCommand(path: "me/player/previous", method: "POST")
+    }
+
+    private func sendPlayerCommand(path: String, method: String) async throws {
+        let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
+        let url = apiBaseURL.appendingPathComponent(path)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw SpotifyAPIError.invalidResponse
+        }
+
+        // Spotify often returns 204 for success
+        if (200..<300).contains(http.statusCode) || http.statusCode == 204 {
+            return
+        }
+
+        if http.statusCode == 404 {
+            // typically "No active device found"
+            throw SpotifyAPIError.noActiveDevice
+        }
+
+        throw SpotifyAPIError.invalidResponse
     }
 }
 
