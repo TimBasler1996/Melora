@@ -79,6 +79,8 @@ struct DiscoverView: View {
     }
 }
 
+// MARK: - Row: Navigation + Like Button
+
 private struct DiscoverUserRow: View {
 
     let user: AppUser
@@ -86,15 +88,13 @@ private struct DiscoverUserRow: View {
     var body: some View {
         HStack(spacing: 10) {
 
-            // Left side navigates
             NavigationLink {
                 UserProfileDetailView(userId: user.id)
             } label: {
-                DiscoverUserCardContent(user: user)
+                DiscoverUserCard(user: user)
             }
             .buttonStyle(.plain)
 
-            // Right side is the like button
             DiscoverLikeButton(user: user)
         }
     }
@@ -132,7 +132,7 @@ private struct DiscoverLikeButton: View {
 
         do {
             _ = try await LikeApiService.shared.likeBroadcastTrack(
-                fromUser: nil,                 // optional; we can wire it later if you have it globally
+                fromUser: nil,
                 toUser: user,
                 track: track,
                 sessionLocation: user.lastLocation,
@@ -145,9 +145,13 @@ private struct DiscoverLikeButton: View {
     }
 }
 
-private struct DiscoverUserCardContent: View {
+// MARK: - Card
+
+private struct DiscoverUserCard: View {
 
     let user: AppUser
+
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         HStack(spacing: 12) {
@@ -164,11 +168,33 @@ private struct DiscoverUserCardContent: View {
                     .foregroundColor(AppColors.secondaryText)
                     .lineLimit(1)
 
+                // ✅ Track row: tap to open Spotify
                 if let track = user.currentTrack {
-                    Text("🎵 \(track.title) · \(track.artist)")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.mutedText)
-                        .lineLimit(1)
+                    Button {
+                        openSpotify(for: track)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "spotifyLogo")
+                                .hidden() // fallback; we use SF symbols below
+                            Image(systemName: "music.note")
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .foregroundColor(AppColors.mutedText)
+
+                            Text("\(track.title) · \(track.artist)")
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .foregroundColor(AppColors.mutedText)
+                                .lineLimit(1)
+
+                            Spacer(minLength: 6)
+
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(AppColors.mutedText.opacity(0.9))
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("Open track in Spotify")
                 } else if let taste = user.musicTaste, !taste.isEmpty {
                     Text(taste)
                         .font(.system(size: 12, weight: .regular, design: .rounded))
@@ -239,6 +265,20 @@ private struct DiscoverUserCardContent: View {
             Text(user.initials)
                 .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundColor(AppColors.primaryText)
+        }
+    }
+
+    // MARK: - Spotify Deep Link
+
+    private func openSpotify(for track: Track) {
+        let spotifyAppURL = URL(string: "spotify:track:\(track.id)")!
+        let webURL = URL(string: "https://open.spotify.com/track/\(track.id)")!
+
+        // Try Spotify app first, then web
+        openURL(spotifyAppURL) { success in
+            if !success {
+                openURL(webURL)
+            }
         }
     }
 }
