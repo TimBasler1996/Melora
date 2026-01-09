@@ -13,6 +13,7 @@ struct NowPlayingView: View {
     @EnvironmentObject private var currentUserStore: CurrentUserStore
     @EnvironmentObject private var broadcast: BroadcastManager
     @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
+    @Environment(\.openURL) private var openURL
 
     @StateObject private var vm = NowPlayingViewModel()
 
@@ -31,6 +32,15 @@ struct NowPlayingView: View {
             .navigationTitle("Now Playing")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        openSpotifyLibrary()
+                    } label: {
+                        Label("Your Library", systemImage: "books.vertical")
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 ToolbarItem(placement: .topBarTrailing) {
                     if let user = currentUserStore.user {
                         LikesInboxButton(user: user)
@@ -85,6 +95,17 @@ struct NowPlayingView: View {
             .padding(.vertical, 12)
         }
         .scrollIndicators(.hidden)
+    }
+
+    private func openSpotifyLibrary() {
+        let appURL = URL(string: "spotify:collection")!
+        let webURL = URL(string: "https://open.spotify.com/collection")!
+
+        openURL(appURL) { success in
+            if !success {
+                openURL(webURL)
+            }
+        }
     }
 }
 
@@ -240,4 +261,3 @@ private struct EmptyStateCard: View {
         )
     }
 }
-
