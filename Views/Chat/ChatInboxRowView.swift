@@ -1,3 +1,11 @@
+//
+//  ChatInboxRowView.swift
+//  SocialSound
+//
+//  Created by Tim Basler on 07.01.2026.
+//
+
+
 import SwiftUI
 
 struct ChatInboxRowView: View {

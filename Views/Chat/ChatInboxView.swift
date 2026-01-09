@@ -1,3 +1,10 @@
+//
+//  ChatInboxView.swift
+//  SocialSound
+//
+//  Created by Tim Basler on 07.01.2026.
+//
+
 import SwiftUI
 
 struct ChatInboxView: View {
@@ -58,7 +65,7 @@ struct ChatInboxView: View {
                 Text("No chats yet")
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
-                Text("When you accept a like and start chatting, it shows up here.")
+                Text("When you accept a like and start chatting, it will show up here.")
                     .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
@@ -84,3 +91,4 @@ struct ChatInboxView: View {
         }
     }
 }
+

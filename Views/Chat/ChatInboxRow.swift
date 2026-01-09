@@ -1,3 +1,10 @@
+//
+//  ChatInboxRow.swift
+//  SocialSound
+//
+//  Created by Tim Basler on 07.01.2026.
+//
+
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -51,6 +58,7 @@ final class ChatInboxViewModel: ObservableObject {
             }
 
             let docs = snap?.documents ?? []
+
             let baseRows: [ChatInboxRow] = docs.compactMap { doc in
                 let data = doc.data()
 
@@ -59,7 +67,10 @@ final class ChatInboxViewModel: ObservableObject {
 
                 let lastText = data["lastMessageText"] as? String
                 let lastAt = (data["lastMessageAt"] as? Timestamp)?.dateValue()
-                let updatedAt = (data["updatedAt"] as? Timestamp)?.dateValue()
+
+                let updatedAt =
+                    (data["updatedAt"] as? Timestamp)?.dateValue()
+                    ?? (data["createdAt"] as? Timestamp)?.dateValue()
 
                 return ChatInboxRow(
                     id: doc.documentID,
@@ -76,8 +87,7 @@ final class ChatInboxViewModel: ObservableObject {
             self.rows = baseRows
             self.isLoading = false
 
-            // Enrich each row with user profile (displayName + avatar)
-            Task { await self.enrichRowsWithUsers() }
+            self.enrichRowsWithUsers()
         }
     }
 
@@ -86,26 +96,37 @@ final class ChatInboxViewModel: ObservableObject {
         listener = nil
     }
 
-    /// One-shot reload (for pull-to-refresh)
+    /// One-shot reload (pull-to-refresh)
     func reloadOnce() {
         startListening()
     }
 
-    private func enrichRowsWithUsers() async {
-        // Fetch user info for rows that miss it
-        for i in rows.indices {
-            if rows[i].displayName != nil { continue }
-            let uid = rows[i].otherUserId
+    private func enrichRowsWithUsers() {
+        for index in rows.indices {
+            if rows[index].displayName != nil { continue }
+
+            let uid = rows[index].otherUserId
             guard uid != "unknown" else { continue }
 
-            do {
-                let other = try await UserApiService.shared.fetchUser(userId: uid)
-                rows[i].displayName = other.displayName
-                rows[i].avatarURL = (other.photoURLs?.first) ?? other.avatarURL
-            } catch {
-                // Don’t fail the whole inbox if one profile can't load
-                print("⚠️ [ChatInbox] failed to fetch user \(uid):", error.localizedDescription)
+            UserApiService.shared.getUser(uid: uid) { [weak self] result in
+                guard let self else { return }
+
+                switch result {
+                case .success(let other):
+                    DispatchQueue.main.async {
+                        // Ensure row still exists and still refers to same user
+                        guard index < self.rows.count,
+                              self.rows[index].otherUserId == uid else { return }
+
+                        self.rows[index].displayName = other.displayName
+                        self.rows[index].avatarURL = (other.photoURLs?.first) ?? other.avatarURL
+                    }
+
+                case .failure(let error):
+                    print("⚠️ [ChatInbox] failed to fetch user \(uid):", error.localizedDescription)
+                }
             }
         }
     }
 }
+
