@@ -19,6 +19,8 @@ final class OnboardingViewModel: ObservableObject {
     @Published var photo3Data: Data?
 
     @Published var isConnectingSpotify: Bool = false
+    @Published var isSpotifyConnected: Bool = false
+    @Published var isSpotifyProfileLinked: Bool = false
     @Published var spotifyErrorMessage: String?
     @Published var finishErrorMessage: String?
 
@@ -47,13 +49,16 @@ final class OnboardingViewModel: ObservableObject {
         return true
     }
 
+    private var hasAllPhotos: Bool {
+        profilePhotoData != nil && photo2Data != nil && photo3Data != nil
+    }
+
     /// Used by OnboardingFlowView for CTA enabling.
-    /// Step 2/3 will be enforced later (photos + spotify).
     var canContinueCurrentStep: Bool {
         switch stepIndex {
         case 1: return canContinueStep1
-        case 2: return true
-        case 3: return true
+        case 2: return canContinueStep1 && hasAllPhotos
+        case 3: return canContinueStep1 && hasAllPhotos && isSpotifyConnected
         default: return false
         }
     }
@@ -74,24 +79,37 @@ final class OnboardingViewModel: ObservableObject {
         stepIndex -= 1
     }
 
-    func connectSpotify() async {
-        guard !isConnectingSpotify else { return }
+    func startSpotifyAuth() {
+        spotifyErrorMessage = nil
+        let auth = SpotifyAuthManager.shared
+        auth.ensureAuthorized()
+
+        if auth.isAuthorized {
+            updateSpotifyConnection(true)
+        }
+    }
+
+    func updateSpotifyConnection(_ isAuthorized: Bool) {
+        isSpotifyConnected = isAuthorized
+
+        guard isAuthorized else {
+            isSpotifyProfileLinked = false
+            return
+        }
+        Task { await syncSpotifyProfileIfNeeded() }
+    }
+
+    func syncSpotifyProfileIfNeeded() async {
+        guard !isConnectingSpotify, !isSpotifyProfileLinked else { return }
 
         isConnectingSpotify = true
         spotifyErrorMessage = nil
         defer { isConnectingSpotify = false }
 
-        let auth = SpotifyAuthManager.shared
-        auth.ensureAuthorized()
-
-        guard auth.isAuthorized else {
-            spotifyErrorMessage = "Connect your Spotify account to continue."
-            return
-        }
-
         do {
             let profile = try await SpotifyService.shared.fetchCurrentUserProfile()
             try await ensureUserFromSpotify(profile)
+            isSpotifyProfileLinked = true
             spotifyErrorMessage = nil
         } catch {
             spotifyErrorMessage = error.localizedDescription
@@ -124,6 +142,13 @@ final class OnboardingViewModel: ObservableObject {
         }
 
         do {
+            if isSpotifyConnected && !isSpotifyProfileLinked {
+                await syncSpotifyProfileIfNeeded()
+                if !isSpotifyProfileLinked {
+                    finishErrorMessage = "Spotify connection not completed. Please try again."
+                    return
+                }
+            }
             let photoURLs = try await uploadPhotos(uid: uid)
             try await saveBasics(uid: uid, photoURLs: photoURLs)
             try await markProfileCompleted(uid: uid)

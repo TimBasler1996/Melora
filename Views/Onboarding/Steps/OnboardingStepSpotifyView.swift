@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OnboardingStepSpotifyView: View {
     @ObservedObject var viewModel: OnboardingViewModel
+    @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -19,26 +20,46 @@ struct OnboardingStepSpotifyView: View {
                 featureRow("Likes as lightweight social signals")
             }
 
-            if let error = viewModel.spotifyErrorMessage, !error.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(error)
-                        .font(AppFonts.footnote())
-                        .foregroundColor(.red.opacity(0.85))
+            if viewModel.isSpotifyProfileLinked {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(AppColors.primary)
 
-                    Button(action: {
-                        Task { await viewModel.connectSpotify() }
-                    }) {
-                        Text("Try again")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundColor(AppColors.primaryText)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Color.white.opacity(0.18))
-                            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusSmall, style: .continuous))
-                    }
-                    .disabled(viewModel.isConnectingSpotify)
-                    .opacity(viewModel.isConnectingSpotify ? 0.6 : 1)
+                    Text("Spotify connected")
+                        .font(AppFonts.footnote())
+                        .foregroundColor(AppColors.secondaryText)
                 }
+            } else {
+                let buttonTitle = viewModel.isConnectingSpotify
+                    ? "Connecting…"
+                    : (viewModel.isSpotifyConnected ? "Sync Spotify profile" : "Connect Spotify")
+
+                Button(action: {
+                    viewModel.startSpotifyAuth()
+                }) {
+                    HStack(spacing: 8) {
+                        if viewModel.isConnectingSpotify {
+                            ProgressView()
+                                .tint(.white)
+                        }
+
+                        Text(buttonTitle)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(AppColors.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
+                }
+                .disabled(viewModel.isConnectingSpotify)
+                .opacity(viewModel.isConnectingSpotify ? 0.7 : 1)
+            }
+
+            if let error = viewModel.spotifyErrorMessage, !error.isEmpty {
+                Text(error)
+                    .font(AppFonts.footnote())
+                    .foregroundColor(.red.opacity(0.85))
             }
 
             if let finishError = viewModel.finishErrorMessage, !finishError.isEmpty {
@@ -46,6 +67,9 @@ struct OnboardingStepSpotifyView: View {
                     .font(AppFonts.footnote())
                     .foregroundColor(.red.opacity(0.85))
             }
+        }
+        .onChange(of: spotifyAuth.isAuthorized) { isAuthorized in
+            viewModel.updateSpotifyConnection(isAuthorized)
         }
     }
 
