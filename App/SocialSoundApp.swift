@@ -40,6 +40,7 @@ struct SocialSoundApp: App {
             .environmentObject(broadcast)
             .environmentObject(locationService)
             .environmentObject(currentUserStore)
+            .environmentObject(onboardingState)
         }
     }
 }

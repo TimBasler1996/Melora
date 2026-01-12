@@ -40,6 +40,12 @@ struct OnboardingStepSpotifyView: View {
                     .opacity(viewModel.isConnectingSpotify ? 0.6 : 1)
                 }
             }
+
+            if let finishError = viewModel.finishErrorMessage, !finishError.isEmpty {
+                Text(finishError)
+                    .font(AppFonts.footnote())
+                    .foregroundColor(.red.opacity(0.85))
+            }
         }
     }
 

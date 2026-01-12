@@ -3,6 +3,9 @@ import UIKit
 
 struct OnboardingFlowView: View {
     @StateObject private var viewModel = OnboardingViewModel()
+    @EnvironmentObject private var onboardingState: OnboardingStateManager
+    @EnvironmentObject private var broadcast: BroadcastManager
+
     let onFinished: () -> Void
 
     init(onFinished: @escaping () -> Void = { print("Onboarding finished (not persisted yet)") }) {
@@ -33,6 +36,7 @@ struct OnboardingFlowView: View {
         .onTapGesture {
             hideKeyboard()
         }
+        .allowsHitTesting(!viewModel.isFinishing)
     }
 
     private var topBar: some View {
@@ -105,11 +109,17 @@ struct OnboardingFlowView: View {
         Button(action: handleCTAAction) {
             if viewModel.stepIndex == 3 {
                 if viewModel.spotifyConnected {
-                    Text("Finish")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
+                    HStack(spacing: 10) {
+                        if viewModel.isFinishing {
+                            ProgressView()
+                                .tint(.white)
+                        }
+                        Text("Finish")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
                 } else {
                     HStack(spacing: 10) {
                         if viewModel.isConnectingSpotify {
@@ -140,7 +150,7 @@ struct OnboardingFlowView: View {
 
     private var isCTADisabled: Bool {
         if viewModel.stepIndex == 3 {
-            return viewModel.isConnectingSpotify
+            return viewModel.isConnectingSpotify || viewModel.isFinishing
         }
         return !viewModel.canContinue
     }
@@ -149,7 +159,12 @@ struct OnboardingFlowView: View {
         switch viewModel.stepIndex {
         case 3:
             if viewModel.spotifyConnected {
-                onFinished()
+                Task {
+                    await viewModel.finishOnboarding(onboardingState: onboardingState, broadcast: broadcast)
+                    if viewModel.finishErrorMessage == nil {
+                        onFinished()
+                    }
+                }
             } else {
                 Task {
                     await viewModel.connectSpotify()

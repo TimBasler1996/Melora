@@ -1,4 +1,6 @@
 import Foundation
+import FirebaseAuth
+import FirebaseFirestore
 
 @MainActor
 final class OnboardingViewModel: ObservableObject {
@@ -22,6 +24,9 @@ final class OnboardingViewModel: ObservableObject {
     @Published var spotifyAvatarURL: String?
     @Published var spotifyCountryCode: String?
     @Published var spotifyErrorMessage: String?
+
+    @Published var isFinishing: Bool = false
+    @Published var finishErrorMessage: String?
 
     var progressText: String {
         "\(stepIndex)/3"
@@ -132,6 +137,96 @@ final class OnboardingViewModel: ObservableObject {
         } catch {
             spotifyErrorMessage = "Spotify connection failed. Please try again."
         }
+    }
+
+    func finishOnboarding(
+        onboardingState: OnboardingStateManager,
+        broadcast: BroadcastManager
+    ) async {
+        guard !isFinishing else { return }
+        finishErrorMessage = nil
+
+        guard canContinueStep1, canContinueStep2, spotifyConnected, !spotifyId.isEmpty else {
+            finishErrorMessage = "Please complete all steps before finishing."
+            return
+        }
+
+        guard let profileData = profilePhotoData,
+              let secondData = photo2Data,
+              let thirdData = photo3Data else {
+            finishErrorMessage = "Please select all three photos."
+            return
+        }
+
+        guard let uid = Auth.auth().currentUser?.uid else {
+            finishErrorMessage = "No Firebase user found. Please try again."
+            return
+        }
+
+        isFinishing = true
+        defer { isFinishing = false }
+
+        do {
+            let service = OnboardingProfileService.shared
+            let photoURLs = try await service.uploadPhotos(
+                uid: uid,
+                profile: profileData,
+                photo2: secondData,
+                photo3: thirdData
+            )
+
+            let now = Date()
+            var payload: [String: Any] = [
+                "firstName": firstName,
+                "lastName": lastName,
+                "displayName": "\(firstName) \(lastName)",
+                "city": city,
+                "birthday": Timestamp(date: birthday),
+                "gender": gender,
+                "photoURLs": photoURLs,
+                "avatarURL": photoURLs.first as Any,
+                "spotifyId": spotifyId,
+                "countryCode": spotifyCountryCode as Any,
+                "profileCompleted": true,
+                "updatedAt": Timestamp(date: now),
+                "lastActiveAt": Timestamp(date: now)
+            ]
+
+            if try await service.shouldSetCreatedAt(uid: uid) {
+                payload["createdAt"] = Timestamp(date: now)
+            }
+
+            try await service.saveUserProfile(uid: uid, payload: payload)
+
+            let snap = try await Firestore.firestore().collection("users").document(uid).getDocument()
+            if let data = snap.data() {
+                let appUser = AppUser.fromFirestore(uid: uid, data: data)
+                broadcast.updateCurrentUser(userFrom(appUser: appUser))
+            }
+
+            onboardingState.reload()
+            finishErrorMessage = nil
+        } catch {
+            finishErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func userFrom(appUser: AppUser) -> User {
+        let avatarURL: URL? = {
+            if let s = appUser.avatarURL { return URL(string: s) }
+            if let s = appUser.photoURLs?.first { return URL(string: s) }
+            return nil
+        }()
+
+        let stableId = appUser.spotifyId ?? appUser.uid
+
+        return User(
+            id: stableId,
+            displayName: appUser.displayName,
+            avatarURL: avatarURL,
+            age: appUser.age,
+            countryCode: appUser.countryCode
+        )
     }
 
     private static var minimumBirthday: Date {
