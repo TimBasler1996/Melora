@@ -58,7 +58,7 @@ final class OnboardingViewModel: ObservableObject {
         switch stepIndex {
         case 1: return canContinueStep1
         case 2: return canContinueStep1 && hasAllPhotos
-        case 3: return canContinueStep1 && hasAllPhotos && isSpotifyProfileLinked
+        case 3: return canContinueStep1 && hasAllPhotos && isSpotifyConnected
         default: return false
         }
     }
@@ -142,6 +142,13 @@ final class OnboardingViewModel: ObservableObject {
         }
 
         do {
+            if isSpotifyConnected && !isSpotifyProfileLinked {
+                await syncSpotifyProfileIfNeeded()
+                if !isSpotifyProfileLinked {
+                    finishErrorMessage = "Spotify connection not completed. Please try again."
+                    return
+                }
+            }
             let photoURLs = try await uploadPhotos(uid: uid)
             try await saveBasics(uid: uid, photoURLs: photoURLs)
             try await markProfileCompleted(uid: uid)
