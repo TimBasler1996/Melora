@@ -71,10 +71,10 @@ struct OnboardingFlowView: View {
                 OnboardingStepBasicsView(viewModel: viewModel)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             case 2:
-                OnboardingStepPhotosView()
+                OnboardingStepPhotosView(viewModel: viewModel)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             default:
-                OnboardingStepSpotifyView()
+                OnboardingStepSpotifyView(viewModel: viewModel)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
@@ -114,4 +114,3 @@ struct OnboardingFlowView: View {
 #Preview {
     OnboardingFlowView()
 }
-
