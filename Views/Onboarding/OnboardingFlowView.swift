@@ -71,6 +71,8 @@ struct OnboardingFlowView: View {
             switch viewModel.stepIndex {
             case 1:
                 OnboardingStepBasicsView(viewModel: viewModel)
+            case 2:
+                OnboardingStepPhotosView(viewModel: viewModel)
             default:
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Next step")

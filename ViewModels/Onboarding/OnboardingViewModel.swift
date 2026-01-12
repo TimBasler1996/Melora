@@ -11,6 +11,10 @@ final class OnboardingViewModel: ObservableObject {
     @Published var birthday: Date = Date()
     @Published var gender: String = ""
 
+    @Published var profilePhotoData: Data?
+    @Published var photo2Data: Data?
+    @Published var photo3Data: Data?
+
     var progressText: String {
         "\(stepIndex)/3"
     }
@@ -23,6 +27,8 @@ final class OnboardingViewModel: ObservableObject {
         switch stepIndex {
         case 1:
             return canContinueStep1
+        case 2:
+            return canContinueStep2
         default:
             return true
         }
@@ -50,9 +56,16 @@ final class OnboardingViewModel: ObservableObject {
         return true
     }
 
+    var canContinueStep2: Bool {
+        profilePhotoData != nil && photo2Data != nil && photo3Data != nil
+    }
+
     func goNext() {
         guard stepIndex < 3 else { return }
         if stepIndex == 1, !canContinueStep1 {
+            return
+        }
+        if stepIndex == 2, !canContinueStep2 {
             return
         }
         stepIndex += 1
