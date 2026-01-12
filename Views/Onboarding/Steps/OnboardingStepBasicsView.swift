@@ -29,7 +29,6 @@ struct OnboardingStepBasicsView: View {
                     .keyboardType(.default)
 
                 birthdayPicker
-
                 genderMenu
             }
         }
@@ -62,7 +61,7 @@ struct OnboardingStepBasicsView: View {
 
     private var genderMenu: some View {
         Menu {
-            ForEach(genderOptions, id: \\.self) { option in
+            ForEach(genderOptions, id: \.self) { option in
                 Button(option) {
                     viewModel.gender = option
                 }
@@ -95,3 +94,4 @@ struct OnboardingStepBasicsView: View {
     OnboardingStepBasicsView(viewModel: OnboardingViewModel())
         .padding()
 }
+
