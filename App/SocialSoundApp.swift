@@ -9,6 +9,7 @@ struct SocialSoundApp: App {
     @StateObject private var broadcast = BroadcastManager()
     @StateObject private var locationService = LocationService()
     @StateObject private var currentUserStore = CurrentUserStore()
+    @StateObject private var onboardingState = OnboardingStateManager()
 
     init() {
         FirebaseApp.configure()
@@ -17,15 +18,45 @@ struct SocialSoundApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainView()
-                .onAppear {
-                    FirebaseAuthBootstrap.ensureFirebaseUser()
-                    currentUserStore.startListening()
+            ZStack {
+                if onboardingState.isLoading {
+                    LoadingView()
+                        .transition(.opacity)
+                } else if onboardingState.needsOnboarding {
+                    OnboardingFlowView()
+                        .transition(.opacity)
+                } else {
+                    MainView()
+                        .transition(.opacity)
                 }
-                .environmentObject(spotifyAuth)
-                .environmentObject(broadcast)
-                .environmentObject(locationService)
-                .environmentObject(currentUserStore)
+            }
+            .animation(.easeInOut(duration: 0.25), value: onboardingState.isLoading)
+            .animation(.easeInOut(duration: 0.25), value: onboardingState.needsOnboarding)
+            .onAppear {
+                FirebaseAuthBootstrap.ensureFirebaseUser()
+                currentUserStore.startListening()
+            }
+            .environmentObject(spotifyAuth)
+            .environmentObject(broadcast)
+            .environmentObject(locationService)
+            .environmentObject(currentUserStore)
+        }
+    }
+}
+
+private struct LoadingView: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [AppColors.primary, AppColors.secondary],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            ProgressView("Loading…")
+                .tint(.white)
+                .foregroundColor(.white)
         }
     }
 }
