@@ -3,6 +3,11 @@ import UIKit
 
 struct OnboardingFlowView: View {
     @StateObject private var viewModel = OnboardingViewModel()
+    let onFinished: () -> Void
+
+    init(onFinished: @escaping () -> Void = { print("Onboarding finished (not persisted yet)") }) {
+        self.onFinished = onFinished
+    }
 
     var body: some View {
         ZStack {
@@ -73,6 +78,8 @@ struct OnboardingFlowView: View {
                 OnboardingStepBasicsView(viewModel: viewModel)
             case 2:
                 OnboardingStepPhotosView(viewModel: viewModel)
+            case 3:
+                OnboardingStepSpotifyView(viewModel: viewModel)
             default:
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Next step")
@@ -95,18 +102,62 @@ struct OnboardingFlowView: View {
     }
 
     private var ctaButton: some View {
-        Button(action: viewModel.goNext) {
-            Text("Continue")
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(AppColors.primary)
-                .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
+        Button(action: handleCTAAction) {
+            if viewModel.stepIndex == 3 {
+                if viewModel.spotifyConnected {
+                    Text("Finish")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                } else {
+                    HStack(spacing: 10) {
+                        if viewModel.isConnectingSpotify {
+                            ProgressView()
+                                .tint(.white)
+                        }
+                        Text("Connect Spotify")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                }
+            } else {
+                Text("Continue")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+            }
         }
-        .disabled(!viewModel.canContinue)
-        .opacity(viewModel.canContinue ? 1 : 0.6)
+        .background(AppColors.primary)
+        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
+        .disabled(isCTADisabled)
+        .opacity(isCTADisabled ? 0.6 : 1)
         .padding(.bottom, 6)
+    }
+
+    private var isCTADisabled: Bool {
+        if viewModel.stepIndex == 3 {
+            return viewModel.isConnectingSpotify
+        }
+        return !viewModel.canContinue
+    }
+
+    private func handleCTAAction() {
+        switch viewModel.stepIndex {
+        case 3:
+            if viewModel.spotifyConnected {
+                onFinished()
+            } else {
+                Task {
+                    await viewModel.connectSpotify()
+                }
+            }
+        default:
+            viewModel.goNext()
+        }
     }
 
     private func hideKeyboard() {

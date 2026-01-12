@@ -15,6 +15,14 @@ final class OnboardingViewModel: ObservableObject {
     @Published var photo2Data: Data?
     @Published var photo3Data: Data?
 
+    @Published var isConnectingSpotify: Bool = false
+    @Published var spotifyConnected: Bool = false
+    @Published var spotifyId: String = ""
+    @Published var spotifyDisplayName: String = ""
+    @Published var spotifyAvatarURL: String?
+    @Published var spotifyCountryCode: String?
+    @Published var spotifyErrorMessage: String?
+
     var progressText: String {
         "\(stepIndex)/3"
     }
@@ -29,6 +37,8 @@ final class OnboardingViewModel: ObservableObject {
             return canContinueStep1
         case 2:
             return canContinueStep2
+        case 3:
+            return spotifyConnected
         default:
             return true
         }
@@ -75,6 +85,53 @@ final class OnboardingViewModel: ObservableObject {
     func goBack() {
         guard stepIndex > 1 else { return }
         stepIndex -= 1
+    }
+
+    func connectSpotify() async {
+        guard !isConnectingSpotify else { return }
+        isConnectingSpotify = true
+        spotifyErrorMessage = nil
+
+        defer {
+            isConnectingSpotify = false
+        }
+
+        let spotifyAuth = SpotifyAuthManager.shared
+        spotifyAuth.ensureAuthorized()
+
+        let timeoutDate = Date().addingTimeInterval(20)
+        while !spotifyAuth.isAuthorized && Date() < timeoutDate {
+            if Task.isCancelled {
+                spotifyErrorMessage = "Spotify connection was cancelled."
+                return
+            }
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
+
+        guard spotifyAuth.isAuthorized else {
+            spotifyErrorMessage = "Spotify connection timed out. Please try again."
+            return
+        }
+
+        do {
+            let profile = try await SpotifyService.shared.fetchCurrentUserProfile()
+            spotifyId = profile.id
+            spotifyDisplayName = profile.displayName
+            spotifyAvatarURL = profile.imageURL?.absoluteString
+            spotifyCountryCode = profile.countryCode
+            spotifyConnected = true
+        } catch let error as SpotifyAPIError {
+            switch error {
+            case .notAuthorized:
+                spotifyErrorMessage = "Spotify authorization expired. Please try again."
+            case .invalidResponse:
+                spotifyErrorMessage = "Spotify returned an unexpected response. Please try again."
+            default:
+                spotifyErrorMessage = "Spotify connection failed. Please try again."
+            }
+        } catch {
+            spotifyErrorMessage = "Spotify connection failed. Please try again."
+        }
     }
 
     private static var minimumBirthday: Date {
