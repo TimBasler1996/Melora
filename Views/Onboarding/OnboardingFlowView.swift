@@ -3,6 +3,7 @@ import UIKit
 
 struct OnboardingFlowView: View {
     @StateObject private var viewModel = OnboardingViewModel()
+    @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
 
     var body: some View {
         ZStack {
@@ -26,6 +27,12 @@ struct OnboardingFlowView: View {
         .animation(.easeInOut(duration: 0.25), value: viewModel.stepIndex)
         .contentShape(Rectangle())
         .onTapGesture { hideKeyboard() }
+        .onAppear {
+            viewModel.updateSpotifyConnection(spotifyAuth.isAuthorized)
+        }
+        .onChange(of: spotifyAuth.isAuthorized) { isAuthorized in
+            viewModel.updateSpotifyConnection(isAuthorized)
+        }
     }
 
     private var topBar: some View {
