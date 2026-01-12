@@ -23,7 +23,7 @@ struct SocialSoundApp: App {
                     LoadingView()
                         .transition(.opacity)
                 } else if onboardingState.needsOnboarding {
-                    OnboardingFlowPlaceholderView()
+                    OnboardingFlowView()
                         .transition(.opacity)
                 } else {
                     MainView()
@@ -54,7 +54,7 @@ private struct LoadingView: View {
             )
             .ignoresSafeArea()
 
-            ProgressView(\"Loading…\")
+            ProgressView("Loading…")
                 .tint(.white)
                 .foregroundColor(.white)
         }

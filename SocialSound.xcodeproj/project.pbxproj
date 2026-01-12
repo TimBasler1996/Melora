@@ -24,6 +24,9 @@
 		756E44A42EFE8C1000F49C30 /* ProfilePhotosStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E449B2EFE8C1000F49C30 /* ProfilePhotosStepView.swift */; };
 		76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A02F12345600112233 /* OnboardingStateManager.swift */; };
 		76B0C1A42F12345600112233 /* OnboardingFlowPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */; };
+		76B0C1A72F12345600112233 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A62F12345600112233 /* OnboardingViewModel.swift */; };
+		76B0C1AA2F12345600112233 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A92F12345600112233 /* OnboardingFlowView.swift */; };
+		76B0C1AD2F12345600112233 /* OnboardingStepBasicsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */; };
 		756E44A72EFE8C2400F49C30 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44A52EFE8C2400F49C30 /* DiscoverView.swift */; };
 		756E44AA2EFE8FA300F49C30 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44A92EFE8FA300F49C30 /* FirebaseAuth */; };
 		756E44AC2EFE8FB300F49C30 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44AB2EFE8FB300F49C30 /* FirebaseStorage */; };
@@ -92,6 +95,9 @@
 		756E44A52EFE8C2400F49C30 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		76B0C1A02F12345600112233 /* OnboardingStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStateManager.swift; sourceTree = "<group>"; };
 		76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowPlaceholderView.swift; sourceTree = "<group>"; };
+		76B0C1A62F12345600112233 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
+		76B0C1A92F12345600112233 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
+		76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepBasicsView.swift; sourceTree = "<group>"; };
 		757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesClusterRowView.swift; sourceTree = "<group>"; };
 		75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastToggleCard.swift; sourceTree = "<group>"; };
 		75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesBadgeViewModel.swift; sourceTree = "<group>"; };
@@ -288,6 +294,7 @@
 			isa = PBXGroup;
 			children = (
 				76B0C1A02F12345600112233 /* OnboardingStateManager.swift */,
+				76B0C1A62F12345600112233 /* OnboardingViewModel.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -295,9 +302,19 @@
 		76B0C1A52F12345600112233 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				76B0C1AB2F12345600112233 /* Steps */,
+				76B0C1A92F12345600112233 /* OnboardingFlowView.swift */,
 				76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */,
 			);
 			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		76B0C1AB2F12345600112233 /* Steps */ = {
+			isa = PBXGroup;
+			children = (
+				76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */,
+			);
+			path = Steps;
 			sourceTree = "<group>";
 		};
 		759F7AF32EC77A8D0012A549 /* Main */ = {
@@ -437,6 +454,9 @@
 				756E44A42EFE8C1000F49C30 /* ProfilePhotosStepView.swift in Sources */,
 				76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */,
 				76B0C1A42F12345600112233 /* OnboardingFlowPlaceholderView.swift in Sources */,
+				76B0C1A72F12345600112233 /* OnboardingViewModel.swift in Sources */,
+				76B0C1AA2F12345600112233 /* OnboardingFlowView.swift in Sources */,
+				76B0C1AD2F12345600112233 /* OnboardingStepBasicsView.swift in Sources */,
 				75A174042EC7E40D00CEB48F /* AppTheme.swift in Sources */,
 				759F7B082EC783C70012A549 /* Track.swift in Sources */,
 				759F7B002EC782D30012A549 /* NearbyView.swift in Sources */,
