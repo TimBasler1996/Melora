@@ -12,6 +12,8 @@
 		79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0082F30000300112233 /* AvatarCropperView.swift */; };
 		79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */; };
 		79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00C2F30000300112233 /* PhotoCard.swift */; };
+		7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */; };
+		7A2B2C2D3E4F5A6B7C8D9E00 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */; };
 		756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */; };
 		756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */; };
 		756E448C2EFE8BE500F49C30 /* PhotoUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */; };
@@ -90,6 +92,8 @@
 		79A1C0082F30000300112233 /* AvatarCropperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarCropperView.swift; sourceTree = "<group>"; };
 		79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarPhotoCard.swift; sourceTree = "<group>"; };
 		79A1C00C2F30000300112233 /* PhotoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCard.swift; sourceTree = "<group>"; };
+		7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
 		756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastPresenceManager.swift; sourceTree = "<group>"; };
 		756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthBootstrap.swift; sourceTree = "<group>"; };
 		756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploader.swift; sourceTree = "<group>"; };
@@ -245,6 +249,7 @@
 				75A174112ECBB68900CEB48F /* User.swift */,
 				75A1740D2ECA158400CEB48F /* TrackLike.swift */,
 				75A174092EC8BBFA00CEB48F /* AppUser.swift */,
+				7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */,
 				759F7B092EC783CF0012A549 /* LocationPoint.swift */,
 				759F7B072EC783C70012A549 /* Track.swift */,
 				759F7AF72EC77CD80012A549 /* Session.swift */,
@@ -256,6 +261,7 @@
 			isa = PBXGroup;
 			children = (
 				75834AE92F1650A3008C51F8 /* OnboardingProfileService.swift */,
+				7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */,
 				75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */,
 				756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */,
 				756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */,
@@ -514,6 +520,7 @@
 				75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */,
 				75A1741C2ECE59E300CEB48F /* TrackLikesDetailView.swift in Sources */,
 				75A1740A2EC8BBFA00CEB48F /* AppUser.swift in Sources */,
+				7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */,
 				756E44922EFE8BF600F49C30 /* ProfileSetupWizardViewModel.swift in Sources */,
 				756E44932EFE8BF600F49C30 /* ProfileGateViewModel.swift in Sources */,
 				756E44942EFE8BF600F49C30 /* UserProfileDetailViewModel.swift in Sources */,
@@ -525,6 +532,7 @@
 				75834A882F0D8DCC008C51F8 /* DiscoverUserCard.swift in Sources */,
 				75A174102ECA159900CEB48F /* LikeApiService.swift in Sources */,
 				759F7B102EC78B5C0012A549 /* SpotifyService.swift in Sources */,
+				7A2B2C2D3E4F5A6B7C8D9E00 /* ProfileService.swift in Sources */,
 				75834A862F0C2E3D008C51F8 /* CurrentUserStore.swift in Sources */,
 				75834A8E2F0D8EFB008C51F8 /* ChatMessage.swift in Sources */,
 				759F7B042EC782D30012A549 /* Session.swift in Sources */,
