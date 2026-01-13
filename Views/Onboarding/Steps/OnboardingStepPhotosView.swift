@@ -28,14 +28,19 @@ struct OnboardingStepPhotosView: View {
                 gender: viewModel.gender,
                 avatarImage: viewModel.selectedImages[safe: 0] ?? nil
             )
+            .overlay(alignment: .leading) {
+                PhotosPicker(selection: $profilePickerItem, matching: .images, photoLibrary: .shared()) {
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: 64, height: 64)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 14)
+                .accessibilityLabel(Text("Add profile photo"))
+            }
 
-            VStack(spacing: 14) {
-                AvatarPhotoCard(
-                    image: viewModel.selectedImages[safe: 0] ?? nil,
-                    helperText: "This is your avatar everywhere.",
-                    pickerItem: $profilePickerItem
-                )
-
+            VStack(spacing: 16) {
                 PhotoCard(
                     title: "Photo 2",
                     image: viewModel.selectedImages[safe: 1] ?? nil,
