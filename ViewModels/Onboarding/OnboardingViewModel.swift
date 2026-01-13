@@ -49,7 +49,6 @@ final class OnboardingViewModel: ObservableObject {
 
         guard f.count >= 2, l.count >= 2, c.count >= 2, !g.isEmpty else { return false }
 
-        // Birthday must be <= today and not absurdly old
         let today = Calendar.current.startOfDay(for: Date())
         let sel = Calendar.current.startOfDay(for: birthday)
         guard sel <= today else { return false }
@@ -60,6 +59,16 @@ final class OnboardingViewModel: ObservableObject {
 
     var canContinueStep2: Bool {
         selectedImages.allSatisfy { $0 != nil }
+    }
+
+    /// ✅ Used by the FlowView (no bindings, pure Bool)
+    var canContinueCurrentStep: Bool {
+        switch stepIndex {
+        case 1: return canContinueStep1
+        case 2: return canContinueStep2
+        case 3: return spotifyConnected
+        default: return false
+        }
     }
 
     var canFinish: Bool {
@@ -97,30 +106,30 @@ final class OnboardingViewModel: ObservableObject {
         isConnectingSpotify = true
         defer { isConnectingSpotify = false }
 
-        // Trigger auth flow (opens browser)
         spotifyAuth.ensureAuthorized()
 
         do {
-            // Wait until access token is valid (this will refresh if needed)
             _ = try await waitUntilSpotifyAuthorized(spotifyAuth: spotifyAuth, timeoutSeconds: 90)
 
-            // Fetch /v1/me
             let profile = try await SpotifyService.shared.fetchCurrentUserProfile()
-            guard let spotifyId = profile.id, !spotifyId.isEmpty else {
+
+            let spotifyId = profile.id
+            guard !spotifyId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 spotifyErrorMessage = "Could not read Spotify user id."
                 return
             }
 
-            // Store spotify fields immediately
             guard let uid = Auth.auth().currentUser?.uid else {
                 spotifyErrorMessage = "Not authenticated."
                 return
             }
 
+            let avatarString: String? = profile.imageURL?.absoluteString
+
             try await profileService.saveSpotify(
                 spotifyId: spotifyId,
                 countryCode: profile.country,
-                spotifyAvatarURL: profile.imageURL,
+                spotifyAvatarURL: avatarString,
                 uid: uid
             )
 
@@ -137,13 +146,13 @@ final class OnboardingViewModel: ObservableObject {
             if Date().timeIntervalSince(start) > timeoutSeconds {
                 throw SpotifyAuthError.notAuthorized
             }
-            try await Task.sleep(nanoseconds: 300_000_000) // 0.3s
+            try await Task.sleep(nanoseconds: 300_000_000)
         }
 
         return try await spotifyAuth.getValidAccessToken()
     }
 
-    // MARK: - Finish (uploads + writes profile + marks completed)
+    // MARK: - Finish
 
     func finish(using spotifyAuth: SpotifyAuthManager) async {
         finishErrorMessage = nil
@@ -160,7 +169,6 @@ final class OnboardingViewModel: ObservableObject {
         defer { isFinishing = false }
 
         do {
-            // 1) Save basics
             let basics = OnboardingProfileService.Basics(
                 firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
                 lastName: lastName.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -170,16 +178,13 @@ final class OnboardingViewModel: ObservableObject {
             )
             try await profileService.saveBasics(basics, uid: uid)
 
-            // 2) Upload photos
             let images = selectedImages.compactMap { $0 }
             let urls = try await profileService.uploadPhotos(images: images, uid: uid)
             uploadedPhotoURLs = urls
             try await profileService.savePhotos(photoURLs: urls, uid: uid)
 
-            // 3) Ensure Spotify token still valid (mandatory)
             _ = try await spotifyAuth.getValidAccessToken()
 
-            // 4) Mark completed
             try await profileService.markCompleted(uid: uid)
 
             didFinish = true

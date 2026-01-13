@@ -22,47 +22,52 @@ struct OnboardingStepPhotosView: View {
             VStack(spacing: 12) {
                 photoSlot(
                     title: "Profile photo",
-                    imageData: viewModel.profilePhotoData,
+                    image: viewModel.selectedImages[safe: 0] ?? nil,
                     item: $profilePickerItem,
                     height: 200
-                ) { data in
-                    viewModel.profilePhotoData = data
+                ) { image in
+                    setImage(image, at: 0)
                 }
 
                 HStack(spacing: 12) {
                     photoSlot(
                         title: "Photo 2",
-                        imageData: viewModel.photo2Data,
+                        image: viewModel.selectedImages[safe: 1] ?? nil,
                         item: $photo2PickerItem,
                         height: 140
-                    ) { data in
-                        viewModel.photo2Data = data
+                    ) { image in
+                        setImage(image, at: 1)
                     }
 
                     photoSlot(
                         title: "Photo 3",
-                        imageData: viewModel.photo3Data,
+                        image: viewModel.selectedImages[safe: 2] ?? nil,
                         item: $photo3PickerItem,
                         height: 140
-                    ) { data in
-                        viewModel.photo3Data = data
+                    ) { image in
+                        setImage(image, at: 2)
                     }
                 }
             }
         }
     }
 
+    private func setImage(_ image: UIImage?, at index: Int) {
+        guard viewModel.selectedImages.indices.contains(index) else { return }
+        viewModel.selectedImages[index] = image
+    }
+
     @ViewBuilder
     private func photoSlot(
         title: String,
-        imageData: Data?,
+        image: UIImage?,
         item: Binding<PhotosPickerItem?>,
         height: CGFloat,
-        onDataLoaded: @escaping (Data?) -> Void
+        onImageLoaded: @escaping (UIImage?) -> Void
     ) -> some View {
         PhotosPicker(selection: item, matching: .images, photoLibrary: .shared()) {
             ZStack {
-                if let imageData, let image = UIImage(data: imageData) {
+                if let image {
                     Image(uiImage: image)
                         .resizable()
                         .scaledToFill()
@@ -92,17 +97,18 @@ struct OnboardingStepPhotosView: View {
         .accessibilityLabel(Text(title))
         .onChange(of: item.wrappedValue) { newItem in
             guard let newItem else {
-                onDataLoaded(nil)
+                onImageLoaded(nil)
                 return
             }
 
             Task {
                 let data = try? await newItem.loadTransferable(type: Data.self)
+                let image = data.flatMap { UIImage(data: $0) }
+
                 await MainActor.run {
-                    onDataLoaded(data)
-                    if data != nil {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
+                    onImageLoaded(image)
+                    if image != nil {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     }
                 }
             }
@@ -110,7 +116,17 @@ struct OnboardingStepPhotosView: View {
     }
 }
 
+// MARK: - Safe index helper
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        guard indices.contains(index) else { return nil }
+        return self[index]
+    }
+}
+
 #Preview {
     OnboardingStepPhotosView(viewModel: OnboardingViewModel())
         .padding()
 }
+

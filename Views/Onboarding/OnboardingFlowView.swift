@@ -126,7 +126,7 @@ struct OnboardingFlowView: View {
                     .opacity(viewModel.isConnectingSpotify ? 0.7 : 1)
                 } else {
                     Button {
-                        Task { await viewModel.finish() }
+                        Task { await viewModel.finish(using: spotifyAuth) }
                     } label: {
                         Text(viewModel.isFinishing ? "Finishing…" : "Finish")
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
