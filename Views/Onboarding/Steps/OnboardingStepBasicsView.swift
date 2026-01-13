@@ -6,82 +6,148 @@ struct OnboardingStepBasicsView: View {
     private let genderOptions = ["Female", "Male", "Non-binary", "Other"]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             Text("Create your profile")
                 .font(AppFonts.title())
                 .foregroundColor(AppColors.primaryText)
 
-            Text("A few details so others can recognize you")
+            Text("This is how others will see you.")
                 .font(AppFonts.body())
                 .foregroundColor(AppColors.secondaryText)
 
-            VStack(spacing: 12) {
-                inputField(title: "First name", text: $viewModel.firstName)
-                    .textInputAutocapitalization(.words)
-                    .keyboardType(.namePhonePad)
+            ProfilePreviewHeader(
+                firstName: viewModel.firstName,
+                city: viewModel.city,
+                birthday: viewModel.birthday,
+                gender: viewModel.gender
+            )
 
-                inputField(title: "Last name", text: $viewModel.lastName)
-                    .textInputAutocapitalization(.words)
-                    .keyboardType(.namePhonePad)
+            VStack(spacing: 14) {
+                labeledField(title: "First name", isProminent: true) {
+                    TextField("First name", text: $viewModel.firstName)
+                        .textInputAutocapitalization(.words)
+                        .keyboardType(.namePhonePad)
+                }
 
-                inputField(title: "City", text: $viewModel.city)
-                    .textInputAutocapitalization(.words)
-                    .keyboardType(.default)
+                labeledField(title: "Last name") {
+                    TextField("Last name", text: $viewModel.lastName)
+                        .textInputAutocapitalization(.words)
+                        .keyboardType(.namePhonePad)
+                }
 
                 birthdayPicker
-                genderMenu
+
+                labeledField(title: "City") {
+                    TextField("City", text: $viewModel.city)
+                        .textInputAutocapitalization(.words)
+                        .keyboardType(.default)
+                }
+
+                genderSelector
             }
         }
     }
 
-    private func inputField(title: String, text: Binding<String>) -> some View {
-        TextField(title, text: text)
-            .font(AppFonts.body())
-            .foregroundColor(AppColors.primaryText)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(AppColors.tintedBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
+    private func labeledField<Content: View>(
+        title: String,
+        isProminent: Bool = false,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(AppFonts.footnote())
+                .foregroundColor(AppColors.mutedText)
+
+            fieldContainer {
+                content()
+                    .font(isProminent ? .system(size: 18, weight: .semibold, design: .rounded) : AppFonts.body())
+                    .foregroundColor(AppColors.primaryText)
+                    .disableAutocorrection(true)
+            }
+        }
     }
 
     private var birthdayPicker: some View {
-        DatePicker(
-            "Birthday",
-            selection: $viewModel.birthday,
-            in: minimumDate...Date(),
-            displayedComponents: .date
-        )
-        .font(AppFonts.body())
-        .foregroundColor(AppColors.primaryText)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(AppColors.tintedBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
-    }
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Birthday")
+                .font(AppFonts.footnote())
+                .foregroundColor(AppColors.mutedText)
 
-    private var genderMenu: some View {
-        Menu {
-            ForEach(genderOptions, id: \.self) { option in
-                Button(option) {
-                    viewModel.gender = option
+            fieldContainer {
+                HStack(spacing: 12) {
+                    DatePicker(
+                        "",
+                        selection: $viewModel.birthday,
+                        in: minimumDate...Date(),
+                        displayedComponents: .date
+                    )
+                    .labelsHidden()
+                    .datePickerStyle(.compact)
+
+                    Spacer(minLength: 0)
+
+                    if let age = viewModel.birthday.age() {
+                        Text("\(age)")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.primaryText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(AppColors.tintedBackground.opacity(0.6))
+                            )
+                    }
                 }
             }
-        } label: {
-            HStack {
-                Text(viewModel.gender.isEmpty ? "Gender" : viewModel.gender)
-                    .font(AppFonts.body())
-                    .foregroundColor(viewModel.gender.isEmpty ? AppColors.secondaryText : AppColors.primaryText)
+        }
+    }
 
-                Spacer()
+    private var genderSelector: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Gender")
+                .font(AppFonts.footnote())
+                .foregroundColor(AppColors.mutedText)
 
-                Image(systemName: "chevron.down")
-                    .foregroundColor(AppColors.secondaryText)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(genderOptions, id: \.self) { option in
+                    Button {
+                        viewModel.gender = option
+                    } label: {
+                        Text(option)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundColor(viewModel.gender == option ? .white : AppColors.primaryText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(viewModel.gender == option ? AppColors.primary : AppColors.tintedBackground)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(
+                                        viewModel.gender == option ? AppColors.primary.opacity(0.8) : Color.white.opacity(0.12),
+                                        lineWidth: 1
+                                    )
+                            )
+                    }
+                }
             }
+        }
+    }
+
+    private func fieldContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(AppColors.tintedBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
-        }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                    .fill(AppColors.tintedBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
     }
 
     private var minimumDate: Date {
@@ -94,4 +160,3 @@ struct OnboardingStepBasicsView: View {
     OnboardingStepBasicsView(viewModel: OnboardingViewModel())
         .padding()
 }
-
