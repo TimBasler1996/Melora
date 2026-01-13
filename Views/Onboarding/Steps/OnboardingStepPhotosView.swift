@@ -94,7 +94,7 @@ struct OnboardingStepPhotosView: View {
     }
 
     private func loadImage(from item: PhotosPickerItem, completion: @escaping (UIImage?) -> Void) {
-        Task {
+        _ = Task {
             let data = try? await item.loadTransferable(type: Data.self)
             let image = data.flatMap { UIImage(data: $0) }
             await MainActor.run {
