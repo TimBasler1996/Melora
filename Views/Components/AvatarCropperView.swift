@@ -77,8 +77,12 @@ struct AvatarCropperView: View {
                 }
 
                 Button {
-                    let cropped = cropImage(cropSize: previewCropSize)
-                    onUse(cropped)
+                    Task.detached(priority: .userInitiated) {
+                        let cropped = cropImage(cropSize: previewCropSize)
+                        await MainActor.run {
+                            onUse(cropped)
+                        }
+                    }
                 } label: {
                     Text("Use Photo")
                         .font(.system(size: 16, weight: .semibold, design: .rounded))
