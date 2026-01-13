@@ -10,32 +10,30 @@ struct PhotoCard: View {
     var body: some View {
         PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
             ZStack(alignment: .bottomLeading) {
-                GeometryReader { geo in
-                    if let image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: geo.size.width, height: geo.size.height)
-                            .clipped()
-                            .overlay(
-                                LinearGradient(
-                                    colors: [.black.opacity(0.35), .clear],
-                                    startPoint: .bottom,
-                                    endPoint: .top
-                                )
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                        .overlay(
+                            LinearGradient(
+                                colors: [.black.opacity(0.35), .clear],
+                                startPoint: .bottom,
+                                endPoint: .top
                             )
-                    } else {
-                        VStack(spacing: 10) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundColor(AppColors.secondaryText)
+                        )
+                } else {
+                    VStack(spacing: 10) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(AppColors.secondaryText)
 
-                            Text("Add photo")
-                                .font(AppFonts.footnote())
-                                .foregroundColor(AppColors.secondaryText)
-                        }
-                        .frame(width: geo.size.width, height: geo.size.height)
+                        Text("Add photo")
+                            .font(AppFonts.footnote())
+                            .foregroundColor(AppColors.secondaryText)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
 
                 if image != nil {
