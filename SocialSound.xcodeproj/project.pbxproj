@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		79A1C0052F30000200112233 /* PhotoGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0062F30000200112233 /* PhotoGridView.swift */; };
 		79A1C0012F30000100112233 /* Date+Age.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0002F30000100112233 /* Date+Age.swift */; };
 		79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */; };
+		79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0082F30000300112233 /* AvatarCropperView.swift */; };
+		79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */; };
+		79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00C2F30000300112233 /* PhotoCard.swift */; };
 		756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */; };
 		756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */; };
 		756E448C2EFE8BE500F49C30 /* PhotoUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */; };
@@ -83,9 +85,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		79A1C0062F30000200112233 /* PhotoGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGridView.swift; sourceTree = "<group>"; };
 		79A1C0002F30000100112233 /* Date+Age.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Age.swift"; sourceTree = "<group>"; };
 		79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePreviewHeader.swift; sourceTree = "<group>"; };
+		79A1C0082F30000300112233 /* AvatarCropperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarCropperView.swift; sourceTree = "<group>"; };
+		79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarPhotoCard.swift; sourceTree = "<group>"; };
+		79A1C00C2F30000300112233 /* PhotoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCard.swift; sourceTree = "<group>"; };
 		756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastPresenceManager.swift; sourceTree = "<group>"; };
 		756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthBootstrap.swift; sourceTree = "<group>"; };
 		756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploader.swift; sourceTree = "<group>"; };
@@ -299,7 +303,9 @@
 		79A1C0042F30000100112233 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				79A1C0062F30000200112233 /* PhotoGridView.swift */,
+				79A1C0082F30000300112233 /* AvatarCropperView.swift */,
+				79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */,
+				79A1C00C2F30000300112233 /* PhotoCard.swift */,
 				79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */,
 			);
 			path = Components;
@@ -468,9 +474,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				79A1C0052F30000200112233 /* PhotoGridView.swift in Sources */,
 				79A1C0012F30000100112233 /* Date+Age.swift in Sources */,
 				79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */,
+				79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */,
+				79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */,
+				79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */,
 				759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */,
 				756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */,
 				78B0C1B12F20000100112233 /* OnboardingStepPhotosView.swift in Sources */,

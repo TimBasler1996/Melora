@@ -8,6 +8,8 @@ struct OnboardingStepPhotosView: View {
     @State private var profilePickerItem: PhotosPickerItem?
     @State private var photo2PickerItem: PhotosPickerItem?
     @State private var photo3PickerItem: PhotosPickerItem?
+    @State private var pendingAvatarImage: UIImage?
+    @State private var isCroppingAvatar = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -15,7 +17,7 @@ struct OnboardingStepPhotosView: View {
                 .font(AppFonts.title())
                 .foregroundColor(AppColors.primaryText)
 
-            Text("Your photos shape your profile preview.")
+            Text("Build your profile look.")
                 .font(AppFonts.body())
                 .foregroundColor(AppColors.secondaryText)
 
@@ -27,17 +29,62 @@ struct OnboardingStepPhotosView: View {
                 avatarImage: viewModel.selectedImages[safe: 0] ?? nil
             )
 
-            PhotoGridView(
-                profileImage: viewModel.selectedImages[safe: 0] ?? nil,
-                photo2Image: viewModel.selectedImages[safe: 1] ?? nil,
-                photo3Image: viewModel.selectedImages[safe: 2] ?? nil,
-                profilePickerItem: $profilePickerItem,
-                photo2PickerItem: $photo2PickerItem,
-                photo3PickerItem: $photo3PickerItem,
-                onImageLoaded: setImage
-            )
+            VStack(spacing: 14) {
+                AvatarPhotoCard(
+                    image: viewModel.selectedImages[safe: 0] ?? nil,
+                    helperText: "This is your avatar everywhere.",
+                    pickerItem: $profilePickerItem
+                )
 
-            guidanceSection
+                PhotoCard(
+                    title: "Photo 2",
+                    image: viewModel.selectedImages[safe: 1] ?? nil,
+                    pickerItem: $photo2PickerItem
+                )
+
+                PhotoCard(
+                    title: "Photo 3",
+                    image: viewModel.selectedImages[safe: 2] ?? nil,
+                    pickerItem: $photo3PickerItem
+                )
+            }
+        }
+        .sheet(isPresented: $isCroppingAvatar) {
+            if let pendingAvatarImage {
+                AvatarCropperView(
+                    image: pendingAvatarImage,
+                    onCancel: {
+                        isCroppingAvatar = false
+                        self.pendingAvatarImage = nil
+                    },
+                    onUse: { cropped in
+                        setImage(cropped, at: 0)
+                        isCroppingAvatar = false
+                        self.pendingAvatarImage = nil
+                    }
+                )
+                .presentationDetents([.medium, .large])
+            }
+        }
+        .onChange(of: profilePickerItem) { newItem in
+            guard let newItem else { return }
+            loadImage(from: newItem) { image in
+                guard let image else { return }
+                pendingAvatarImage = image
+                isCroppingAvatar = true
+            }
+        }
+        .onChange(of: photo2PickerItem) { newItem in
+            guard let newItem else { return }
+            loadImage(from: newItem) { image in
+                setImage(image, at: 1)
+            }
+        }
+        .onChange(of: photo3PickerItem) { newItem in
+            guard let newItem else { return }
+            loadImage(from: newItem) { image in
+                setImage(image, at: 2)
+            }
         }
     }
 
@@ -46,11 +93,16 @@ struct OnboardingStepPhotosView: View {
         viewModel.selectedImages[index] = image
     }
 
-    private var guidanceSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Photo 1 should clearly show your face.")
-            Text("Avoid group photos as your first picture.")
-            Text("Good lighting works best.")
+    private func loadImage(from item: PhotosPickerItem, completion: @escaping (UIImage?) -> Void) {
+        Task {
+            let data = try? await item.loadTransferable(type: Data.self)
+            let image = data.flatMap { UIImage(data: $0) }
+            await MainActor.run {
+                completion(image)
+                if image != nil {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }
+            }
         }
         .font(AppFonts.footnote())
         .foregroundColor(AppColors.secondaryText)
