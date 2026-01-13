@@ -33,30 +33,22 @@ struct ProfileView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal, AppLayout.screenPadding)
 
-                if viewModel.isLoading {
-                    Spacer()
-                    ProgressView().tint(AppColors.primary)
-                    Spacer()
-                } else if let error = viewModel.errorMessage {
-                    Spacer()
-                    Text(error)
-                        .font(AppFonts.body())
-                        .foregroundColor(AppColors.secondaryText)
-                        .multilineTextAlignment(.center)
-                        .padding()
-                    Spacer()
-                } else {
-                    ScrollView {
-                        VStack(spacing: 18) {
+                ScrollView {
+                    VStack(spacing: 18) {
+                        if viewModel.isLoading {
+                            loadingState
+                        } else if let error = viewModel.errorMessage {
+                            errorState(error)
+                        } else {
                             if mode == .preview {
                                 previewContent
                             } else {
                                 editContent
                             }
                         }
-                        .padding(.horizontal, AppLayout.screenPadding)
-                        .padding(.bottom, 24)
                     }
+                    .padding(.horizontal, AppLayout.screenPadding)
+                    .padding(.bottom, 24)
                 }
             }
         }
@@ -123,6 +115,7 @@ struct ProfileView: View {
                 startPoint: .center,
                 endPoint: .bottom
             )
+            .allowsHitTesting(false)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(heroTitle)
@@ -650,6 +643,27 @@ struct ProfileView: View {
         RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
             .fill(AppColors.cardBackground)
             .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 8)
+    }
+
+    private var loadingState: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .tint(AppColors.primary)
+            Text("Loading profile…")
+                .font(AppFonts.footnote())
+                .foregroundColor(AppColors.secondaryText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 48)
+    }
+
+    private func errorState(_ message: String) -> some View {
+        Text(message)
+            .font(AppFonts.body())
+            .foregroundColor(AppColors.secondaryText)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 32)
     }
 
     // MARK: - Settings Sheet
