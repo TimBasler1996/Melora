@@ -97,17 +97,28 @@ struct OnboardingFlowView: View {
     private var bottomCTA: some View {
         VStack(spacing: 10) {
             if viewModel.stepIndex < 3 {
+                let isEnabled = viewModel.canContinueCurrentStep
                 Button(action: viewModel.goNext) {
-                    Text("Continue")
+                    Text(viewModel.stepIndex == 1 ? "Looks good" : "Continue")
                         .font(.system(size: 17, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(AppColors.primary)
+                        .background(
+                            LinearGradient(
+                                colors: [AppColors.primary, AppColors.secondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            .opacity(isEnabled ? 1 : 0.55)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                                .stroke(Color.white.opacity(isEnabled ? 0.25 : 0.12), lineWidth: 1)
+                        )
                         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
                 }
-                .disabled(!viewModel.canContinueCurrentStep)
-                .opacity(viewModel.canContinueCurrentStep ? 1 : 0.6)
+                .disabled(!isEnabled)
             } else {
                 // Step 3
                 if viewModel.spotifyConnected == false {
@@ -160,4 +171,3 @@ struct OnboardingFlowView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
-
