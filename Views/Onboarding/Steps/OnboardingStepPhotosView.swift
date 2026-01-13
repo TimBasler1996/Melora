@@ -104,10 +104,8 @@ struct OnboardingStepPhotosView: View {
                 }
             }
         }
-        .font(AppFonts.footnote())
-        .foregroundColor(AppColors.secondaryText)
-        .padding(.top, 4)
     }
+
 }
 
 // MARK: - Safe index helper
