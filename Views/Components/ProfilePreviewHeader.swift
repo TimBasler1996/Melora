@@ -1,10 +1,26 @@
 import SwiftUI
+import UIKit
 
 struct ProfilePreviewHeader: View {
     let firstName: String
     let city: String
     let birthday: Date?
     let gender: String
+    let avatarImage: UIImage?
+
+    init(
+        firstName: String,
+        city: String,
+        birthday: Date?,
+        gender: String,
+        avatarImage: UIImage? = nil
+    ) {
+        self.firstName = firstName
+        self.city = city
+        self.birthday = birthday
+        self.gender = gender
+        self.avatarImage = avatarImage
+    }
 
     var body: some View {
         HStack(spacing: 16) {
@@ -43,19 +59,27 @@ struct ProfilePreviewHeader: View {
 
     private var avatarPlaceholder: some View {
         ZStack {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [AppColors.primary, AppColors.secondary],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            if let avatarImage {
+                Image(uiImage: avatarImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 64, height: 64)
+                    .clipShape(Circle())
+            } else {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [AppColors.primary, AppColors.secondary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
-                .frame(width: 64, height: 64)
+                    .frame(width: 64, height: 64)
 
-            Image(systemName: "person.fill")
-                .font(.system(size: 26, weight: .semibold))
-                .foregroundColor(.white.opacity(0.9))
+                Image(systemName: "person.fill")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+            }
         }
         .overlay(
             Circle()
@@ -103,7 +127,8 @@ struct ProfilePreviewHeader: View {
         firstName: "Sofia",
         city: "Berlin",
         birthday: Calendar.current.date(byAdding: .year, value: -26, to: Date()),
-        gender: "Female"
+        gender: "Female",
+        avatarImage: nil
     )
     .padding()
     .background(AppColors.cardBackground)

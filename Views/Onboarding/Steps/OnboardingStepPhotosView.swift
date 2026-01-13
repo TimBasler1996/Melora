@@ -10,45 +10,34 @@ struct OnboardingStepPhotosView: View {
     @State private var photo3PickerItem: PhotosPickerItem?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             Text("Add photos")
                 .font(AppFonts.title())
                 .foregroundColor(AppColors.primaryText)
 
-            Text("Pick 3 photos — your first one is your profile picture")
+            Text("Your photos shape your profile preview.")
                 .font(AppFonts.body())
                 .foregroundColor(AppColors.secondaryText)
 
-            VStack(spacing: 12) {
-                photoSlot(
-                    title: "Profile photo",
-                    image: viewModel.selectedImages[safe: 0] ?? nil,
-                    item: $profilePickerItem,
-                    height: 200
-                ) { image in
-                    setImage(image, at: 0)
-                }
+            ProfilePreviewHeader(
+                firstName: viewModel.firstName,
+                city: viewModel.city,
+                birthday: viewModel.birthday,
+                gender: viewModel.gender,
+                avatarImage: viewModel.selectedImages[safe: 0] ?? nil
+            )
 
-                HStack(spacing: 12) {
-                    photoSlot(
-                        title: "Photo 2",
-                        image: viewModel.selectedImages[safe: 1] ?? nil,
-                        item: $photo2PickerItem,
-                        height: 140
-                    ) { image in
-                        setImage(image, at: 1)
-                    }
+            PhotoGridView(
+                profileImage: viewModel.selectedImages[safe: 0] ?? nil,
+                photo2Image: viewModel.selectedImages[safe: 1] ?? nil,
+                photo3Image: viewModel.selectedImages[safe: 2] ?? nil,
+                profilePickerItem: $profilePickerItem,
+                photo2PickerItem: $photo2PickerItem,
+                photo3PickerItem: $photo3PickerItem,
+                onImageLoaded: setImage
+            )
 
-                    photoSlot(
-                        title: "Photo 3",
-                        image: viewModel.selectedImages[safe: 2] ?? nil,
-                        item: $photo3PickerItem,
-                        height: 140
-                    ) { image in
-                        setImage(image, at: 2)
-                    }
-                }
-            }
+            guidanceSection
         }
     }
 
@@ -57,62 +46,15 @@ struct OnboardingStepPhotosView: View {
         viewModel.selectedImages[index] = image
     }
 
-    @ViewBuilder
-    private func photoSlot(
-        title: String,
-        image: UIImage?,
-        item: Binding<PhotosPickerItem?>,
-        height: CGFloat,
-        onImageLoaded: @escaping (UIImage?) -> Void
-    ) -> some View {
-        PhotosPicker(selection: item, matching: .images, photoLibrary: .shared()) {
-            ZStack {
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
-                } else {
-                    VStack(spacing: 8) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(AppColors.secondaryText)
-
-                        Text("Add photo")
-                            .font(AppFonts.footnote())
-                            .foregroundColor(AppColors.secondaryText)
-                    }
-                }
-            }
-            .frame(height: height)
-            .frame(maxWidth: .infinity)
-            .background(AppColors.tintedBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
+    private var guidanceSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Photo 1 should clearly show your face.")
+            Text("Avoid group photos as your first picture.")
+            Text("Good lighting works best.")
         }
-        .accessibilityLabel(Text(title))
-        .onChange(of: item.wrappedValue) { newItem in
-            guard let newItem else {
-                onImageLoaded(nil)
-                return
-            }
-
-            Task {
-                let data = try? await newItem.loadTransferable(type: Data.self)
-                let image = data.flatMap { UIImage(data: $0) }
-
-                await MainActor.run {
-                    onImageLoaded(image)
-                    if image != nil {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    }
-                }
-            }
-        }
+        .font(AppFonts.footnote())
+        .foregroundColor(AppColors.secondaryText)
+        .padding(.top, 4)
     }
 }
 
@@ -129,4 +71,3 @@ private extension Array {
     OnboardingStepPhotosView(viewModel: OnboardingViewModel())
         .padding()
 }
-

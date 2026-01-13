@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		79A1C0052F30000200112233 /* PhotoGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0062F30000200112233 /* PhotoGridView.swift */; };
 		79A1C0012F30000100112233 /* Date+Age.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0002F30000100112233 /* Date+Age.swift */; };
 		79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */; };
 		756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */; };
@@ -82,6 +83,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		79A1C0062F30000200112233 /* PhotoGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGridView.swift; sourceTree = "<group>"; };
 		79A1C0002F30000100112233 /* Date+Age.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Age.swift"; sourceTree = "<group>"; };
 		79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePreviewHeader.swift; sourceTree = "<group>"; };
 		756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastPresenceManager.swift; sourceTree = "<group>"; };
@@ -297,6 +299,7 @@
 		79A1C0042F30000100112233 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				79A1C0062F30000200112233 /* PhotoGridView.swift */,
 				79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */,
 			);
 			path = Components;
@@ -465,6 +468,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				79A1C0052F30000200112233 /* PhotoGridView.swift in Sources */,
 				79A1C0012F30000100112233 /* Date+Age.swift in Sources */,
 				79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */,
 				759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */,
