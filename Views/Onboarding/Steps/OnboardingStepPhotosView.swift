@@ -8,46 +8,82 @@ struct OnboardingStepPhotosView: View {
     @State private var profilePickerItem: PhotosPickerItem?
     @State private var photo2PickerItem: PhotosPickerItem?
     @State private var photo3PickerItem: PhotosPickerItem?
+    @State private var pendingAvatarImage: UIImage?
+    @State private var isCroppingAvatar = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             Text("Add photos")
                 .font(AppFonts.title())
                 .foregroundColor(AppColors.primaryText)
 
-            Text("Pick 3 photos — your first one is your profile picture")
+            Text("Build your profile look.")
                 .font(AppFonts.body())
                 .foregroundColor(AppColors.secondaryText)
 
-            VStack(spacing: 12) {
-                photoSlot(
-                    title: "Profile photo",
+            ProfilePreviewHeader(
+                firstName: viewModel.firstName,
+                city: viewModel.city,
+                birthday: viewModel.birthday,
+                gender: viewModel.gender,
+                avatarImage: viewModel.selectedImages[safe: 0] ?? nil
+            )
+
+            VStack(spacing: 14) {
+                AvatarPhotoCard(
                     image: viewModel.selectedImages[safe: 0] ?? nil,
-                    item: $profilePickerItem,
-                    height: 200
-                ) { image in
-                    setImage(image, at: 0)
-                }
+                    helperText: "This is your avatar everywhere.",
+                    pickerItem: $profilePickerItem
+                )
 
-                HStack(spacing: 12) {
-                    photoSlot(
-                        title: "Photo 2",
-                        image: viewModel.selectedImages[safe: 1] ?? nil,
-                        item: $photo2PickerItem,
-                        height: 140
-                    ) { image in
-                        setImage(image, at: 1)
-                    }
+                PhotoCard(
+                    title: "Photo 2",
+                    image: viewModel.selectedImages[safe: 1] ?? nil,
+                    pickerItem: $photo2PickerItem
+                )
 
-                    photoSlot(
-                        title: "Photo 3",
-                        image: viewModel.selectedImages[safe: 2] ?? nil,
-                        item: $photo3PickerItem,
-                        height: 140
-                    ) { image in
-                        setImage(image, at: 2)
+                PhotoCard(
+                    title: "Photo 3",
+                    image: viewModel.selectedImages[safe: 2] ?? nil,
+                    pickerItem: $photo3PickerItem
+                )
+            }
+        }
+        .sheet(isPresented: $isCroppingAvatar) {
+            if let pendingAvatarImage {
+                AvatarCropperView(
+                    image: pendingAvatarImage,
+                    onCancel: {
+                        isCroppingAvatar = false
+                        self.pendingAvatarImage = nil
+                    },
+                    onUse: { cropped in
+                        setImage(cropped, at: 0)
+                        isCroppingAvatar = false
+                        self.pendingAvatarImage = nil
                     }
-                }
+                )
+                .presentationDetents([.medium, .large])
+            }
+        }
+        .onChange(of: profilePickerItem) { newItem in
+            guard let newItem else { return }
+            loadImage(from: newItem) { image in
+                guard let image else { return }
+                pendingAvatarImage = image
+                isCroppingAvatar = true
+            }
+        }
+        .onChange(of: photo2PickerItem) { newItem in
+            guard let newItem else { return }
+            loadImage(from: newItem) { image in
+                setImage(image, at: 1)
+            }
+        }
+        .onChange(of: photo3PickerItem) { newItem in
+            guard let newItem else { return }
+            loadImage(from: newItem) { image in
+                setImage(image, at: 2)
             }
         }
     }
@@ -57,59 +93,14 @@ struct OnboardingStepPhotosView: View {
         viewModel.selectedImages[index] = image
     }
 
-    @ViewBuilder
-    private func photoSlot(
-        title: String,
-        image: UIImage?,
-        item: Binding<PhotosPickerItem?>,
-        height: CGFloat,
-        onImageLoaded: @escaping (UIImage?) -> Void
-    ) -> some View {
-        PhotosPicker(selection: item, matching: .images, photoLibrary: .shared()) {
-            ZStack {
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
-                } else {
-                    VStack(spacing: 8) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(AppColors.secondaryText)
-
-                        Text("Add photo")
-                            .font(AppFonts.footnote())
-                            .foregroundColor(AppColors.secondaryText)
-                    }
-                }
-            }
-            .frame(height: height)
-            .frame(maxWidth: .infinity)
-            .background(AppColors.tintedBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-            )
-        }
-        .accessibilityLabel(Text(title))
-        .onChange(of: item.wrappedValue) { newItem in
-            guard let newItem else {
-                onImageLoaded(nil)
-                return
-            }
-
-            Task {
-                let data = try? await newItem.loadTransferable(type: Data.self)
-                let image = data.flatMap { UIImage(data: $0) }
-
-                await MainActor.run {
-                    onImageLoaded(image)
-                    if image != nil {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    }
+    private func loadImage(from item: PhotosPickerItem, completion: @escaping (UIImage?) -> Void) {
+        _ = Task {
+            let data = try? await item.loadTransferable(type: Data.self)
+            let image = data.flatMap { UIImage(data: $0) }
+            await MainActor.run {
+                completion(image)
+                if image != nil {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 }
             }
         }
@@ -129,4 +120,3 @@ private extension Array {
     OnboardingStepPhotosView(viewModel: OnboardingViewModel())
         .padding()
 }
-
