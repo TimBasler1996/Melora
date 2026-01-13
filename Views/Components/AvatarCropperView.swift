@@ -13,25 +13,42 @@ struct AvatarCropperView: View {
     @State private var previewCropSize: CGSize = .zero
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("Crop Avatar")
-                .font(AppFonts.sectionTitle())
-                .foregroundColor(AppColors.primaryText)
+        VStack(spacing: 14) {
+            VStack(spacing: 6) {
+                Text("Crop Avatar")
+                    .font(AppFonts.sectionTitle())
+                    .foregroundColor(AppColors.primaryText)
+
+                Text("Move and scale")
+                    .font(AppFonts.footnote())
+                    .foregroundColor(AppColors.secondaryText)
+            }
+            .padding(.top, 4)
 
             GeometryReader { geo in
                 let size = min(geo.size.width, geo.size.height)
                 let cropSize = CGSize(width: size, height: size)
 
                 ZStack {
-                    Color.black.opacity(0.04)
+                    Color.black.opacity(0.12)
 
                     avatarImageView(in: cropSize)
+                        .frame(width: cropSize.width, height: cropSize.height)
+                        .clipped()
+
+                    cropOverlay()
+                        .frame(width: cropSize.width, height: cropSize.height)
+                        .allowsHitTesting(false)
+
+                    Circle()
+                        .stroke(Color.white.opacity(0.85), lineWidth: 2)
+                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                 }
                 .frame(width: cropSize.width, height: cropSize.height)
                 .clipShape(Circle())
                 .overlay(
                     Circle()
-                        .stroke(Color.white.opacity(0.35), lineWidth: 2)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .gesture(dragGesture(in: cropSize))
@@ -43,7 +60,7 @@ struct AvatarCropperView: View {
                     previewCropSize = cropSize
                 }
             }
-            .frame(height: 280)
+            .frame(height: 300)
             .padding(.horizontal, 24)
 
             HStack(spacing: 12) {
@@ -81,6 +98,15 @@ struct AvatarCropperView: View {
             .padding(.horizontal, 24)
         }
         .padding(.vertical, 20)
+    }
+
+    private func cropOverlay() -> some View {
+        ZStack {
+            Color.black.opacity(0.55)
+            Circle()
+                .blendMode(.destinationOut)
+        }
+        .compositingGroup()
     }
 
     private func avatarImageView(in cropSize: CGSize) -> some View {
