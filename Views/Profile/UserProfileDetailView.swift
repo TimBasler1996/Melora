@@ -1,11 +1,12 @@
 import SwiftUI
 
 struct UserProfileDetailView: View {
-    
+
     let userId: String
-    
+
     @StateObject private var vm = UserProfileDetailViewModel()
-    
+    @Environment(\.openURL) private var openURL
+
     var body: some View {
         ZStack {
             LinearGradient(
@@ -14,9 +15,10 @@ struct UserProfileDetailView: View {
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            
+
             if vm.isLoading && vm.user == nil {
                 ProgressView("Loading…").tint(.white)
+
             } else if let error = vm.errorMessage {
                 VStack(spacing: 10) {
                     Text("Couldn’t load profile")
@@ -32,16 +34,38 @@ struct UserProfileDetailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .padding(.horizontal, AppLayout.screenPadding)
+
             } else if let user = vm.user {
                 ScrollView {
                     VStack(spacing: 14) {
-                        // reuse same layout as Profile tab
-                        // (simple duplicate for now, fast)
                         Text(user.displayName)
                             .font(AppFonts.title())
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        
+
+                        // ✅ Spotify link button (only if spotifyId exists)
+                        if let spotifyId = user.spotifyId, !spotifyId.isEmpty {
+                            Button {
+                                openSpotifyProfile(spotifyId: spotifyId)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "arrow.up.right.square")
+                                        .foregroundColor(.white)
+
+                                    Text("Open Spotify profile")
+                                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                        .foregroundColor(.white)
+
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+                                .background(Color.white.opacity(0.18))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         // Photos
                         if let urls = user.photoURLs, !urls.isEmpty {
                             ScrollView(.horizontal) {
@@ -73,13 +97,13 @@ struct UserProfileDetailView: View {
                             }
                             .scrollIndicators(.hidden)
                         }
-                        
+
                         // Basics
                         VStack(alignment: .leading, spacing: 6) {
                             Text("\(user.age.map(String.init) ?? "?") · \(user.hometown ?? "Unknown")")
                                 .font(AppFonts.body())
                                 .foregroundColor(.white.opacity(0.9))
-                            
+
                             if let taste = user.musicTaste, !taste.isEmpty {
                                 Text("Music taste")
                                     .font(.caption)
@@ -90,7 +114,7 @@ struct UserProfileDetailView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        
+
                         Spacer(minLength: 20)
                     }
                     .padding(.horizontal, AppLayout.screenPadding)
@@ -102,4 +126,19 @@ struct UserProfileDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { vm.load(userId: userId) }
     }
+
+    // MARK: - Spotify Deep Link
+
+    private func openSpotifyProfile(spotifyId: String) {
+        // Try Spotify app deep link first
+        let appURL = URL(string: "spotify:user:\(spotifyId)")!
+        let webURL = URL(string: "https://open.spotify.com/user/\(spotifyId)")!
+
+        openURL(appURL) { success in
+            if !success {
+                openURL(webURL)
+            }
+        }
+    }
 }
+

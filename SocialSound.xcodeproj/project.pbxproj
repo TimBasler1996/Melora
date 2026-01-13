@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		756E44842EFE8BC000F49C30 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44832EFE8BC000F49C30 /* AppDelegate.swift */; };
 		756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */; };
 		756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */; };
 		756E448C2EFE8BE500F49C30 /* PhotoUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */; };
@@ -26,7 +25,18 @@
 		756E44A72EFE8C2400F49C30 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44A52EFE8C2400F49C30 /* DiscoverView.swift */; };
 		756E44AA2EFE8FA300F49C30 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44A92EFE8FA300F49C30 /* FirebaseAuth */; };
 		756E44AC2EFE8FB300F49C30 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44AB2EFE8FB300F49C30 /* FirebaseStorage */; };
+		7576DF322F168B470034BF2A /* UserProfilePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7576DF312F168B400034BF2A /* UserProfilePreview.swift */; };
 		757B182E2EFEF8D500801991 /* TrackLikesClusterRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */; };
+		75834A802F091CC0008C51F8 /* BroadcastToggleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */; };
+		75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */; };
+		75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */; };
+		75834A862F0C2E3D008C51F8 /* CurrentUserStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */; };
+		75834A882F0D8DCC008C51F8 /* DiscoverUserCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A872F0D8DCC008C51F8 /* DiscoverUserCard.swift */; };
+		75834A8A2F0D8DD7008C51F8 /* LikeMessageSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A892F0D8DD7008C51F8 /* LikeMessageSheet.swift */; };
+		75834A8C2F0D8EED008C51F8 /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8B2F0D8EED008C51F8 /* Conversation.swift */; };
+		75834A8E2F0D8EFB008C51F8 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8D2F0D8EFB008C51F8 /* ChatMessage.swift */; };
+		75834A902F0D8F0C008C51F8 /* ChatApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */; };
+		75834AEA2F1650A3008C51F8 /* OnboardingProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834AE92F1650A3008C51F8 /* OnboardingProfileService.swift */; };
 		759F7ADF2EC779740012A549 /* SocialSoundApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7ADE2EC779740012A549 /* SocialSoundApp.swift */; };
 		759F7AFE2EC781A70012A549 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AF92EC77D5B0012A549 /* MainView.swift */; };
 		759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AFD2EC77D9A0012A549 /* ProfileView.swift */; };
@@ -61,10 +71,23 @@
 		75A174212ED0FFFA00CEB48F /* TrackLikesCluster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */; };
 		75A174232ED1007200CEB48F /* LikesInboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174222ED1007200CEB48F /* LikesInboxViewModel.swift */; };
 		75A174252ED107AF00CEB48F /* SpotifyConnectionSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174242ED107AF00CEB48F /* SpotifyConnectionSection.swift */; };
+		76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A02F12345600112233 /* OnboardingStateManager.swift */; };
+		76B0C1A42F12345600112233 /* OnboardingFlowPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */; };
+		76B0C1A72F12345600112233 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A62F12345600112233 /* OnboardingViewModel.swift */; };
+		76B0C1AA2F12345600112233 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A92F12345600112233 /* OnboardingFlowView.swift */; };
+		76B0C1AD2F12345600112233 /* OnboardingStepBasicsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */; };
+		78B0C1B12F20000100112233 /* OnboardingStepPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */; };
+		78B0C1B22F20000100112233 /* OnboardingStepSpotifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B0C1B42F20000100112233 /* OnboardingStepSpotifyView.swift */; };
+		79A1C0012F30000100112233 /* Date+Age.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0002F30000100112233 /* Date+Age.swift */; };
+		79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */; };
+		79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0082F30000300112233 /* AvatarCropperView.swift */; };
+		79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */; };
+		79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00C2F30000300112233 /* PhotoCard.swift */; };
+		7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */; };
+		7A2B2C2D3E4F5A6B7C8D9E00 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		756E44832EFE8BC000F49C30 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastPresenceManager.swift; sourceTree = "<group>"; };
 		756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthBootstrap.swift; sourceTree = "<group>"; };
 		756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploader.swift; sourceTree = "<group>"; };
@@ -81,7 +104,18 @@
 		756E449C2EFE8C1000F49C30 /* ProfileSetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSetupWizardView.swift; sourceTree = "<group>"; };
 		756E449D2EFE8C1000F49C30 /* UserProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileDetailView.swift; sourceTree = "<group>"; };
 		756E44A52EFE8C2400F49C30 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
+		7576DF312F168B400034BF2A /* UserProfilePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfilePreview.swift; sourceTree = "<group>"; };
 		757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesClusterRowView.swift; sourceTree = "<group>"; };
+		75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastToggleCard.swift; sourceTree = "<group>"; };
+		75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesBadgeViewModel.swift; sourceTree = "<group>"; };
+		75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxButton.swift; sourceTree = "<group>"; };
+		75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentUserStore.swift; sourceTree = "<group>"; };
+		75834A872F0D8DCC008C51F8 /* DiscoverUserCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverUserCard.swift; sourceTree = "<group>"; };
+		75834A892F0D8DD7008C51F8 /* LikeMessageSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeMessageSheet.swift; sourceTree = "<group>"; };
+		75834A8B2F0D8EED008C51F8 /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
+		75834A8D2F0D8EFB008C51F8 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatApiService.swift; sourceTree = "<group>"; };
+		75834AE92F1650A3008C51F8 /* OnboardingProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProfileService.swift; sourceTree = "<group>"; };
 		759F7ADB2EC779740012A549 /* SocialSound.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SocialSound.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		759F7ADE2EC779740012A549 /* SocialSoundApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialSoundApp.swift; sourceTree = "<group>"; };
 		759F7AF72EC77CD80012A549 /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
@@ -116,7 +150,29 @@
 		75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesCluster.swift; sourceTree = "<group>"; };
 		75A174222ED1007200CEB48F /* LikesInboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxViewModel.swift; sourceTree = "<group>"; };
 		75A174242ED107AF00CEB48F /* SpotifyConnectionSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyConnectionSection.swift; sourceTree = "<group>"; };
+		76B0C1A02F12345600112233 /* OnboardingStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStateManager.swift; sourceTree = "<group>"; };
+		76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowPlaceholderView.swift; sourceTree = "<group>"; };
+		76B0C1A62F12345600112233 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
+		76B0C1A92F12345600112233 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
+		76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepBasicsView.swift; sourceTree = "<group>"; };
+		78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepPhotosView.swift; sourceTree = "<group>"; };
+		78B0C1B42F20000100112233 /* OnboardingStepSpotifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepSpotifyView.swift; sourceTree = "<group>"; };
+		79A1C0002F30000100112233 /* Date+Age.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Age.swift"; sourceTree = "<group>"; };
+		79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePreviewHeader.swift; sourceTree = "<group>"; };
+		79A1C0082F30000300112233 /* AvatarCropperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarCropperView.swift; sourceTree = "<group>"; };
+		79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarPhotoCard.swift; sourceTree = "<group>"; };
+		79A1C00C2F30000300112233 /* PhotoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCard.swift; sourceTree = "<group>"; };
+		7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		75834A912F0D97D3008C51F8 /* Chat */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Chat;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		759F7AD82EC779740012A549 /* Frameworks */ = {
@@ -136,6 +192,8 @@
 		756E44A62EFE8C2400F49C30 /* Discover */ = {
 			isa = PBXGroup;
 			children = (
+				75834A892F0D8DD7008C51F8 /* LikeMessageSheet.swift */,
+				75834A872F0D8DCC008C51F8 /* DiscoverUserCard.swift */,
 				756E44A52EFE8C2400F49C30 /* DiscoverView.swift */,
 			);
 			path = Discover;
@@ -176,7 +234,6 @@
 		759F7AEC2EC77A2C0012A549 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				756E44832EFE8BC000F49C30 /* AppDelegate.swift */,
 				759F7ADE2EC779740012A549 /* SocialSoundApp.swift */,
 			);
 			path = App;
@@ -185,11 +242,16 @@
 		759F7AED2EC77A4C0012A549 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				75834A8D2F0D8EFB008C51F8 /* ChatMessage.swift */,
+				75834A8B2F0D8EED008C51F8 /* Conversation.swift */,
+				75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */,
+				75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */,
 				756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */,
 				75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */,
 				75A174112ECBB68900CEB48F /* User.swift */,
 				75A1740D2ECA158400CEB48F /* TrackLike.swift */,
 				75A174092EC8BBFA00CEB48F /* AppUser.swift */,
+				7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */,
 				759F7B092EC783CF0012A549 /* LocationPoint.swift */,
 				759F7B072EC783C70012A549 /* Track.swift */,
 				759F7AF72EC77CD80012A549 /* Session.swift */,
@@ -200,6 +262,9 @@
 		759F7AEE2EC77A550012A549 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				75834AE92F1650A3008C51F8 /* OnboardingProfileService.swift */,
+				7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */,
+				75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */,
 				756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */,
 				756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */,
 				75A1741E2ECFAD0100CEB48F /* SpotifyPlaybackError.swift */,
@@ -217,6 +282,7 @@
 		759F7AEF2EC77A5D0012A549 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				76B0C1A22F12345600112233 /* Onboarding */,
 				756E448D2EFE8BF600F49C30 /* DiscoverViewModel.swift */,
 				756E448E2EFE8BF600F49C30 /* ProfileGateViewModel.swift */,
 				756E448F2EFE8BF600F49C30 /* ProfileSetupWizardViewModel.swift */,
@@ -231,6 +297,9 @@
 		759F7AF02EC77A6D0012A549 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				79A1C0042F30000100112233 /* Components */,
+				76B0C1A52F12345600112233 /* Onboarding */,
+				75834A912F0D97D3008C51F8 /* Chat */,
 				756E44A62EFE8C2400F49C30 /* Discover */,
 				759F7AF52EC77A9D0012A549 /* Profile */,
 				759F7AF42EC77A960012A549 /* Nearby */,
@@ -243,6 +312,7 @@
 			isa = PBXGroup;
 			children = (
 				75A174032EC7E40D00CEB48F /* AppTheme.swift */,
+				79A1C0002F30000100112233 /* Date+Age.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -250,6 +320,7 @@
 		759F7AF32EC77A8D0012A549 /* Main */ = {
 			isa = PBXGroup;
 			children = (
+				75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */,
 				759F7AFA2EC77D6B0012A549 /* NowPlayingView.swift */,
 				759F7AF92EC77D5B0012A549 /* MainView.swift */,
 			);
@@ -269,6 +340,8 @@
 		759F7AF52EC77A9D0012A549 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				7576DF312F168B400034BF2A /* UserProfilePreview.swift */,
+				75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */,
 				757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */,
 				756E44972EFE8C1000F49C30 /* PhotoPickerBridge.swift */,
 				756E44982EFE8C1000F49C30 /* ProfileBasicsStepView.swift */,
@@ -287,6 +360,46 @@
 			path = Profile;
 			sourceTree = "<group>";
 		};
+		76B0C1A22F12345600112233 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				76B0C1A02F12345600112233 /* OnboardingStateManager.swift */,
+				76B0C1A62F12345600112233 /* OnboardingViewModel.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		76B0C1A52F12345600112233 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				76B0C1AB2F12345600112233 /* Steps */,
+				76B0C1A92F12345600112233 /* OnboardingFlowView.swift */,
+				76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		76B0C1AB2F12345600112233 /* Steps */ = {
+			isa = PBXGroup;
+			children = (
+				78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */,
+				78B0C1B42F20000100112233 /* OnboardingStepSpotifyView.swift */,
+				76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */,
+			);
+			path = Steps;
+			sourceTree = "<group>";
+		};
+		79A1C0042F30000100112233 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				79A1C0082F30000300112233 /* AvatarCropperView.swift */,
+				79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */,
+				79A1C00C2F30000300112233 /* PhotoCard.swift */,
+				79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -301,6 +414,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				75834A912F0D97D3008C51F8 /* Chat */,
 			);
 			name = SocialSound;
 			packageProductDependencies = (
@@ -367,8 +483,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				79A1C0012F30000100112233 /* Date+Age.swift in Sources */,
+				79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */,
+				79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */,
+				79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */,
+				79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */,
 				759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */,
 				756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */,
+				78B0C1B12F20000100112233 /* OnboardingStepPhotosView.swift in Sources */,
+				78B0C1B22F20000100112233 /* OnboardingStepSpotifyView.swift in Sources */,
+				75834A902F0D8F0C008C51F8 /* ChatApiService.swift in Sources */,
 				756E449E2EFE8C1000F49C30 /* ProfileGateView.swift in Sources */,
 				756E449F2EFE8C1000F49C30 /* PhotoPickerBridge.swift in Sources */,
 				756E44A02EFE8C1000F49C30 /* ProfileFinishStepView.swift in Sources */,
@@ -376,36 +500,52 @@
 				756E44A22EFE8C1000F49C30 /* ProfileBasicsStepView.swift in Sources */,
 				756E44A32EFE8C1000F49C30 /* UserProfileDetailView.swift in Sources */,
 				756E44A42EFE8C1000F49C30 /* ProfilePhotosStepView.swift in Sources */,
+				76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */,
+				76B0C1A42F12345600112233 /* OnboardingFlowPlaceholderView.swift in Sources */,
+				76B0C1A72F12345600112233 /* OnboardingViewModel.swift in Sources */,
+				76B0C1AA2F12345600112233 /* OnboardingFlowView.swift in Sources */,
+				76B0C1AD2F12345600112233 /* OnboardingStepBasicsView.swift in Sources */,
 				75A174042EC7E40D00CEB48F /* AppTheme.swift in Sources */,
 				759F7B082EC783C70012A549 /* Track.swift in Sources */,
+				75834AEA2F1650A3008C51F8 /* OnboardingProfileService.swift in Sources */,
 				759F7B002EC782D30012A549 /* NearbyView.swift in Sources */,
+				75834A802F091CC0008C51F8 /* BroadcastToggleCard.swift in Sources */,
 				759F7B0C2EC784920012A549 /* BroadcastManager.swift in Sources */,
 				759F7B1D2EC797210012A549 /* SessionApiService.swift in Sources */,
 				75A1740E2ECA158400CEB48F /* TrackLike.swift in Sources */,
 				759F7B0A2EC783CF0012A549 /* LocationPoint.swift in Sources */,
+				75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */,
 				759F7B212EC799900012A549 /* LocationService.swift in Sources */,
 				756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */,
 				756E448C2EFE8BE500F49C30 /* PhotoUploader.swift in Sources */,
 				75A1740C2EC8C0FA00CEB48F /* ProfileViewModel.swift in Sources */,
 				759F7B012EC782D30012A549 /* SessionRowView.swift in Sources */,
+				75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */,
 				75A1741C2ECE59E300CEB48F /* TrackLikesDetailView.swift in Sources */,
 				75A1740A2EC8BBFA00CEB48F /* AppUser.swift in Sources */,
+				7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */,
 				756E44922EFE8BF600F49C30 /* ProfileSetupWizardViewModel.swift in Sources */,
 				756E44932EFE8BF600F49C30 /* ProfileGateViewModel.swift in Sources */,
 				756E44942EFE8BF600F49C30 /* UserProfileDetailViewModel.swift in Sources */,
 				756E44952EFE8BF600F49C30 /* ProfileTabViewModel.swift in Sources */,
+				75834A8C2F0D8EED008C51F8 /* Conversation.swift in Sources */,
 				756E44962EFE8BF600F49C30 /* DiscoverViewModel.swift in Sources */,
+				7576DF322F168B470034BF2A /* UserProfilePreview.swift in Sources */,
 				75A174212ED0FFFA00CEB48F /* TrackLikesCluster.swift in Sources */,
 				759F7B022EC782D30012A549 /* NowPlayingView.swift in Sources */,
+				75834A882F0D8DCC008C51F8 /* DiscoverUserCard.swift in Sources */,
 				75A174102ECA159900CEB48F /* LikeApiService.swift in Sources */,
 				759F7B102EC78B5C0012A549 /* SpotifyService.swift in Sources */,
+				7A2B2C2D3E4F5A6B7C8D9E00 /* ProfileService.swift in Sources */,
+				75834A862F0C2E3D008C51F8 /* CurrentUserStore.swift in Sources */,
+				75834A8E2F0D8EFB008C51F8 /* ChatMessage.swift in Sources */,
 				759F7B042EC782D30012A549 /* Session.swift in Sources */,
+				75834A8A2F0D8DD7008C51F8 /* LikeMessageSheet.swift in Sources */,
 				756E44A72EFE8C2400F49C30 /* DiscoverView.swift in Sources */,
 				75A174182ECE548000CEB48F /* OtherUserProfileView.swift in Sources */,
 				759F7B1F2EC7974A0012A549 /* NearbyViewModel.swift in Sources */,
 				75A174252ED107AF00CEB48F /* SpotifyConnectionSection.swift in Sources */,
 				75A174082EC8B0E400CEB48F /* UserApiService.swift in Sources */,
-				756E44842EFE8BC000F49C30 /* AppDelegate.swift in Sources */,
 				75A174162ECE547500CEB48F /* LikesInboxView.swift in Sources */,
 				759F7ADF2EC779740012A549 /* SocialSoundApp.swift in Sources */,
 				75A174122ECBB68900CEB48F /* User.swift in Sources */,

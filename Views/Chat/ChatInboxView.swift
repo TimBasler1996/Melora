@@ -1,45 +1,47 @@
+//
+//  ChatInboxView.swift
+//  SocialSound
+//
+//  Created by Tim Basler on 07.01.2026.
+//
+
 import SwiftUI
 
-struct LikesInboxView: View {
+struct ChatInboxView: View {
 
-    let user: AppUser
-    @StateObject private var vm = LikesInboxViewModel()
+    @StateObject private var vm = ChatInboxViewModel()
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                LinearGradient(
+                    colors: [AppColors.primary, AppColors.secondary],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
 
-            content
-        }
-        .navigationTitle("Likes")
-        .navigationBarTitleDisplayMode(.large)
-        .onAppear {
-            vm.loadLikes(for: user.uid)
-        }
-        .onDisappear {
-            vm.markAllAsSeen()
-        }
-        .refreshable {
-            vm.loadLikes(for: user.uid)
+                content
+            }
+            .navigationTitle("Chats")
+            .navigationBarTitleDisplayMode(.large)
+            .onAppear { vm.startListening() }
+            .onDisappear { vm.stopListening() }
+            .refreshable { vm.reloadOnce() }
         }
     }
 
     @ViewBuilder
     private var content: some View {
-        if vm.isLoading && vm.clusters.isEmpty {
+        if vm.isLoading && vm.rows.isEmpty {
             VStack {
                 Spacer()
-                ProgressView("Loading likes…").tint(.white)
+                ProgressView("Loading chats…").tint(.white)
                 Spacer()
             }
         } else if let err = vm.errorMessage {
             VStack(spacing: 10) {
-                Text("Couldn’t load likes")
+                Text("Couldn’t load chats")
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
 
@@ -48,7 +50,7 @@ struct LikesInboxView: View {
                     .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
 
-                Button("Retry") { vm.loadLikes(for: user.uid) }
+                Button("Retry") { vm.startListening() }
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
@@ -57,13 +59,13 @@ struct LikesInboxView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .padding(.horizontal, AppLayout.screenPadding)
-        } else if vm.clusters.isEmpty {
+        } else if vm.rows.isEmpty {
             VStack(spacing: 10) {
                 Spacer()
-                Text("No likes yet")
+                Text("No chats yet")
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
-                Text("When someone likes a track you broadcast, it will show up here.")
+                Text("When you accept a like and start chatting, it will show up here.")
                     .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
@@ -73,11 +75,11 @@ struct LikesInboxView: View {
         } else {
             ScrollView {
                 VStack(spacing: 12) {
-                    ForEach(vm.clusters) { cluster in
+                    ForEach(vm.rows) { row in
                         NavigationLink {
-                            TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
+                            ChatView(conversationId: row.conversationId)
                         } label: {
-                            TrackLikesClusterRowView(cluster: cluster)
+                            ChatInboxRowView(row: row)
                         }
                         .buttonStyle(.plain)
                     }

@@ -15,6 +15,11 @@ struct MainView: View {
                     Label("Discover", systemImage: "dot.radiowaves.left.and.right")
                 }
 
+            ChatInboxView()
+                .tabItem {
+                    Label("Chats", systemImage: "message")
+                }
+
             NavigationStack {
                 ProfileView()
             }

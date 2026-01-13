@@ -1,142 +1,204 @@
-//
-//  ProfileViewModel.swift
-//  SocialSound
-//
-
 import Foundation
 import FirebaseAuth
-import FirebaseFirestore
+import UIKit
 
-/// ViewModel for the Profile screen.
-///
-/// Verantwortlich für:
-/// - Laden des AppUser aus Firestore (users/{uid})
-/// - Bearbeiten und Speichern von Profilfeldern
 @MainActor
 final class ProfileViewModel: ObservableObject {
-    
-    // MARK: - Published State (for UI)
-    
+
+    // MARK: - UI State
+
     @Published var isLoading: Bool = false
     @Published var isSaving: Bool = false
     @Published var saveSucceeded: Bool = false
     @Published var errorMessage: String?
-    
-    @Published var appUser: AppUser?
-    
-    // Felder, die die UI bindet
-    @Published var displayName: String = ""
-    @Published var ageString: String = ""
-    @Published var hometown: String = ""
-    @Published var countryCode: String = ""   // UI darf das weiterhin zeigen
-    @Published var gender: String = ""        // UI darf das weiterhin zeigen
-    
-    private let userService = UserApiService.shared
-    private let db = Firestore.firestore()
-    
-    // MARK: - Derived
-    
-    var canSave: Bool {
-        let trimmed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return !trimmed.isEmpty && !isSaving
+
+    // MARK: - Profile Data
+
+    @Published var profile: UserProfile?
+
+    @Published var firstName: String = ""
+    @Published var lastName: String = ""
+    @Published var city: String = ""
+    @Published var birthday: Date = Date()
+    @Published var gender: String = ""
+
+    @Published var photoURLs: [String] = []
+    @Published var selectedImages: [UIImage?] = [nil, nil, nil]
+
+    // MARK: - Spotify
+
+    @Published var isRefreshingSpotify: Bool = false
+
+    // MARK: - Services
+
+    private let profileService: ProfileService
+
+    // MARK: - Computed
+
+    var ageText: String {
+        birthday.age().map(String.init) ?? ""
     }
-    
-    private var ageInt: Int? {
-        let trimmed = ageString.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        return Int(trimmed)
+
+    var hasChanges: Bool {
+        guard let profile else { return false }
+
+        let basicsChanged =
+            firstName != profile.firstName ||
+            lastName != profile.lastName ||
+            city != profile.city ||
+            gender != profile.gender ||
+            birthday != (profile.birthday ?? birthday)
+
+        let photosChanged = selectedImages.contains { $0 != nil }
+
+        return basicsChanged || photosChanged
     }
-    
+
+    // MARK: - Initializers
+
+    /// ✅ App / Runtime Init
+    init() {
+        self.profileService = ProfileService()
+    }
+
+    /// ✅ Preview / Test Init (NO Firebase, NO async)
+    init(preview: Bool) {
+        self.profileService = ProfileService()
+
+        guard preview else { return }
+
+        let mock = UserProfile.mockPreview
+        self.profile = mock
+        self.firstName = mock.firstName
+        self.lastName = mock.lastName
+        self.city = mock.city
+        self.birthday = mock.birthday ?? Date()
+        self.gender = mock.gender
+        self.photoURLs = mock.photoURLs
+        self.selectedImages = [nil, nil, nil]
+    }
+
     // MARK: - Loading
-    
-    /// Lädt ein Profil anhand "userId".
-    /// In deinem aktuellen Setup ist das Firestore-Dokument die Firebase UID.
-    func loadProfile(spotifyId userId: String, createFromSpotifyIfMissing: Bool = false) {
+
+    func loadProfile() async {
         isLoading = true
         errorMessage = nil
         saveSucceeded = false
-        
-        userService.getUser(uid: userId) { [weak self] result in
-            guard let self else { return }
-            self.isLoading = false
-            
-            switch result {
-            case .failure(let error):
-                self.errorMessage = "Failed to load profile: \(error.localizedDescription)"
-                
-            case .success(let user):
-                self.appUser = user
-                self.applyUserToFields(user)
-            }
+
+        do {
+            let fetchedProfile = try await profileService.fetchCurrentUserProfile()
+            applyProfile(fetchedProfile)
+        } catch {
+            errorMessage = error.localizedDescription
         }
+
+        isLoading = false
     }
-    
-    /// Convenience: lädt den aktuell eingeloggten User (uid).
-    func loadCurrentUser() {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            errorMessage = "No Firebase user."
-            return
-        }
-        loadProfile(spotifyId: uid)
+
+    // MARK: - Photos
+
+    func setSelectedImage(_ image: UIImage?, index: Int) {
+        guard selectedImages.indices.contains(index) else { return }
+        selectedImages[index] = image
     }
-    
-    private func applyUserToFields(_ user: AppUser) {
-        displayName = user.displayName
-        ageString = user.age.map(String.init) ?? ""
-        hometown = user.hometown ?? ""
-        
-        // Falls dein aktueller AppUser diese Felder nicht hat,
-        // bleiben sie in der UI leer, wir speichern sie trotzdem separat (siehe saveProfile()).
-        // countryCode / gender bleiben wie sie sind (oder leer).
-    }
-    
+
     // MARK: - Saving
-    
-    /// Speichert die aktuellen Form-Felder zurück nach Firestore users/{uid}.
-    func saveProfile() {
+
+    func saveChanges() async {
         guard let uid = Auth.auth().currentUser?.uid else {
             errorMessage = "No Firebase user."
             return
         }
-        
+
         isSaving = true
-        errorMessage = nil
         saveSucceeded = false
-        
-        // Update für die Felder, die dein aktueller AppUser sicher hat
-        var data: [String: Any] = [
-            "displayName": displayName,
-            "updatedAt": Timestamp(date: Date()),
-            "lastActiveAt": Timestamp(date: Date())
-        ]
-        
-        if let ageInt { data["age"] = ageInt }
-        if !hometown.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            data["hometown"] = hometown
-        }
-        
-        // Optional UI-Felder (auch wenn AppUser sie nicht modelliert)
-        if !countryCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            data["countryCode"] = countryCode
-        }
-        if !gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            data["gender"] = gender
-        }
-        
-        db.collection("users").document(uid).setData(data, merge: true) { [weak self] error in
-            guard let self else { return }
-            self.isSaving = false
-            
-            if let error {
-                self.errorMessage = "Save failed: \(error.localizedDescription)"
-                return
+        errorMessage = nil
+
+        do {
+            let basics = OnboardingProfileService.Basics(
+                firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
+                lastName: lastName.trimmingCharacters(in: .whitespacesAndNewlines),
+                city: city.trimmingCharacters(in: .whitespacesAndNewlines),
+                birthday: birthday,
+                gender: gender.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+
+            try await profileService.saveBasics(basics, uid: uid)
+
+            if selectedImages.contains(where: { $0 != nil }) {
+                var updatedPhotoURLs = photoURLs
+
+                if updatedPhotoURLs.count < 3 {
+                    updatedPhotoURLs.append(
+                        contentsOf: Array(repeating: "", count: 3 - updatedPhotoURLs.count)
+                    )
+                }
+
+                for (index, image) in selectedImages.enumerated() {
+                    guard let image else { continue }
+
+                    let url = try await profileService.uploadPhoto(
+                        image: image,
+                        uid: uid,
+                        index: index
+                    )
+
+                    if updatedPhotoURLs.indices.contains(index) {
+                        updatedPhotoURLs[index] = url
+                    } else {
+                        updatedPhotoURLs.append(url)
+                    }
+                }
+
+                try await profileService.savePhotos(
+                    photoURLs: updatedPhotoURLs,
+                    uid: uid
+                )
             }
-            
-            self.saveSucceeded = true
-            
-            // Re-load damit UI den neuesten Stand hat
-            self.loadCurrentUser()
+
+            saveSucceeded = true
+            selectedImages = [nil, nil, nil]
+            await loadProfile()
+
+        } catch {
+            errorMessage = error.localizedDescription
         }
+
+        isSaving = false
+    }
+
+    // MARK: - Spotify
+
+    func refreshSpotifyProfile() async {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            errorMessage = "No Firebase user."
+            return
+        }
+
+        isRefreshingSpotify = true
+        errorMessage = nil
+
+        do {
+            try await profileService.refreshSpotifyProfile(uid: uid)
+            await loadProfile()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isRefreshingSpotify = false
+    }
+
+    // MARK: - Helpers
+
+    private func applyProfile(_ profile: UserProfile) {
+        self.profile = profile
+        self.firstName = profile.firstName
+        self.lastName = profile.lastName
+        self.city = profile.city
+        self.birthday = profile.birthday ?? Date()
+        self.gender = profile.gender
+        self.photoURLs = profile.photoURLs
+        self.selectedImages = [nil, nil, nil]
     }
 }
 

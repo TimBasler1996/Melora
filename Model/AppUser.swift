@@ -43,9 +43,10 @@ struct AppUser: Identifiable, Codable, Equatable {
     var avatarSource: AvatarSource?
     var photoURLs: [String]?
 
-    // MARK: - Presence
+    // MARK: - Presence / Broadcast
 
     var isBroadcasting: Bool?
+    var currentTrack: Track?
     var lastLocation: LocationPoint?
     var lastActiveAt: Date?
 
@@ -72,6 +73,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         lastName: String? = nil,
         photoURLs: [String]? = nil,
         isBroadcasting: Bool? = nil,
+        currentTrack: Track? = nil,
         profileCompleted: Bool? = nil,
         createdAt: Date? = nil,
         updatedAt: Date? = nil,
@@ -96,6 +98,7 @@ struct AppUser: Identifiable, Codable, Equatable {
 
         self.photoURLs = photoURLs
         self.isBroadcasting = isBroadcasting
+        self.currentTrack = currentTrack
         self.profileCompleted = profileCompleted
 
         self.createdAt = createdAt
@@ -151,10 +154,10 @@ struct AppUser: Identifiable, Codable, Equatable {
 
     static func fromFirestore(uid: String, data: [String: Any]) -> AppUser {
 
-        func intValue(_ key: String) -> Int? {
-            if let v = data[key] as? Int { return v }
-            if let v = data[key] as? Int64 { return Int(v) }
-            if let v = data[key] as? Double { return Int(v) }
+        func intFromAny(_ any: Any?) -> Int? {
+            if let v = any as? Int { return v }
+            if let v = any as? Int64 { return Int(v) }
+            if let v = any as? Double { return Int(v) }
             return nil
         }
 
@@ -169,6 +172,26 @@ struct AppUser: Identifiable, Codable, Equatable {
             return LocationPoint(latitude: lat, longitude: lon)
         }()
 
+        let currentTrack: Track? = {
+            guard let dict = data["currentTrack"] as? [String: Any] else { return nil }
+            guard let id = dict["id"] as? String,
+                  let title = dict["title"] as? String,
+                  let artist = dict["artist"] as? String else { return nil }
+
+            let album = dict["album"] as? String
+            let artworkURL = (dict["artworkURL"] as? String).flatMap(URL.init(string:))
+            let durationMs = intFromAny(dict["durationMs"])
+
+            return Track(
+                id: id,
+                title: title,
+                artist: artist,
+                album: album,
+                artworkURL: artworkURL,
+                durationMs: durationMs
+            )
+        }()
+
         let photoURLs: [String]? = (data["photoURLs"] as? [String])
 
         let avatarSourceRaw = stringValue("avatarSource")
@@ -180,13 +203,16 @@ struct AppUser: Identifiable, Codable, Equatable {
             displayName: stringValue("displayName") ?? "Unknown",
             avatarURL: stringValue("avatarURL"),
             avatarSource: avatarSource,
-            age: intValue("age"),
+            age: intFromAny(data["age"]),
             hometown: stringValue("hometown"),
             musicTaste: stringValue("musicTaste"),
             countryCode: stringValue("countryCode"),
             gender: stringValue("gender"),
+            firstName: stringValue("firstName"),
+            lastName: stringValue("lastName"),
             photoURLs: photoURLs,
             isBroadcasting: boolValue("isBroadcasting"),
+            currentTrack: currentTrack,
             profileCompleted: boolValue("profileCompleted"),
             createdAt: ts("createdAt"),
             updatedAt: ts("updatedAt"),
