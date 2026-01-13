@@ -57,23 +57,28 @@ final class OnboardingProfileService {
         var urls: [String] = []
 
         for (index, image) in images.enumerated() {
-            guard let data = image.jpegData(compressionQuality: 0.85) else {
-                throw NSError(domain: "Onboarding", code: 2, userInfo: [
-                    NSLocalizedDescriptionKey: "Invalid image data."
-                ])
-            }
-
-            let ref = storage.reference()
-                .child("userPhotos")
-                .child(uid)
-                .child("photo_\(index).jpg")
-
-            _ = try await ref.putDataAsync(data)
-            let url = try await ref.downloadURL()
-            urls.append(url.absoluteString)
+            let url = try await uploadPhoto(image: image, uid: uid, index: index)
+            urls.append(url)
         }
 
         return urls
+    }
+
+    func uploadPhoto(image: UIImage, uid: String, index: Int) async throws -> String {
+        guard let data = image.jpegData(compressionQuality: 0.85) else {
+            throw NSError(domain: "Onboarding", code: 2, userInfo: [
+                NSLocalizedDescriptionKey: "Invalid image data."
+            ])
+        }
+
+        let ref = storage.reference()
+            .child("userPhotos")
+            .child(uid)
+            .child("photo_\(index).jpg")
+
+        _ = try await ref.putDataAsync(data)
+        let url = try await ref.downloadURL()
+        return url.absoluteString
     }
 
     func savePhotos(photoURLs: [String], uid: String) async throws {
