@@ -22,8 +22,11 @@ final class ProfileViewModel: ObservableObject {
     @Published var birthday: Date = Date()
     @Published var gender: String = ""
 
+    /// URLs aus Firestore (kann 0...6 enthalten)
     @Published var photoURLs: [String] = []
-    @Published var selectedImages: [UIImage?] = [nil, nil, nil]
+
+    /// Lokale Änderungen (immer 6 Slots, nil = unverändert/leer)
+    @Published var selectedImages: [UIImage?] = Array(repeating: nil, count: 6)
 
     // MARK: - Spotify
 
@@ -32,6 +35,20 @@ final class ProfileViewModel: ObservableObject {
     // MARK: - Services
 
     private let profileService: ProfileService
+
+    // MARK: - Soft discard snapshot (lokal)
+
+    private var snapshot: Snapshot?
+
+    private struct Snapshot {
+        let firstName: String
+        let lastName: String
+        let city: String
+        let birthday: Date
+        let gender: String
+        let photoURLs: [String]
+        let profile: UserProfile?
+    }
 
     // MARK: - Computed
 
@@ -50,32 +67,22 @@ final class ProfileViewModel: ObservableObject {
             birthday != (profile.birthday ?? birthday)
 
         let photosChanged = selectedImages.contains { $0 != nil }
-
         return basicsChanged || photosChanged
     }
 
     // MARK: - Initializers
 
-    /// ✅ App / Runtime Init
     init() {
         self.profileService = ProfileService()
     }
 
-    /// ✅ Preview / Test Init (NO Firebase, NO async)
+    /// Preview / Testing init (kein Firebase Call)
     init(preview: Bool) {
         self.profileService = ProfileService()
-
         guard preview else { return }
 
         let mock = UserProfile.mockPreview
-        self.profile = mock
-        self.firstName = mock.firstName
-        self.lastName = mock.lastName
-        self.city = mock.city
-        self.birthday = mock.birthday ?? Date()
-        self.gender = mock.gender
-        self.photoURLs = mock.photoURLs
-        self.selectedImages = [nil, nil, nil]
+        applyProfile(mock)
     }
 
     // MARK: - Loading
@@ -102,6 +109,30 @@ final class ProfileViewModel: ObservableObject {
         selectedImages[index] = image
     }
 
+    /// Soft delete: setzt Slot lokal zurück (später beim Save wird URL ggf. gelöscht/überschrieben)
+    func clearSelectedImage(at index: Int) {
+        guard selectedImages.indices.contains(index) else { return }
+        selectedImages[index] = nil
+    }
+
+    // MARK: - Discard (soft)
+
+    func discardChanges() {
+        guard let snapshot else { return }
+
+        self.firstName = snapshot.firstName
+        self.lastName = snapshot.lastName
+        self.city = snapshot.city
+        self.birthday = snapshot.birthday
+        self.gender = snapshot.gender
+        self.photoURLs = snapshot.photoURLs
+        self.profile = snapshot.profile
+
+        self.selectedImages = Array(repeating: nil, count: 6)
+        self.saveSucceeded = false
+        self.errorMessage = nil
+    }
+
     // MARK: - Saving
 
     func saveChanges() async {
@@ -125,13 +156,12 @@ final class ProfileViewModel: ObservableObject {
 
             try await profileService.saveBasics(basics, uid: uid)
 
+            // Fotos: wir arbeiten mit 6 Slots
             if selectedImages.contains(where: { $0 != nil }) {
                 var updatedPhotoURLs = photoURLs
 
-                if updatedPhotoURLs.count < 3 {
-                    updatedPhotoURLs.append(
-                        contentsOf: Array(repeating: "", count: 3 - updatedPhotoURLs.count)
-                    )
+                if updatedPhotoURLs.count < 6 {
+                    updatedPhotoURLs.append(contentsOf: Array(repeating: "", count: 6 - updatedPhotoURLs.count))
                 }
 
                 for (index, image) in selectedImages.enumerated() {
@@ -150,14 +180,11 @@ final class ProfileViewModel: ObservableObject {
                     }
                 }
 
-                try await profileService.savePhotos(
-                    photoURLs: updatedPhotoURLs,
-                    uid: uid
-                )
+                try await profileService.savePhotos(photoURLs: updatedPhotoURLs, uid: uid)
             }
 
             saveSucceeded = true
-            selectedImages = [nil, nil, nil]
+            selectedImages = Array(repeating: nil, count: 6)
             await loadProfile()
 
         } catch {
@@ -192,13 +219,25 @@ final class ProfileViewModel: ObservableObject {
 
     private func applyProfile(_ profile: UserProfile) {
         self.profile = profile
-        self.firstName = profile.firstName
-        self.lastName = profile.lastName
-        self.city = profile.city
-        self.birthday = profile.birthday ?? Date()
-        self.gender = profile.gender
-        self.photoURLs = profile.photoURLs
-        self.selectedImages = [nil, nil, nil]
+        firstName = profile.firstName
+        lastName = profile.lastName
+        city = profile.city
+        birthday = profile.birthday ?? Date()
+        gender = profile.gender
+        photoURLs = profile.photoURLs
+
+        // ✅ Snapshot für soft discard
+        snapshot = Snapshot(
+            firstName: firstName,
+            lastName: lastName,
+            city: city,
+            birthday: birthday,
+            gender: gender,
+            photoURLs: photoURLs,
+            profile: profile
+        )
+
+        selectedImages = Array(repeating: nil, count: 6)
     }
 }
 
