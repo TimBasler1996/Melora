@@ -10,6 +10,7 @@ struct AvatarCropperView: View {
     @State private var lastScale: CGFloat = 1
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
+    @State private var previewCropSize: CGSize = .zero
 
     var body: some View {
         VStack(spacing: 16) {
@@ -35,6 +36,12 @@ struct AvatarCropperView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .gesture(dragGesture(in: cropSize))
                 .gesture(magnificationGesture(in: cropSize))
+                .onAppear {
+                    previewCropSize = cropSize
+                }
+                .onChange(of: geo.size) { _, _ in
+                    previewCropSize = cropSize
+                }
             }
             .frame(height: 280)
             .padding(.horizontal, 24)
@@ -53,7 +60,7 @@ struct AvatarCropperView: View {
                 }
 
                 Button {
-                    let cropped = cropImage()
+                    let cropped = cropImage(cropSize: previewCropSize)
                     onUse(cropped)
                 } label: {
                     Text("Use Photo")
@@ -132,8 +139,8 @@ struct AvatarCropperView: View {
         )
     }
 
-    private func cropImage() -> UIImage {
-        let cropSize = CGSize(width: 500, height: 500)
+    private func cropImage(cropSize: CGSize) -> UIImage {
+        let cropSize = cropSize == .zero ? CGSize(width: 280, height: 280) : cropSize
         let baseScale = max(cropSize.width / image.size.width, cropSize.height / image.size.height)
         let effectiveScale = baseScale * scale
         let scaledSize = CGSize(width: image.size.width * effectiveScale, height: image.size.height * effectiveScale)
