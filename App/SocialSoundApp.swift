@@ -24,6 +24,7 @@ struct SocialSoundApp: App {
                         .transition(.opacity)
                 } else if onboardingState.needsOnboarding {
                     OnboardingFlowView()
+                        .environmentObject(onboardingState)
                         .transition(.opacity)
                 } else {
                     MainView()
@@ -40,7 +41,6 @@ struct SocialSoundApp: App {
             .environmentObject(broadcast)
             .environmentObject(locationService)
             .environmentObject(currentUserStore)
-            .environmentObject(onboardingState)
         }
     }
 }
@@ -61,3 +61,4 @@ private struct LoadingView: View {
         }
     }
 }
+

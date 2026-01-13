@@ -1,77 +1,88 @@
 import Foundation
 import FirebaseAuth
-import FirebaseFirestore
-import FirebaseStorage
+import UIKit
 
 @MainActor
 final class OnboardingViewModel: ObservableObject {
 
+    // MARK: - Step navigation
+
     @Published var stepIndex: Int = 1
-
-    @Published var firstName: String = ""
-    @Published var lastName: String = ""
-    @Published var city: String = ""
-    @Published var birthday: Date = Date()
-    @Published var gender: String = ""
-
-    @Published var profilePhotoData: Data?
-    @Published var photo2Data: Data?
-    @Published var photo3Data: Data?
-
-    @Published var isConnectingSpotify: Bool = false
-    @Published var isSpotifyConnected: Bool = false
-    @Published var isSpotifyProfileLinked: Bool = false
-    @Published var spotifyErrorMessage: String?
-    @Published var finishErrorMessage: String?
 
     var progressText: String { "\(stepIndex)/3" }
     var progressValue: Double { Double(stepIndex) / 3.0 }
 
+    // MARK: - Step 1: Basics
+
+    @Published var firstName: String = ""
+    @Published var lastName: String = ""
+    @Published var city: String = ""
+    @Published var birthday: Date = Calendar.current.date(byAdding: .year, value: -20, to: Date()) ?? Date()
+    @Published var gender: String = ""
+
+    // MARK: - Step 2: Photos (3 required)
+
+    @Published var selectedImages: [UIImage?] = [nil, nil, nil]
+    @Published var uploadedPhotoURLs: [String] = []
+
+    // MARK: - Step 3: Spotify
+
+    @Published var spotifyConnected: Bool = false
+    @Published var spotifyErrorMessage: String?
+
+    // MARK: - Finish
+
+    @Published var isConnectingSpotify: Bool = false
+    @Published var isFinishing: Bool = false
+    @Published var finishErrorMessage: String?
+    @Published var didFinish: Bool = false
+
+    private let profileService = OnboardingProfileService()
+
+    // MARK: - Validation
+
     var canContinueStep1: Bool {
-        let trimmedFirst = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedLast = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedCity = city.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedGender = gender.trimmingCharacters(in: .whitespacesAndNewlines)
+        let f = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let l = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let c = city.trimmingCharacters(in: .whitespacesAndNewlines)
+        let g = gender.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard trimmedFirst.count >= 2,
-              trimmedLast.count >= 2,
-              trimmedCity.count >= 2,
-              !trimmedGender.isEmpty else {
-            return false
-        }
+        guard f.count >= 2, l.count >= 2, c.count >= 2, !g.isEmpty else { return false }
 
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let selectedDay = calendar.startOfDay(for: birthday)
-        guard selectedDay <= today else { return false }
-        guard selectedDay >= Self.minimumBirthday else { return false }
+        // Birthday must be <= today and not absurdly old
+        let today = Calendar.current.startOfDay(for: Date())
+        let sel = Calendar.current.startOfDay(for: birthday)
+        guard sel <= today else { return false }
+        guard birthday >= minimumBirthday else { return false }
 
         return true
     }
 
-    private var hasAllPhotos: Bool {
-        profilePhotoData != nil && photo2Data != nil && photo3Data != nil
+    var canContinueStep2: Bool {
+        selectedImages.allSatisfy { $0 != nil }
     }
 
-    /// Used by OnboardingFlowView for CTA enabling.
-    var canContinueCurrentStep: Bool {
-        switch stepIndex {
-        case 1: return canContinueStep1
-        case 2: return canContinueStep1 && hasAllPhotos
-        case 3: return canContinueStep1 && hasAllPhotos && isSpotifyConnected
-        default: return false
-        }
+    var canFinish: Bool {
+        spotifyConnected && !isFinishing
     }
+
+    private var minimumBirthday: Date {
+        Calendar.current.date(from: DateComponents(year: 1900, month: 1, day: 1)) ?? Date.distantPast
+    }
+
+    // MARK: - Nav
 
     func goNext() {
-        if stepIndex == 1, !canContinueStep1 { return }
-
-        guard stepIndex < 3 else {
-            Task { await finishOnboarding() }
-            return
+        switch stepIndex {
+        case 1:
+            guard canContinueStep1 else { return }
+            stepIndex = 2
+        case 2:
+            guard canContinueStep2 else { return }
+            stepIndex = 3
+        default:
+            break
         }
-
-        stepIndex += 1
     }
 
     func goBack() {
@@ -79,142 +90,102 @@ final class OnboardingViewModel: ObservableObject {
         stepIndex -= 1
     }
 
-    func startSpotifyAuth() {
+    // MARK: - Step 3: Spotify connect
+
+    func connectSpotify(using spotifyAuth: SpotifyAuthManager) async {
         spotifyErrorMessage = nil
-        let auth = SpotifyAuthManager.shared
-        auth.ensureAuthorized()
-
-        if auth.isAuthorized {
-            updateSpotifyConnection(true)
-        }
-    }
-
-    func updateSpotifyConnection(_ isAuthorized: Bool) {
-        isSpotifyConnected = isAuthorized
-
-        guard isAuthorized else {
-            isSpotifyProfileLinked = false
-            return
-        }
-        Task { await syncSpotifyProfileIfNeeded() }
-    }
-
-    func syncSpotifyProfileIfNeeded() async {
-        guard !isConnectingSpotify, !isSpotifyProfileLinked else { return }
-
         isConnectingSpotify = true
-        spotifyErrorMessage = nil
         defer { isConnectingSpotify = false }
 
+        // Trigger auth flow (opens browser)
+        spotifyAuth.ensureAuthorized()
+
         do {
+            // Wait until access token is valid (this will refresh if needed)
+            _ = try await waitUntilSpotifyAuthorized(spotifyAuth: spotifyAuth, timeoutSeconds: 90)
+
+            // Fetch /v1/me
             let profile = try await SpotifyService.shared.fetchCurrentUserProfile()
-            try await ensureUserFromSpotify(profile)
-            isSpotifyProfileLinked = true
-            spotifyErrorMessage = nil
-        } catch {
-            spotifyErrorMessage = error.localizedDescription
-        }
-    }
-
-    private func ensureUserFromSpotify(_ profile: SpotifyUserProfile) async throws {
-        try await withCheckedThrowingContinuation { continuation in
-            UserApiService.shared.ensureCurrentUserExistsFromSpotify(
-                spotifyId: profile.id,
-                displayName: profile.displayName,
-                countryCode: profile.countryCode,
-                avatarURL: profile.imageURL?.absoluteString
-            ) { result in
-                switch result {
-                case .success:
-                    continuation.resume()
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
+            guard let spotifyId = profile.id, !spotifyId.isEmpty else {
+                spotifyErrorMessage = "Could not read Spotify user id."
+                return
             }
+
+            // Store spotify fields immediately
+            guard let uid = Auth.auth().currentUser?.uid else {
+                spotifyErrorMessage = "Not authenticated."
+                return
+            }
+
+            try await profileService.saveSpotify(
+                spotifyId: spotifyId,
+                countryCode: profile.country,
+                spotifyAvatarURL: profile.imageURL,
+                uid: uid
+            )
+
+            spotifyConnected = true
+        } catch {
+            spotifyErrorMessage = "Spotify connection failed. Please try again."
         }
     }
 
-    private func finishOnboarding() async {
+    private func waitUntilSpotifyAuthorized(spotifyAuth: SpotifyAuthManager, timeoutSeconds: TimeInterval) async throws -> String {
+        let start = Date()
+
+        while spotifyAuth.isAuthorized == false {
+            if Date().timeIntervalSince(start) > timeoutSeconds {
+                throw SpotifyAuthError.notAuthorized
+            }
+            try await Task.sleep(nanoseconds: 300_000_000) // 0.3s
+        }
+
+        return try await spotifyAuth.getValidAccessToken()
+    }
+
+    // MARK: - Finish (uploads + writes profile + marks completed)
+
+    func finish(using spotifyAuth: SpotifyAuthManager) async {
         finishErrorMessage = nil
+        guard canContinueStep1 else { finishErrorMessage = "Please complete your profile details."; return }
+        guard canContinueStep2 else { finishErrorMessage = "Please add all 3 photos."; return }
+        guard spotifyConnected else { finishErrorMessage = "Spotify is required."; return }
+
         guard let uid = Auth.auth().currentUser?.uid else {
-            finishErrorMessage = "No Firebase user."
+            finishErrorMessage = "Not authenticated."
             return
         }
 
+        isFinishing = true
+        defer { isFinishing = false }
+
         do {
-            if isSpotifyConnected && !isSpotifyProfileLinked {
-                await syncSpotifyProfileIfNeeded()
-                if !isSpotifyProfileLinked {
-                    finishErrorMessage = "Spotify connection not completed. Please try again."
-                    return
-                }
-            }
-            let photoURLs = try await uploadPhotos(uid: uid)
-            try await saveBasics(uid: uid, photoURLs: photoURLs)
-            try await markProfileCompleted(uid: uid)
+            // 1) Save basics
+            let basics = OnboardingProfileService.Basics(
+                firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
+                lastName: lastName.trimmingCharacters(in: .whitespacesAndNewlines),
+                city: city.trimmingCharacters(in: .whitespacesAndNewlines),
+                birthday: birthday,
+                gender: gender.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
+            try await profileService.saveBasics(basics, uid: uid)
+
+            // 2) Upload photos
+            let images = selectedImages.compactMap { $0 }
+            let urls = try await profileService.uploadPhotos(images: images, uid: uid)
+            uploadedPhotoURLs = urls
+            try await profileService.savePhotos(photoURLs: urls, uid: uid)
+
+            // 3) Ensure Spotify token still valid (mandatory)
+            _ = try await spotifyAuth.getValidAccessToken()
+
+            // 4) Mark completed
+            try await profileService.markCompleted(uid: uid)
+
+            didFinish = true
         } catch {
             finishErrorMessage = error.localizedDescription
         }
     }
-
-    private func uploadPhotos(uid: String) async throws -> [String] {
-        let dataList = [profilePhotoData, photo2Data, photo3Data].compactMap { $0 }
-        guard !dataList.isEmpty else { return [] }
-
-        let storage = Storage.storage()
-        var urls: [String] = []
-        urls.reserveCapacity(min(dataList.count, 3))
-
-        for data in dataList.prefix(3) {
-            let name = UUID().uuidString + ".jpg"
-            let path = "userPhotos/\(uid)/\(name)"
-            let ref = storage.reference().child(path)
-
-            _ = try await ref.putDataAsync(data, metadata: nil)
-            let downloadURL = try await ref.downloadURL()
-            urls.append(downloadURL.absoluteString)
-        }
-
-        return urls
-    }
-
-    private func saveBasics(uid: String, photoURLs: [String]) async throws {
-        let db = Firestore.firestore()
-        let trimmedFirst = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedLast = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedCity = city.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedGender = gender.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        var data: [String: Any] = [
-            "firstName": trimmedFirst,
-            "lastName": trimmedLast,
-            "city": trimmedCity,
-            "gender": trimmedGender,
-            "birthday": Timestamp(date: birthday),
-            "updatedAt": Timestamp(date: Date()),
-            "lastActiveAt": Timestamp(date: Date())
-        ]
-
-        if !photoURLs.isEmpty {
-            data["photoURLs"] = photoURLs
-            data["avatarURL"] = photoURLs.first as Any
-            data["avatarSource"] = "uploaded"
-        }
-
-        try await db.collection("users").document(uid).setData(data, merge: true)
-    }
-
-    private func markProfileCompleted(uid: String) async throws {
-        let db = Firestore.firestore()
-        try await db.collection("users").document(uid).setData([
-            "profileCompleted": true,
-            "updatedAt": Timestamp(date: Date()),
-            "lastActiveAt": Timestamp(date: Date())
-        ], merge: true)
-    }
-
-    private static var minimumBirthday: Date {
-        let components = DateComponents(year: 1900, month: 1, day: 1)
-        return Calendar.current.date(from: components) ?? Date.distantPast
-    }
 }
+
