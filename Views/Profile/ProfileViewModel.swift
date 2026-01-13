@@ -23,7 +23,8 @@ final class ProfileViewModel: ObservableObject {
     @Published var gender: String = ""
 
     /// URLs aus Firestore (kann 0...6 enthalten)
-    @Published var photoURLs: [String] = []
+    /// Immer 6 Slots ("" = leer)
+    @Published var photoURLs: [String] = Array(repeating: "", count: 6)
 
     /// Lokale Änderungen (immer 6 Slots, nil = unverändert/leer)
     @Published var selectedImages: [UIImage?] = Array(repeating: nil, count: 6)
@@ -57,16 +58,16 @@ final class ProfileViewModel: ObservableObject {
     }
 
     var hasChanges: Bool {
-        guard let profile else { return false }
+        guard let snapshot else { return false }
 
         let basicsChanged =
-            firstName != profile.firstName ||
-            lastName != profile.lastName ||
-            city != profile.city ||
-            gender != profile.gender ||
-            birthday != (profile.birthday ?? birthday)
+            firstName != snapshot.firstName ||
+            lastName != snapshot.lastName ||
+            city != snapshot.city ||
+            gender != snapshot.gender ||
+            birthday != snapshot.birthday
 
-        let photosChanged = selectedImages.contains { $0 != nil }
+        let photosChanged = (photoURLs != snapshot.photoURLs) || selectedImages.contains { $0 != nil }
         return basicsChanged || photosChanged
     }
 
@@ -109,9 +110,10 @@ final class ProfileViewModel: ObservableObject {
         selectedImages[index] = image
     }
 
-    /// Soft delete: setzt Slot lokal zurück (später beim Save wird URL ggf. gelöscht/überschrieben)
-    func clearSelectedImage(at index: Int) {
-        guard selectedImages.indices.contains(index) else { return }
+    /// Entfernt ein Foto aus dem Slot (soft delete) und markiert es für Save.
+    func removePhoto(at index: Int) {
+        guard photoURLs.indices.contains(index) else { return }
+        photoURLs[index] = ""
         selectedImages[index] = nil
     }
 
@@ -156,13 +158,10 @@ final class ProfileViewModel: ObservableObject {
 
             try await profileService.saveBasics(basics, uid: uid)
 
-            // Fotos: wir arbeiten mit 6 Slots
-            if selectedImages.contains(where: { $0 != nil }) {
+            // Fotos: wir arbeiten mit 6 Slots ("" = gelöscht)
+            let photosNeedSave = (snapshot?.photoURLs != photoURLs) || selectedImages.contains(where: { $0 != nil })
+            if photosNeedSave {
                 var updatedPhotoURLs = photoURLs
-
-                if updatedPhotoURLs.count < 6 {
-                    updatedPhotoURLs.append(contentsOf: Array(repeating: "", count: 6 - updatedPhotoURLs.count))
-                }
 
                 for (index, image) in selectedImages.enumerated() {
                     guard let image else { continue }
@@ -181,6 +180,7 @@ final class ProfileViewModel: ObservableObject {
                 }
 
                 try await profileService.savePhotos(photoURLs: updatedPhotoURLs, uid: uid)
+                photoURLs = updatedPhotoURLs
             }
 
             saveSucceeded = true
@@ -224,9 +224,16 @@ final class ProfileViewModel: ObservableObject {
         city = profile.city
         birthday = profile.birthday ?? Date()
         gender = profile.gender
-        photoURLs = profile.photoURLs
 
-        // ✅ Snapshot für soft discard
+        // Immer 6 Slots ("" für leere)
+        var padded = profile.photoURLs
+        if padded.count < 6 {
+            padded.append(contentsOf: Array(repeating: "", count: 6 - padded.count))
+        } else if padded.count > 6 {
+            padded = Array(padded.prefix(6))
+        }
+        photoURLs = padded
+
         snapshot = Snapshot(
             firstName: firstName,
             lastName: lastName,

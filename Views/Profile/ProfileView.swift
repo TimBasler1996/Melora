@@ -13,19 +13,19 @@ struct ProfileView: View {
     // ✅ inject for previews / testing
     @StateObject private var viewModel: ProfileViewModel
 
-        init(viewModel: ProfileViewModel) {
-            _viewModel = StateObject(wrappedValue: viewModel)
-        }
-    
+    init(viewModel: ProfileViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
+
     // Convenience init für die App (MainActor-safe)
-       @MainActor
-       init() {
-           _viewModel = StateObject(wrappedValue: ProfileViewModel())
-       }
+    @MainActor
+    init() {
+        _viewModel = StateObject(wrappedValue: ProfileViewModel())
+    }
 
     @State private var mode: Mode = .preview
     @State private var showSettings = false
-    @State private var photoPickerItems: [PhotosPickerItem?] = [nil, nil, nil]
+    @State private var photoPickerItems: [PhotosPickerItem?] = Array(repeating: nil, count: 6)
 
     private let genderOptions = ["Female", "Male", "Non-binary", "Other"]
 
@@ -117,12 +117,8 @@ struct ProfileView: View {
     private var previewContent: some View {
         VStack(spacing: 12) {
             heroCard
-
             topInfoRow
-
-            // ✅ Only show photo2 + photo3 under hero
-            photoCard(urlString: viewModel.profile?.photoURL(at: 1))
-            photoCard(urlString: viewModel.profile?.photoURL(at: 2))
+            additionalPhotosGrid
         }
     }
 
@@ -150,10 +146,16 @@ struct ProfileView: View {
             .padding(14)
         }
         .frame(maxWidth: .infinity)
-        .aspectRatio(3 / 4, contentMode: .fit)
-        .frame(maxHeight: 520) // ✅ smaller than before
+        .frame(height: heroHeight)
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
         .shadow(color: Color.black.opacity(0.14), radius: 14, x: 0, y: 10)
+    }
+
+    private var heroHeight: CGFloat {
+        // Dating-app-ish hero: tall enough to feel premium, but not "endless".
+        let screenWidth = UIScreen.main.bounds.width
+        let proposed = (screenWidth - (AppLayout.screenPadding * 2)) * 1.18
+        return min(max(proposed, 420), 520)
     }
 
     private var heroImageNonCropping: some View {
@@ -175,11 +177,12 @@ struct ProfileView: View {
                                 .clipped()
                                 .allowsHitTesting(false)
 
-                            // Foreground fits fully -> no side cropping
+                            // Foreground: slight fill (premium), but we avoid aggressive cropping by
+                            // padding + clipping inside the card.
                             image
                                 .resizable()
-                                .scaledToFit()
-                                .padding(10)
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .clipped()
                                 .transaction { t in t.animation = nil }
                         }
@@ -195,6 +198,19 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
+    }
+
+    private var additionalPhotosGrid: some View {
+        let urls: [String] = (1..<6).compactMap { viewModel.profile?.photoURL(at: $0) }
+        guard !urls.isEmpty else { return AnyView(EmptyView()) }
+
+        return AnyView(
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(Array(urls.enumerated()), id: \.offset) { _, url in
+                    photoCard(urlString: url)
+                }
+            }
+        )
     }
 
     private var heroPlaceholder: some View {
@@ -327,25 +343,43 @@ struct ProfileView: View {
             photoEditorSection(contentWidth: contentWidth)
             basicsSection
 
-            Button {
-                Task { await viewModel.saveChanges() }
-            } label: {
-                HStack(spacing: 8) {
-                    if viewModel.isSaving {
-                        ProgressView().tint(.white)
-                    }
-                    Text(viewModel.isSaving ? "Saving…" : "Save changes")
+            HStack(spacing: 12) {
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    viewModel.discardChanges()
+                } label: {
+                    Text("Discard")
                         .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                                .fill(AppColors.tintedBackground)
+                        )
+                        .foregroundColor(AppColors.primaryText)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                        .fill(viewModel.hasChanges ? AppColors.primary : AppColors.primary.opacity(0.4))
-                )
-                .foregroundColor(.white)
+                .disabled(viewModel.isSaving || !viewModel.hasChanges)
+
+                Button {
+                    Task { await viewModel.saveChanges() }
+                } label: {
+                    HStack(spacing: 8) {
+                        if viewModel.isSaving {
+                            ProgressView().tint(.white)
+                        }
+                        Text(viewModel.isSaving ? "Saving…" : "Save")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                            .fill(viewModel.hasChanges ? AppColors.primary : AppColors.primary.opacity(0.4))
+                    )
+                    .foregroundColor(.white)
+                }
+                .disabled(viewModel.isSaving || !viewModel.hasChanges)
             }
-            .disabled(viewModel.isSaving || !viewModel.hasChanges)
 
             if viewModel.saveSucceeded {
                 Text("Changes saved ✅")
@@ -356,20 +390,16 @@ struct ProfileView: View {
     }
 
     private func photoEditorSection(contentWidth: CGFloat) -> some View {
-        let spacing: CGFloat = 12
-        let innerWidth = contentWidth - (AppLayout.cardPadding * 2)
-        let halfWidth = (innerWidth - spacing) / 2
+        let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
 
         return VStack(alignment: .leading, spacing: 12) {
             Text("Photos")
                 .font(AppFonts.sectionTitle())
                 .foregroundColor(AppColors.primaryText)
 
-            VStack(spacing: 12) {
-                photoEditorTile(index: 0, title: "Profile photo", badge: "1", isPrimary: true, fixedWidth: nil)
-                HStack(spacing: spacing) {
-                    photoEditorTile(index: 1, title: "Photo 2", badge: "2", isPrimary: false, fixedWidth: halfWidth)
-                    photoEditorTile(index: 2, title: "Photo 3", badge: "3", isPrimary: false, fixedWidth: halfWidth)
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(0..<6, id: \.self) { index in
+                    photoEditorTile(index: index)
                 }
             }
         }
@@ -377,15 +407,13 @@ struct ProfileView: View {
         .background(cardBackground)
     }
 
-    private func photoEditorTile(
-        index: Int,
-        title: String,
-        badge: String,
-        isPrimary: Bool,
-        fixedWidth: CGFloat?
-    ) -> some View {
+    private func photoEditorTile(index: Int) -> some View {
         let localImage = viewModel.selectedImages.indices.contains(index) ? viewModel.selectedImages[index] : nil
-        let remoteURL = viewModel.profile?.photoURL(at: index)
+        let remoteURL = viewModel.photoURLs.indices.contains(index) ? viewModel.photoURLs[index] : nil
+
+        let hasRemote = (remoteURL ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        let hasLocal = localImage != nil
+        let hasAnyPhoto = hasLocal || hasRemote
 
         let binding = Binding<PhotosPickerItem?>(
             get: { photoPickerItems.indices.contains(index) ? photoPickerItems[index] : nil },
@@ -396,7 +424,7 @@ struct ProfileView: View {
             }
         )
 
-        return PhotosPicker(selection: binding, matching: .images, photoLibrary: .shared()) {
+        let picker = PhotosPicker(selection: binding, matching: .images, photoLibrary: .shared()) {
             ZStack(alignment: .topLeading) {
                 Group {
                     if let localImage {
@@ -408,7 +436,7 @@ struct ProfileView: View {
                         AsyncImage(url: url) { phase in
                             switch phase {
                             case .empty:
-                                editPhotoPlaceholder(isPrimary: isPrimary)
+                                editPhotoPlaceholder(index: index)
                             case .success(let image):
                                 image
                                     .resizable()
@@ -416,57 +444,75 @@ struct ProfileView: View {
                                     .clipped()
                                     .transaction { t in t.animation = nil }
                             case .failure:
-                                editPhotoPlaceholder(isPrimary: isPrimary)
+                                editPhotoPlaceholder(index: index)
                             @unknown default:
-                                editPhotoPlaceholder(isPrimary: isPrimary)
+                                editPhotoPlaceholder(index: index)
                             }
                         }
                     } else {
-                        editPhotoPlaceholder(isPrimary: isPrimary)
+                        editPhotoPlaceholder(index: index)
                     }
                 }
 
-                photoBadge(badge)
+                photoBadge("\(index + 1)")
             }
-            .frame(width: fixedWidth)
-            .frame(maxWidth: fixedWidth == nil ? .infinity : fixedWidth)
+            .frame(maxWidth: .infinity)
             .aspectRatio(3 / 4, contentMode: .fit)
-            .clipped()
             .background(AppColors.tintedBackground)
             .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                    .stroke(Color.white.opacity(isPrimary ? 0.25 : 0.16), lineWidth: 1)
+                    .stroke(Color.white.opacity(index == 0 ? 0.22 : 0.14), lineWidth: 1)
             )
         }
-        .accessibilityLabel(Text(title))
-        .onChange(of: binding.wrappedValue) { newItem in
-            guard let newItem else {
-                viewModel.setSelectedImage(nil, index: index)
-                return
-            }
 
-            Task {
-                let data = try? await newItem.loadTransferable(type: Data.self)
-                let image = data.flatMap { UIImage(data: $0) }
-
-                await MainActor.run {
-                    viewModel.setSelectedImage(image, index: index)
-                    if image != nil {
+        return picker
+            .overlay(alignment: .topTrailing) {
+                if hasAnyPhoto {
+                    Button {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        // Remove local override + remote URL (soft delete)
+                        viewModel.removePhoto(at: index)
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 28, height: 28)
+                            .background(Circle().fill(Color.black.opacity(0.55)))
+                            .padding(8)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Remove photo \(index + 1)")
+                }
+            }
+            .accessibilityLabel(Text("Photo \(index + 1)"))
+            .onChange(of: binding.wrappedValue) { newItem in
+                guard let newItem else {
+                    viewModel.setSelectedImage(nil, index: index)
+                    return
+                }
+
+                Task {
+                    let data = try? await newItem.loadTransferable(type: Data.self)
+                    let image = data.flatMap { UIImage(data: $0) }
+
+                    await MainActor.run {
+                        viewModel.setSelectedImage(image, index: index)
+                        if image != nil {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }
                     }
                 }
             }
-        }
     }
 
-    private func editPhotoPlaceholder(isPrimary: Bool) -> some View {
+    private func editPhotoPlaceholder(index: Int) -> some View {
         VStack(spacing: 8) {
             Image(systemName: "plus")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(AppColors.secondaryText)
 
-            Text(isPrimary ? "Profile photo" : "Add photo")
+            Text(index == 0 ? "Profile" : "Add")
                 .font(AppFonts.footnote())
                 .foregroundColor(AppColors.secondaryText)
         }
@@ -555,28 +601,27 @@ struct ProfileView: View {
                 .font(AppFonts.footnote())
                 .foregroundColor(AppColors.mutedText)
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                ForEach(genderOptions, id: \.self) { option in
-                    Button {
-                        viewModel.gender = option
-                    } label: {
-                        Text(option)
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundColor(viewModel.gender == option ? .white : AppColors.primaryText)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(viewModel.gender == option ? AppColors.primary : AppColors.tintedBackground)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(
-                                        viewModel.gender == option ? AppColors.primary.opacity(0.8) : Color.white.opacity(0.12),
-                                        lineWidth: 1
+            fieldContainer {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(genderOptions, id: \.self) { option in
+                            Button {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                viewModel.gender = option
+                            } label: {
+                                Text(option)
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundColor(viewModel.gender == option ? .white : AppColors.primaryText)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Capsule().fill(viewModel.gender == option ? AppColors.primary : AppColors.tintedBackground.opacity(0.8))
                                     )
-                            )
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
+                    .padding(.vertical, 2)
                 }
             }
         }
@@ -590,14 +635,9 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(AppFonts.footnote())
-                .foregroundColor(AppColors.mutedText)
+                .foregroundColor(isProminent ? AppColors.primaryText : AppColors.mutedText)
 
-            fieldContainer {
-                content()
-                    .font(isProminent ? .system(size: 18, weight: .semibold, design: .rounded) : AppFonts.body())
-                    .foregroundColor(AppColors.primaryText)
-                    .disableAutocorrection(true)
-            }
+            fieldContainer(content: content)
         }
     }
 
