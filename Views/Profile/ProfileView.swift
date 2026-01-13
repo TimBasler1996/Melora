@@ -1,16 +1,27 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 struct ProfileView: View {
 
     enum Mode: String, CaseIterable, Identifiable {
         case preview = "Preview"
         case edit = "Edit"
-
         var id: String { rawValue }
     }
 
-    @StateObject private var viewModel = ProfileViewModel()
+    // ✅ inject for previews / testing
+    @StateObject private var viewModel: ProfileViewModel
+
+        init(viewModel: ProfileViewModel) {
+            _viewModel = StateObject(wrappedValue: viewModel)
+        }
+    
+    // Convenience init für die App (MainActor-safe)
+       @MainActor
+       init() {
+           _viewModel = StateObject(wrappedValue: ProfileViewModel())
+       }
 
     @State private var mode: Mode = .preview
     @State private var showSettings = false
@@ -18,49 +29,59 @@ struct ProfileView: View {
 
     private let genderOptions = ["Female", "Male", "Non-binary", "Other"]
 
+    private var isXcodePreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+
     var body: some View {
-        ZStack {
-            AppColors.background.ignoresSafeArea()
+        GeometryReader { geo in
+            let contentWidth = geo.size.width - (AppLayout.screenPadding * 2)
 
-            VStack(spacing: 16) {
-                header
+            ZStack {
+                AppColors.background.ignoresSafeArea()
 
-                Picker("Profile mode", selection: $mode) {
-                    ForEach(Mode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, AppLayout.screenPadding)
+                VStack(spacing: 16) {
+                    header
 
-                ScrollView {
-                    VStack(spacing: 18) {
-                        if viewModel.isLoading {
-                            loadingState
-                        } else if let error = viewModel.errorMessage {
-                            errorState(error)
-                        } else {
-                            if mode == .preview {
-                                previewContent
-                            } else {
-                                editContent
-                            }
+                    Picker("Profile mode", selection: $mode) {
+                        ForEach(Mode.allCases) { m in
+                            Text(m.rawValue).tag(m)
                         }
                     }
+                    .pickerStyle(.segmented)
                     .padding(.horizontal, AppLayout.screenPadding)
-                    .padding(.bottom, 24)
+
+                    ScrollView(.vertical) {
+                        VStack(spacing: 16) {
+                            if viewModel.isLoading {
+                                loadingState
+                            } else if let error = viewModel.errorMessage {
+                                errorState(error)
+                            } else {
+                                if mode == .preview {
+                                    previewContent
+                                } else {
+                                    editContent(contentWidth: contentWidth)
+                                }
+                            }
+                        }
+                        .frame(width: contentWidth, alignment: .center)
+                        .padding(.bottom, 24)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    }
                 }
             }
         }
-        .sheet(isPresented: $showSettings) {
-            settingsSheet
-        }
+        .sheet(isPresented: $showSettings) { settingsSheet }
         .task {
-            await viewModel.loadProfile()
+            if !isXcodePreview {
+                await viewModel.loadProfile()
+            }
         }
+        .animation(.easeInOut(duration: 0.18), value: mode)
     }
 
-    // MARK: - Header
+    // MARK: Header
 
     private var header: some View {
         HStack(alignment: .center) {
@@ -76,16 +97,13 @@ struct ProfileView: View {
 
             Spacer()
 
-            Button {
-                showSettings = true
-            } label: {
+            Button { showSettings = true } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(AppColors.primary)
                     .frame(width: 40, height: 40)
                     .background(
-                        Circle()
-                            .fill(AppColors.tintedBackground.opacity(0.35))
+                        Circle().fill(AppColors.tintedBackground.opacity(0.35))
                     )
             }
             .accessibilityLabel("Settings")
@@ -94,24 +112,27 @@ struct ProfileView: View {
         .padding(.top, 12)
     }
 
-    // MARK: - Preview Content
+    // MARK: Preview Content
 
     private var previewContent: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 12) {
             heroCard
-            musicIdentityCard
+
+            topInfoRow
+
+            // ✅ Only show photo2 + photo3 under hero
             photoCard(urlString: viewModel.profile?.photoURL(at: 1))
             photoCard(urlString: viewModel.profile?.photoURL(at: 2))
-            chipsRow
         }
     }
 
+    // ✅ Not round. Smaller. No left/right cropping.
     private var heroCard: some View {
         ZStack(alignment: .bottomLeading) {
-            heroImage
+            heroImageNonCropping
 
             LinearGradient(
-                colors: [Color.black.opacity(0.05), Color.black.opacity(0.65)],
+                colors: [Color.black.opacity(0.00), Color.black.opacity(0.60)],
                 startPoint: .center,
                 endPoint: .bottom
             )
@@ -119,22 +140,23 @@ struct ProfileView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(heroTitle)
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
                 Text(heroSubtitle)
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(.white.opacity(0.88))
             }
-            .padding(16)
+            .padding(14)
         }
         .frame(maxWidth: .infinity)
-        .aspectRatio(4 / 5, contentMode: .fit)
+        .aspectRatio(3 / 4, contentMode: .fit)
+        .frame(maxHeight: 520) // ✅ smaller than before
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
-        .shadow(color: Color.black.opacity(0.15), radius: 16, x: 0, y: 12)
+        .shadow(color: Color.black.opacity(0.14), radius: 14, x: 0, y: 10)
     }
 
-    private var heroImage: some View {
+    private var heroImageNonCropping: some View {
         Group {
             if let urlString = viewModel.profile?.heroPhotoURL,
                let url = URL(string: urlString) {
@@ -143,7 +165,24 @@ struct ProfileView: View {
                     case .empty:
                         heroPlaceholder
                     case .success(let image):
-                        image.resizable().scaledToFill()
+                        ZStack {
+                            // Background blur so we NEVER get ugly bars.
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .blur(radius: 18)
+                                .opacity(0.35)
+                                .clipped()
+                                .allowsHitTesting(false)
+
+                            // Foreground fits fully -> no side cropping
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .padding(10)
+                                .clipped()
+                                .transaction { t in t.animation = nil }
+                        }
                     case .failure:
                         heroPlaceholder
                     @unknown default:
@@ -155,6 +194,7 @@ struct ProfileView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
     }
 
     private var heroPlaceholder: some View {
@@ -186,95 +226,82 @@ struct ProfileView: View {
         return city.isEmpty ? "Add your city" : city
     }
 
-    private var musicIdentityCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                Image(systemName: "waveform.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(AppColors.primary)
-
-                Text("Music identity")
-                    .font(AppFonts.sectionTitle())
-                    .foregroundColor(AppColors.primaryText)
-
-                Spacer()
+    // ✅ Male + CH first, then Age + City somewhere, and spotify link
+    private var topInfoRow: some View {
+        HStack(spacing: 10) {
+            if let gender = trimmedValue(viewModel.profile?.gender) {
+                ProfileChip(text: gender, icon: "person.fill")
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: spotifyConnected ? "checkmark.seal.fill" : "xmark.seal.fill")
-                        .foregroundColor(spotifyConnected ? .green : AppColors.mutedText)
+            if let country = trimmedValue(viewModel.profile?.spotifyCountry ?? viewModel.profile?.countryCode) {
+                ProfileChip(text: country.uppercased(), icon: "globe")
+            }
 
-                    Text(spotifyConnected ? "Spotify connected" : "Spotify not connected")
-                        .font(AppFonts.body())
-                        .foregroundColor(AppColors.primaryText)
-                }
+            if let age = viewModel.profile?.age {
+                let city = trimmedValue(viewModel.profile?.city) ?? ""
+                let text = city.isEmpty ? "\(age)" : "\(age) · \(city)"
+                ProfileChip(text: text, icon: "location.fill")
+            } else if let city = trimmedValue(viewModel.profile?.city) {
+                ProfileChip(text: city, icon: "location.fill")
+            }
 
-                if spotifyConnected {
-                    Text(spotifyDetailText)
-                        .font(AppFonts.footnote())
-                        .foregroundColor(AppColors.secondaryText)
-                }
+            Spacer(minLength: 0)
 
-                Divider()
-                    .padding(.vertical, 4)
-
-                HStack(spacing: 10) {
-                    Image(systemName: "antenna.radiowaves.left.and.right")
-                        .foregroundColor(AppColors.secondary)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Now playing")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundColor(AppColors.primaryText)
-                        Text("Connect your broadcast to show live tracks.")
-                            .font(AppFonts.footnote())
-                            .foregroundColor(AppColors.secondaryText)
+            if let spotifyURL = spotifyProfileURL {
+                Link(destination: spotifyURL) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "music.note")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Spotify")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(AppColors.tintedBackground.opacity(0.55)))
+                    .foregroundColor(AppColors.primaryText)
                 }
+                .accessibilityLabel("Open Spotify profile")
             }
         }
-        .padding(AppLayout.cardPadding)
-        .background(cardBackground)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var spotifyConnected: Bool {
-        let id = viewModel.profile?.spotifyId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return !id.isEmpty
-    }
-
-    private var spotifyDetailText: String {
-        let country = (viewModel.profile?.spotifyCountry ?? viewModel.profile?.countryCode ?? "").uppercased()
-        let displayName = viewModel.profile?.spotifyDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        var parts: [String] = []
-        if !displayName.isEmpty { parts.append(displayName) }
-        if !country.isEmpty { parts.append(country) }
-        return parts.isEmpty ? "Connected" : parts.joined(separator: " · ")
+    private var spotifyProfileURL: URL? {
+        let raw = (viewModel.profile?.spotifyId ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+        if let url = URL(string: raw), url.scheme != nil { return url }
+        return URL(string: "https://open.spotify.com/user/\(raw)")
     }
 
     private func photoCard(urlString: String?) -> some View {
-        Group {
-            if let urlString,
-               let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        photoPlaceholder
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .failure:
-                        photoPlaceholder
-                    @unknown default:
-                        photoPlaceholder
+        ZStack {
+            Group {
+                if let urlString, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            photoPlaceholder
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .clipped()
+                                .transaction { t in t.animation = nil }
+                        case .failure:
+                            photoPlaceholder
+                        @unknown default:
+                            photoPlaceholder
+                        }
                     }
+                } else {
+                    photoPlaceholder
                 }
-            } else {
-                photoPlaceholder
             }
         }
         .frame(maxWidth: .infinity)
-        .aspectRatio(4 / 5, contentMode: .fit)
+        .aspectRatio(3 / 4, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
-        .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 10)
+        .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 10)
     }
 
     private var photoPlaceholder: some View {
@@ -287,34 +314,18 @@ struct ProfileView: View {
         }
     }
 
-    private var chipsRow: some View {
-        HStack(spacing: 10) {
-            if let gender = trimmedValue(viewModel.profile?.gender) {
-                ProfileChip(text: gender, icon: "person.fill")
-            }
-            if let country = trimmedValue(viewModel.profile?.spotifyCountry ?? viewModel.profile?.countryCode) {
-                ProfileChip(text: country.uppercased(), icon: "globe")
-            }
-            if spotifyConnected {
-                ProfileChip(text: "Spotify ✓", icon: "checkmark.circle.fill")
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     private func trimmedValue(_ value: String?) -> String? {
         guard let value else { return nil }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    // MARK: - Edit Content
+    // MARK: Edit Content (kept as-is, only layout safe)
 
-    private var editContent: some View {
+    private func editContent(contentWidth: CGFloat) -> some View {
         VStack(spacing: 18) {
-            photoEditorSection
+            photoEditorSection(contentWidth: contentWidth)
             basicsSection
-            spotifySection
 
             Button {
                 Task { await viewModel.saveChanges() }
@@ -344,17 +355,21 @@ struct ProfileView: View {
         }
     }
 
-    private var photoEditorSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func photoEditorSection(contentWidth: CGFloat) -> some View {
+        let spacing: CGFloat = 12
+        let innerWidth = contentWidth - (AppLayout.cardPadding * 2)
+        let halfWidth = (innerWidth - spacing) / 2
+
+        return VStack(alignment: .leading, spacing: 12) {
             Text("Photos")
                 .font(AppFonts.sectionTitle())
                 .foregroundColor(AppColors.primaryText)
 
             VStack(spacing: 12) {
-                photoEditorTile(index: 0, title: "Profile photo", badge: "1", isPrimary: true)
-                HStack(spacing: 12) {
-                    photoEditorTile(index: 1, title: "Photo 2", badge: "2", isPrimary: false)
-                    photoEditorTile(index: 2, title: "Photo 3", badge: "3", isPrimary: false)
+                photoEditorTile(index: 0, title: "Profile photo", badge: "1", isPrimary: true, fixedWidth: nil)
+                HStack(spacing: spacing) {
+                    photoEditorTile(index: 1, title: "Photo 2", badge: "2", isPrimary: false, fixedWidth: halfWidth)
+                    photoEditorTile(index: 2, title: "Photo 3", badge: "3", isPrimary: false, fixedWidth: halfWidth)
                 }
             }
         }
@@ -362,13 +377,18 @@ struct ProfileView: View {
         .background(cardBackground)
     }
 
-    private func photoEditorTile(index: Int, title: String, badge: String, isPrimary: Bool) -> some View {
+    private func photoEditorTile(
+        index: Int,
+        title: String,
+        badge: String,
+        isPrimary: Bool,
+        fixedWidth: CGFloat?
+    ) -> some View {
         let localImage = viewModel.selectedImages.indices.contains(index) ? viewModel.selectedImages[index] : nil
         let remoteURL = viewModel.profile?.photoURL(at: index)
+
         let binding = Binding<PhotosPickerItem?>(
-            get: {
-                photoPickerItems.indices.contains(index) ? photoPickerItems[index] : nil
-            },
+            get: { photoPickerItems.indices.contains(index) ? photoPickerItems[index] : nil },
             set: { newValue in
                 if photoPickerItems.indices.contains(index) {
                     photoPickerItems[index] = newValue
@@ -378,30 +398,38 @@ struct ProfileView: View {
 
         return PhotosPicker(selection: binding, matching: .images, photoLibrary: .shared()) {
             ZStack(alignment: .topLeading) {
-                if let localImage {
-                    Image(uiImage: localImage)
-                        .resizable()
-                        .scaledToFill()
-                } else if let remoteURL, let url = URL(string: remoteURL) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            editPhotoPlaceholder(isPrimary: isPrimary)
-                        case .success(let image):
-                            image.resizable().scaledToFill()
-                        case .failure:
-                            editPhotoPlaceholder(isPrimary: isPrimary)
-                        @unknown default:
-                            editPhotoPlaceholder(isPrimary: isPrimary)
+                Group {
+                    if let localImage {
+                        Image(uiImage: localImage)
+                            .resizable()
+                            .scaledToFill()
+                            .clipped()
+                    } else if let remoteURL, let url = URL(string: remoteURL) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .empty:
+                                editPhotoPlaceholder(isPrimary: isPrimary)
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .clipped()
+                                    .transaction { t in t.animation = nil }
+                            case .failure:
+                                editPhotoPlaceholder(isPrimary: isPrimary)
+                            @unknown default:
+                                editPhotoPlaceholder(isPrimary: isPrimary)
+                            }
                         }
+                    } else {
+                        editPhotoPlaceholder(isPrimary: isPrimary)
                     }
-                } else {
-                    editPhotoPlaceholder(isPrimary: isPrimary)
                 }
 
                 photoBadge(badge)
             }
-            .frame(maxWidth: .infinity)
+            .frame(width: fixedWidth)
+            .frame(maxWidth: fixedWidth == nil ? .infinity : fixedWidth)
             .aspectRatio(3 / 4, contentMode: .fit)
             .clipped()
             .background(AppColors.tintedBackground)
@@ -451,10 +479,7 @@ struct ProfileView: View {
             .foregroundColor(.white)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.4))
-            )
+            .background(Capsule().fill(Color.black.opacity(0.4)))
             .padding(10)
     }
 
@@ -517,10 +542,7 @@ struct ProfileView: View {
                             .foregroundColor(AppColors.primaryText)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(AppColors.tintedBackground.opacity(0.6))
-                            )
+                            .background(Capsule().fill(AppColors.tintedBackground.opacity(0.6)))
                     }
                 }
             }
@@ -560,46 +582,6 @@ struct ProfileView: View {
         }
     }
 
-    private var spotifySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Spotify")
-                .font(AppFonts.sectionTitle())
-                .foregroundColor(AppColors.primaryText)
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text(spotifyConnected ? "Connected" : "Not connected")
-                    .font(AppFonts.body())
-                    .foregroundColor(AppColors.primaryText)
-
-                if spotifyConnected {
-                    Text(spotifyDetailText)
-                        .font(AppFonts.footnote())
-                        .foregroundColor(AppColors.secondaryText)
-                } else {
-                    Text("Connect Spotify during onboarding to show your music identity.")
-                        .font(AppFonts.footnote())
-                        .foregroundColor(AppColors.secondaryText)
-                }
-
-                Button {
-                    Task { await viewModel.refreshSpotifyProfile() }
-                } label: {
-                    HStack(spacing: 8) {
-                        if viewModel.isRefreshingSpotify {
-                            ProgressView().tint(AppColors.primary)
-                        }
-                        Text(viewModel.isRefreshingSpotify ? "Refreshing…" : "Refresh")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundColor(AppColors.primary)
-                    }
-                }
-                .disabled(viewModel.isRefreshingSpotify || !spotifyConnected)
-            }
-        }
-        .padding(AppLayout.cardPadding)
-        .background(cardBackground)
-    }
-
     private func labeledField<Content: View>(
         title: String,
         isProminent: Bool = false,
@@ -635,8 +617,7 @@ struct ProfileView: View {
     }
 
     private var minimumDate: Date {
-        let components = DateComponents(year: 1900, month: 1, day: 1)
-        return Calendar.current.date(from: components) ?? Date.distantPast
+        Calendar.current.date(from: DateComponents(year: 1900, month: 1, day: 1)) ?? .distantPast
     }
 
     private var cardBackground: some View {
@@ -647,8 +628,7 @@ struct ProfileView: View {
 
     private var loadingState: some View {
         VStack(spacing: 16) {
-            ProgressView()
-                .tint(AppColors.primary)
+            ProgressView().tint(AppColors.primary)
             Text("Loading profile…")
                 .font(AppFonts.footnote())
                 .foregroundColor(AppColors.secondaryText)
@@ -665,8 +645,6 @@ struct ProfileView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 32)
     }
-
-    // MARK: - Settings Sheet
 
     private var settingsSheet: some View {
         NavigationStack {
@@ -688,9 +666,7 @@ struct ProfileView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        showSettings = false
-                    }
+                    Button("Done") { showSettings = false }
                 }
             }
         }
@@ -710,10 +686,15 @@ private struct ProfileChip: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(
-            Capsule()
-                .fill(AppColors.tintedBackground.opacity(0.5))
-        )
+        .background(Capsule().fill(AppColors.tintedBackground.opacity(0.5)))
         .foregroundColor(AppColors.primaryText)
     }
 }
+
+#if DEBUG
+
+#Preview {
+    ProfileView(viewModel: ProfileViewModel(preview: true))
+}
+
+#endif

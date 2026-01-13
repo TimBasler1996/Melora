@@ -4,10 +4,15 @@ import UIKit
 
 @MainActor
 final class ProfileViewModel: ObservableObject {
+
+    // MARK: - UI State
+
     @Published var isLoading: Bool = false
     @Published var isSaving: Bool = false
     @Published var saveSucceeded: Bool = false
     @Published var errorMessage: String?
+
+    // MARK: - Profile Data
 
     @Published var profile: UserProfile?
 
@@ -20,9 +25,15 @@ final class ProfileViewModel: ObservableObject {
     @Published var photoURLs: [String] = []
     @Published var selectedImages: [UIImage?] = [nil, nil, nil]
 
+    // MARK: - Spotify
+
     @Published var isRefreshingSpotify: Bool = false
 
-    private let profileService = ProfileService()
+    // MARK: - Services
+
+    private let profileService: ProfileService
+
+    // MARK: - Computed
 
     var ageText: String {
         birthday.age().map(String.init) ?? ""
@@ -30,16 +41,44 @@ final class ProfileViewModel: ObservableObject {
 
     var hasChanges: Bool {
         guard let profile else { return false }
+
         let basicsChanged =
-            firstName != profile.firstName
-            || lastName != profile.lastName
-            || city != profile.city
-            || gender != profile.gender
-            || birthday != (profile.birthday ?? birthday)
+            firstName != profile.firstName ||
+            lastName != profile.lastName ||
+            city != profile.city ||
+            gender != profile.gender ||
+            birthday != (profile.birthday ?? birthday)
 
         let photosChanged = selectedImages.contains { $0 != nil }
+
         return basicsChanged || photosChanged
     }
+
+    // MARK: - Initializers
+
+    /// ✅ App / Runtime Init
+    init() {
+        self.profileService = ProfileService()
+    }
+
+    /// ✅ Preview / Test Init (NO Firebase, NO async)
+    init(preview: Bool) {
+        self.profileService = ProfileService()
+
+        guard preview else { return }
+
+        let mock = UserProfile.mockPreview
+        self.profile = mock
+        self.firstName = mock.firstName
+        self.lastName = mock.lastName
+        self.city = mock.city
+        self.birthday = mock.birthday ?? Date()
+        self.gender = mock.gender
+        self.photoURLs = mock.photoURLs
+        self.selectedImages = [nil, nil, nil]
+    }
+
+    // MARK: - Loading
 
     func loadProfile() async {
         isLoading = true
@@ -56,10 +95,14 @@ final class ProfileViewModel: ObservableObject {
         isLoading = false
     }
 
+    // MARK: - Photos
+
     func setSelectedImage(_ image: UIImage?, index: Int) {
         guard selectedImages.indices.contains(index) else { return }
         selectedImages[index] = image
     }
+
+    // MARK: - Saving
 
     func saveChanges() async {
         guard let uid = Auth.auth().currentUser?.uid else {
@@ -79,17 +122,27 @@ final class ProfileViewModel: ObservableObject {
                 birthday: birthday,
                 gender: gender.trimmingCharacters(in: .whitespacesAndNewlines)
             )
+
             try await profileService.saveBasics(basics, uid: uid)
 
             if selectedImages.contains(where: { $0 != nil }) {
                 var updatedPhotoURLs = photoURLs
+
                 if updatedPhotoURLs.count < 3 {
-                    updatedPhotoURLs.append(contentsOf: Array(repeating: "", count: 3 - updatedPhotoURLs.count))
+                    updatedPhotoURLs.append(
+                        contentsOf: Array(repeating: "", count: 3 - updatedPhotoURLs.count)
+                    )
                 }
 
                 for (index, image) in selectedImages.enumerated() {
                     guard let image else { continue }
-                    let url = try await profileService.uploadPhoto(image: image, uid: uid, index: index)
+
+                    let url = try await profileService.uploadPhoto(
+                        image: image,
+                        uid: uid,
+                        index: index
+                    )
+
                     if updatedPhotoURLs.indices.contains(index) {
                         updatedPhotoURLs[index] = url
                     } else {
@@ -97,18 +150,24 @@ final class ProfileViewModel: ObservableObject {
                     }
                 }
 
-                try await profileService.savePhotos(photoURLs: updatedPhotoURLs, uid: uid)
+                try await profileService.savePhotos(
+                    photoURLs: updatedPhotoURLs,
+                    uid: uid
+                )
             }
 
             saveSucceeded = true
             selectedImages = [nil, nil, nil]
             await loadProfile()
+
         } catch {
             errorMessage = error.localizedDescription
         }
 
         isSaving = false
     }
+
+    // MARK: - Spotify
 
     func refreshSpotifyProfile() async {
         guard let uid = Auth.auth().currentUser?.uid else {
@@ -129,14 +188,17 @@ final class ProfileViewModel: ObservableObject {
         isRefreshingSpotify = false
     }
 
+    // MARK: - Helpers
+
     private func applyProfile(_ profile: UserProfile) {
         self.profile = profile
-        firstName = profile.firstName
-        lastName = profile.lastName
-        city = profile.city
-        birthday = profile.birthday ?? Date()
-        gender = profile.gender
-        photoURLs = profile.photoURLs
-        selectedImages = [nil, nil, nil]
+        self.firstName = profile.firstName
+        self.lastName = profile.lastName
+        self.city = profile.city
+        self.birthday = profile.birthday ?? Date()
+        self.gender = profile.gender
+        self.photoURLs = profile.photoURLs
+        self.selectedImages = [nil, nil, nil]
     }
 }
+
