@@ -8,8 +8,7 @@ struct OnboardingStepPhotosView: View {
     @State private var profilePickerItem: PhotosPickerItem?
     @State private var photo2PickerItem: PhotosPickerItem?
     @State private var photo3PickerItem: PhotosPickerItem?
-    @State private var pendingAvatarImage: UIImage?
-    @State private var isCroppingAvatar = false
+    @State private var pendingAvatar: PendingAvatar?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -54,29 +53,26 @@ struct OnboardingStepPhotosView: View {
                 )
             }
         }
-        .sheet(isPresented: $isCroppingAvatar) {
-            if let pendingAvatarImage {
-                AvatarCropperView(
-                    image: pendingAvatarImage,
-                    onCancel: {
-                        isCroppingAvatar = false
-                        self.pendingAvatarImage = nil
-                    },
-                    onUse: { cropped in
+        .sheet(item: $pendingAvatar) { pending in
+            AvatarCropperView(
+                image: pending.image,
+                onCancel: {
+                    pendingAvatar = nil
+                },
+                onUse: { cropped in
+                    Task { @MainActor in
                         setImage(cropped, at: 0)
-                        isCroppingAvatar = false
-                        self.pendingAvatarImage = nil
+                        pendingAvatar = nil
                     }
-                )
-                .presentationDetents([.medium, .large])
-            }
+                }
+            )
+            .presentationDetents([.medium, .large])
         }
         .onChange(of: profilePickerItem) { newItem in
             guard let newItem else { return }
             loadImage(from: newItem) { image in
                 guard let image else { return }
-                pendingAvatarImage = image
-                isCroppingAvatar = true
+                pendingAvatar = PendingAvatar(image: image)
             }
         }
         .onChange(of: photo2PickerItem) { newItem in
@@ -111,6 +107,11 @@ struct OnboardingStepPhotosView: View {
         }
     }
 
+}
+
+private struct PendingAvatar: Identifiable {
+    let id = UUID()
+    let image: UIImage
 }
 
 // MARK: - Safe index helper
