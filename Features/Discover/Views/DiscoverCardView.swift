@@ -5,138 +5,109 @@ struct DiscoverCardView: View {
     let onTap: () -> Void
     let onDismiss: () -> Void
 
+    private let cardHeight: CGFloat = 240
+
     var body: some View {
         Button(action: onTap) {
             ZStack(alignment: .topTrailing) {
-                GeometryReader { proxy in
-                    let halfWidth = proxy.size.width / 2
 
-                    HStack(spacing: 0) {
-                        userSide
-                            .frame(width: halfWidth)
-
-                        divider
-
-                        trackSide
-                            .frame(width: halfWidth)
-                    }
-                    .frame(height: proxy.size.height)
+                VStack(spacing: 0) {
+                    trackModule
+                    moduleDivider
+                    profileModule
                 }
-                .frame(height: 260)
+                .frame(height: cardHeight)
                 .background(AppColors.cardBackground)
                 .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
-                .shadow(color: Color.black.opacity(0.2), radius: 16, x: 0, y: 10)
+                .shadow(color: Color.black.opacity(0.18), radius: 16, x: 0, y: 10)
 
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(10)
-                        .background(Color.black.opacity(0.6), in: Circle())
-                }
-                .padding(14)
+                dismissButton
             }
         }
         .buttonStyle(.plain)
     }
 
-    private var userSide: some View {
-        ZStack(alignment: .bottomLeading) {
-            userBackground
+    // MARK: - Modules
 
-            LinearGradient(
-                colors: [Color.black.opacity(0.05), Color.black.opacity(0.55)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+    /// Top: Spotify-style row (like your screenshot)
+    private var trackModule: some View {
+        HStack(spacing: 14) {
+            trackArtworkThumbnail
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("\(broadcast.user.displayName), \(broadcast.user.ageText)")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                Text(trackTitle)
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
 
-                Text("\(broadcast.user.locationText) · \(distanceText)")
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.9))
+                Text(trackArtist)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.secondaryText)
                     .lineLimit(1)
 
-                if let badgeText = badgeText {
-                    badge(text: badgeText)
-                }
-            }
-            .padding(16)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
-    }
-
-    private var userBackground: some View {
-        ZStack {
-            if let url = broadcast.user.primaryPhotoURL.flatMap(URL.init(string:)) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        placeholder
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    case .failure:
-                        placeholder
-                    @unknown default:
-                        placeholder
-                    }
-                }
-            } else {
-                placeholder
-            }
-        }
-        .clipped()
-    }
-
-    private var trackSide: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
-                artwork
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(broadcast.track.title)
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.primaryText)
-                        .lineLimit(2)
-
-                    Text(broadcast.track.artist)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.secondaryText)
+                if let album = trackAlbum {
+                    Text(album)
+                        .font(.system(size: 12, weight: .regular, design: .rounded))
+                        .foregroundColor(AppColors.mutedText)
                         .lineLimit(1)
-
-                    if let album = broadcast.track.album, !album.isEmpty {
-                        Text(album)
-                            .font(.system(size: 12, weight: .regular, design: .rounded))
-                            .foregroundColor(AppColors.mutedText)
-                            .lineLimit(1)
-                    }
                 }
             }
 
             Spacer(minLength: 0)
 
-            HStack(spacing: 8) {
-                Image(systemName: "music.note")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppColors.secondaryText)
-                Text("Spotify")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundColor(AppColors.secondaryText)
-            }
-            .opacity(0.7)
+            spotifyPill
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(AppColors.cardBackground)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 
-    private var artwork: some View {
+    /// Bottom: Profile row in same style (no hero crop)
+    private var profileModule: some View {
+        HStack(spacing: 14) {
+            heroThumbnailNoCrop
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("\(broadcast.user.displayName), \(broadcast.user.ageText)")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundColor(AppColors.primaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+
+                Text("\(broadcast.user.locationText) · \(distanceText)")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.secondaryText)
+                    .lineLimit(1)
+
+                if let badgeText = badgeText {
+                    profileChip(text: badgeText)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            // Subtle “tap hint” like dating apps
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppColors.mutedText.opacity(0.8))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+
+    private var moduleDivider: some View {
+        Rectangle()
+            .fill(Color.black.opacity(0.06))
+            .frame(height: 1)
+            .padding(.horizontal, 16)
+    }
+
+    // MARK: - Track UI
+
+    private var trackArtworkThumbnail: some View {
         ZStack {
             if let url = broadcast.track.artworkURLValue {
                 AsyncImage(url: url) { phase in
@@ -147,6 +118,7 @@ struct DiscoverCardView: View {
                         image
                             .resizable()
                             .scaledToFill()
+                            .transaction { $0.animation = nil }
                     case .failure:
                         artworkPlaceholder
                     @unknown default:
@@ -157,103 +129,153 @@ struct DiscoverCardView: View {
                 artworkPlaceholder
             }
         }
-        .frame(width: 104, height: 104)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .frame(width: 58, height: 58)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        )
     }
 
     private var artworkPlaceholder: some View {
         ZStack {
             LinearGradient(
-                colors: [AppColors.primary.opacity(0.7), AppColors.secondary.opacity(0.7)],
+                colors: [AppColors.primary.opacity(0.6), AppColors.secondary.opacity(0.6)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-
             Image(systemName: "music.note")
-                .font(.system(size: 26, weight: .bold))
+                .font(.system(size: 20, weight: .bold))
                 .foregroundColor(.white.opacity(0.9))
         }
     }
 
-    private var divider: some View {
-        Rectangle()
-            .fill(Color.white.opacity(0.08))
-            .frame(width: 1)
+    private var spotifyPill: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "music.note")
+                .font(.system(size: 12, weight: .semibold))
+            Text("Spotify")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+        }
+        .foregroundColor(AppColors.secondaryText)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(Color.black.opacity(0.05))
+        .clipShape(Capsule())
     }
 
-    private var placeholder: some View {
+    // MARK: - Profile UI (NO CROP HERO)
+
+    /// Hero thumbnail where the image is NOT cropped:
+    /// - Use scaledToFit inside a fixed frame
+    /// - Provide a subtle background so letterboxing looks intentional
+    private var heroThumbnailNoCrop: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.black.opacity(0.06))
+
+            if let url = broadcast.user.primaryPhotoURL.flatMap(URL.init(string:)) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        heroPlaceholder
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit() // IMPORTANT: no crop
+                            .padding(6)     // keeps it clean inside frame
+                            .transaction { $0.animation = nil }
+                    case .failure:
+                        heroPlaceholder
+                    @unknown default:
+                        heroPlaceholder
+                    }
+                }
+            } else {
+                heroPlaceholder
+            }
+        }
+        .frame(width: 58, height: 58)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+        )
+    }
+
+    private var heroPlaceholder: some View {
         ZStack {
             LinearGradient(
-                colors: [AppColors.primary.opacity(0.6), AppColors.secondary.opacity(0.7)],
+                colors: [AppColors.primary.opacity(0.6), AppColors.secondary.opacity(0.6)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-
             Image(systemName: "person.fill")
-                .font(.system(size: 40, weight: .semibold))
-                .foregroundColor(.white.opacity(0.8))
+                .font(.system(size: 22, weight: .bold))
+                .foregroundColor(.white.opacity(0.9))
         }
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(8)
     }
 
-    private var distanceText: String {
-        guard let distance = broadcast.distanceMeters else {
-            return "—"
+    private func profileChip(text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(AppColors.primary.opacity(0.12))
+            .foregroundColor(AppColors.primary)
+            .clipShape(Capsule())
+    }
+
+    // MARK: - Dismiss
+
+    private var dismissButton: some View {
+        Button(action: onDismiss) {
+            Image(systemName: "xmark")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 34, height: 34)
+                .background(Color.black.opacity(0.60), in: Circle())
         }
+        .padding(14)
+        .buttonStyle(.plain)
+        .accessibilityLabel("Dismiss")
+    }
+
+    // MARK: - Helpers
+
+    private var distanceText: String {
+        guard let distance = broadcast.distanceMeters else { return "—" }
         return "\(distance)m"
     }
 
     private var badgeText: String? {
-        if let gender = broadcast.user.gender, !gender.isEmpty {
+        if let gender = broadcast.user.gender?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !gender.isEmpty {
             return gender
         }
-        if let country = broadcast.user.countryCode, !country.isEmpty {
-            return country
+        if let country = broadcast.user.countryCode?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !country.isEmpty {
+            return country.uppercased()
         }
         return nil
     }
 
-    private func badge(text: String) -> some View {
-        Text(text)
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.white.opacity(0.18))
-            .foregroundColor(.white)
-            .clipShape(Capsule())
+    private var trackTitle: String {
+        let t = broadcast.track.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return t.isEmpty ? "Unknown track" : t
+    }
+
+    private var trackArtist: String {
+        let a = broadcast.track.artist.trimmingCharacters(in: .whitespacesAndNewlines)
+        return a.isEmpty ? "Unknown artist" : a
+    }
+
+    private var trackAlbum: String? {
+        guard let raw = broadcast.track.album?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty else { return nil }
+        return raw
     }
 }
 
-#Preview {
-    DiscoverCardView(
-        broadcast: DiscoverBroadcast(
-            id: "preview",
-            user: DiscoverUser(
-                id: "user",
-                firstName: "Lina",
-                lastName: "Klein",
-                age: 24,
-                city: "Hamburg",
-                gender: "Female",
-                countryCode: "DE",
-                heroPhotoURL: nil,
-                profilePhotoURL: nil,
-                photoURLs: []
-            ),
-            track: DiscoverTrack(
-                id: "track",
-                title: "Solar Nights",
-                artist: "Aurora",
-                album: "Skyline",
-                artworkURL: nil,
-                spotifyTrackURL: nil
-            ),
-            broadcastedAt: Date(),
-            location: LocationPoint(latitude: 53.55, longitude: 9.99),
-            distanceMeters: 320
-        ),
-        onTap: {},
-        onDismiss: {}
-    )
-    .padding()
-    .background(AppColors.background)
-}

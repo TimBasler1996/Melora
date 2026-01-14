@@ -140,8 +140,9 @@ struct DiscoverView: View {
                                 viewModel.requestDismiss(for: broadcast)
                             }
                         )
+                        // Keep the card big, but NEVER touch screen edges:
                         .frame(maxWidth: 420)
-                        .padding(.horizontal, AppLayout.screenPadding)
+                        .padding(.horizontal, max(AppLayout.screenPadding, 28))
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 viewModel.requestDismiss(for: broadcast)
@@ -168,3 +169,4 @@ struct DiscoverView: View {
         .environmentObject(CurrentUserStore())
         .environmentObject(LocationService())
 }
+
