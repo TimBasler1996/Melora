@@ -3,95 +3,91 @@ import Foundation
 
 // MARK: - Model used by both Profile tab + Discover sheet
 
+/// Lightweight UI model for rendering a profile preview (used in Profile tab + Discover detail sheet)
 struct ProfilePreviewModel: Equatable {
 
+    // MARK: - Main display
 
-    /// Lightweight UI model for rendering a profile preview (used in Profile tab + Discover detail sheet)
-    struct ProfilePreviewModel: Equatable {
+    var firstName: String
+    var age: Int?
+    var city: String?
+    var gender: String?
+    var countryCode: String?
 
-        // MARK: - Main display
+    // MARK: - Images
 
-        var firstName: String
-        var age: Int?
-        var city: String?
-        var gender: String?
-        var countryCode: String?
+    var heroPhotoURL: String?
+    var photoURLs: [String]
 
-        // MARK: - Images
+    // MARK: - Spotify (optional)
 
-        var heroPhotoURL: String?
-        var photoURLs: [String]
+    var spotifyIdOrURL: String?
 
-        // MARK: - Spotify (optional)
+    // MARK: - Derived text
 
-        var spotifyIdOrURL: String?
-
-        // MARK: - Derived text
-
-        var titleLine: String {
-            let name = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let safeName = name.isEmpty ? "Unknown" : name
-            if let age { return "\(safeName), \(age)" }
-            return safeName
-        }
-
-        var subtitleLine: String {
-            let c = (city ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            return c.isEmpty ? "" : c
-        }
-
-        var spotifyProfileURL: URL? {
-            let raw = (spotifyIdOrURL ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !raw.isEmpty else { return nil }
-
-            // If full URL already
-            if let url = URL(string: raw), url.scheme != nil { return url }
-
-            // Otherwise treat as Spotify user id
-            return URL(string: "https://open.spotify.com/user/\(raw)")
-        }
-
-        // MARK: - Factory
-
-        static func fromUserProfile(_ profile: UserProfile?) -> ProfilePreviewModel {
-            guard let profile else {
-                return ProfilePreviewModel(
-                    firstName: "Your Name",
-                    age: nil,
-                    city: nil,
-                    gender: nil,
-                    countryCode: nil,
-                    heroPhotoURL: nil,
-                    photoURLs: [],
-                    spotifyIdOrURL: nil
-                )
-            }
-
-            // Ensure we don't pass empty strings around
-            func clean(_ s: String?) -> String? {
-                guard let s else { return nil }
-                let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
-                return t.isEmpty ? nil : t
-            }
-
-            // Photos: remove empties
-            let photos = profile.photoURLs
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
-
-            return ProfilePreviewModel(
-                firstName: profile.firstName,
-                age: profile.age,
-                city: clean(profile.city),
-                gender: clean(profile.gender),
-                countryCode: clean(profile.spotifyCountry ?? profile.countryCode),
-                heroPhotoURL: clean(profile.heroPhotoURL),
-                photoURLs: photos,
-                spotifyIdOrURL: clean(profile.spotifyId)
-            )
-        }
+    var titleLine: String {
+        let name = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let safeName = name.isEmpty ? "Unknown" : name
+        if let age { return "\(safeName), \(age)" }
+        return safeName
     }
 
+    var subtitleLine: String {
+        let c = (city ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return c.isEmpty ? "" : c
+    }
+
+    var spotifyProfileURL: URL? {
+        let raw = (spotifyIdOrURL ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+
+        // If full URL already
+        if let url = URL(string: raw), url.scheme != nil { return url }
+
+        // Otherwise treat as Spotify user id
+        return URL(string: "https://open.spotify.com/user/\(raw)")
+    }
+
+    // MARK: - Factory
+
+    static func fromUserProfile(_ profile: UserProfile?) -> ProfilePreviewModel {
+        guard let profile else {
+            return ProfilePreviewModel(
+                firstName: "Your Name",
+                age: nil,
+                city: nil,
+                gender: nil,
+                countryCode: nil,
+                heroPhotoURL: nil,
+                photoURLs: [],
+                spotifyIdOrURL: nil
+            )
+        }
+
+        // Ensure we don't pass empty strings around
+        func clean(_ s: String?) -> String? {
+            guard let s else { return nil }
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : t
+        }
+
+        // Photos: remove empties
+        let photos = profile.photoURLs
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        return ProfilePreviewModel(
+            firstName: profile.firstName,
+            age: profile.age,
+            city: clean(profile.city),
+            gender: clean(profile.gender),
+            countryCode: clean(profile.spotifyCountry ?? profile.countryCode),
+            heroPhotoURL: clean(profile.heroPhotoURL),
+            photoURLs: photos,
+            spotifyIdOrURL: clean(profile.spotifyId)
+        )
+    }
+}
 
 // Helpers
 private extension String {
