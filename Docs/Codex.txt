@@ -1,0 +1,32 @@
+# Codex Instructions (Project Rules)
+
+Follow these rules when making changes:
+
+## Non-negotiables
+- Never use "+" in file names
+- Never break SwiftUI previews
+- All ViewModels must be @MainActor
+- Do not start Firebase listeners inside init()
+- Prefer clean SwiftUI patterns and production-ready code
+
+## Before writing code
+- Search the codebase for existing models/services before creating new ones
+- Reuse existing profile models (e.g. UserProfile) if suitable
+- Reuse existing chat/conversation schema and services
+- If schema is unclear, add TODO comments rather than guessing
+
+## Firebase usage
+- Use explicit start/stop listener functions
+- Keep Firestore code inside services or viewmodels (not views)
+- Prefer async/await wrappers where possible
+- Keep error messages user-friendly (no raw debug dumps)
+
+## Preview safety
+- In `.task` / `.onAppear`, guard previews:
+  - check XCODE_RUNNING_FOR_PREVIEWS
+- Provide preview initializers or mock states so UI can render without Firebase
+
+## Deliverables
+- When implementing a feature, provide complete file contents
+- Clearly list which files were added/modified
+- Keep changes minimal and avoid unrelated refactors
