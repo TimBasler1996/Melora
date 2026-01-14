@@ -36,7 +36,6 @@
 		22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867F3432B825422BBA8DB009 /* DiscoverCardView.swift */; };
 		E6D61480FDDD4862A5606347 /* DiscoverDetailSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */; };
 		FF0A5E9459D24E7A8705F315 /* DiscoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */; };
-		75834A8A2F0D8DD7008C51F8 /* LikeMessageSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A892F0D8DD7008C51F8 /* LikeMessageSheet.swift */; };
 		75834A8C2F0D8EED008C51F8 /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8B2F0D8EED008C51F8 /* Conversation.swift */; };
 		75834A8E2F0D8EFB008C51F8 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8D2F0D8EFB008C51F8 /* ChatMessage.swift */; };
 		75834A902F0D8F0C008C51F8 /* ChatApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */; };
@@ -123,7 +122,6 @@
 		CF916ADE61D344A28E4A3266 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		E7E051118A634A34AB907992 /* DiscoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverViewModel.swift; sourceTree = "<group>"; };
 		F5E7962926804ED6997F6667 /* DiscoverModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverModels.swift; sourceTree = "<group>"; };
-		75834A892F0D8DD7008C51F8 /* LikeMessageSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeMessageSheet.swift; sourceTree = "<group>"; };
 		75834A8B2F0D8EED008C51F8 /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
 		75834A8D2F0D8EFB008C51F8 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatApiService.swift; sourceTree = "<group>"; };
@@ -609,7 +607,6 @@
 				75834A862F0C2E3D008C51F8 /* CurrentUserStore.swift in Sources */,
 				75834A8E2F0D8EFB008C51F8 /* ChatMessage.swift in Sources */,
 				759F7B042EC782D30012A549 /* Session.swift in Sources */,
-				75834A8A2F0D8DD7008C51F8 /* LikeMessageSheet.swift in Sources */,
 				CCCEEE84C08D478CBD670188 /* DiscoverView.swift in Sources */,
 				E6D61480FDDD4862A5606347 /* DiscoverDetailSheetView.swift in Sources */,
 				FF0A5E9459D24E7A8705F315 /* DiscoverService.swift in Sources */,
