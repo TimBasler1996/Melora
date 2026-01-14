@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867F3432B825422BBA8DB009 /* DiscoverCardView.swift */; };
+		5BE3C3AF6AB442B096226779 /* DiscoverModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E7962926804ED6997F6667 /* DiscoverModels.swift */; };
+		66DB9590C4A94D7BB7C2DABE /* DiscoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E051118A634A34AB907992 /* DiscoverViewModel.swift */; };
 		756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */; };
 		756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */; };
 		756E448C2EFE8BE500F49C30 /* PhotoUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */; };
@@ -25,17 +28,13 @@
 		756E44AC2EFE8FB300F49C30 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44AB2EFE8FB300F49C30 /* FirebaseStorage */; };
 		7576DF322F168B470034BF2A /* UserProfilePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7576DF312F168B400034BF2A /* UserProfilePreview.swift */; };
 		7576DF442F18036A0034BF2A /* Readme.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7576DF432F18036A0034BF2A /* Readme.txt */; };
+		7576DF642F1835050034BF2A /* ProfilePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7576DF632F1835050034BF2A /* ProfilePreviewView.swift */; };
+		7576DF662F1836BE0034BF2A /* ProfileChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7576DF652F1836BE0034BF2A /* ProfileChip.swift */; };
 		757B182E2EFEF8D500801991 /* TrackLikesClusterRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */; };
 		75834A802F091CC0008C51F8 /* BroadcastToggleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */; };
 		75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */; };
 		75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */; };
 		75834A862F0C2E3D008C51F8 /* CurrentUserStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */; };
-		5BE3C3AF6AB442B096226779 /* DiscoverModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E7962926804ED6997F6667 /* DiscoverModels.swift */; };
-		66DB9590C4A94D7BB7C2DABE /* DiscoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E051118A634A34AB907992 /* DiscoverViewModel.swift */; };
-		CCCEEE84C08D478CBD670188 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF916ADE61D344A28E4A3266 /* DiscoverView.swift */; };
-		22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867F3432B825422BBA8DB009 /* DiscoverCardView.swift */; };
-		E6D61480FDDD4862A5606347 /* DiscoverDetailSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */; };
-		FF0A5E9459D24E7A8705F315 /* DiscoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */; };
 		75834A8C2F0D8EED008C51F8 /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8B2F0D8EED008C51F8 /* Conversation.swift */; };
 		75834A8E2F0D8EFB008C51F8 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8D2F0D8EFB008C51F8 /* ChatMessage.swift */; };
 		75834A902F0D8F0C008C51F8 /* ChatApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */; };
@@ -88,6 +87,9 @@
 		79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00C2F30000300112233 /* PhotoCard.swift */; };
 		7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */; };
 		7A2B2C2D3E4F5A6B7C8D9E00 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */; };
+		CCCEEE84C08D478CBD670188 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF916ADE61D344A28E4A3266 /* DiscoverView.swift */; };
+		E6D61480FDDD4862A5606347 /* DiscoverDetailSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */; };
+		FF0A5E9459D24E7A8705F315 /* DiscoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -111,17 +113,13 @@
 		7576DF472F1804230034BF2A /* Firebase_Schema.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Firebase_Schema.txt; sourceTree = "<group>"; };
 		7576DF482F1804430034BF2A /* UX_Guidlines.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = UX_Guidlines.txt; sourceTree = "<group>"; };
 		7576DF492F1804510034BF2A /* Codex.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Codex.txt; sourceTree = "<group>"; };
+		7576DF632F1835050034BF2A /* ProfilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePreviewView.swift; sourceTree = "<group>"; };
+		7576DF652F1836BE0034BF2A /* ProfileChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileChip.swift; sourceTree = "<group>"; };
 		757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesClusterRowView.swift; sourceTree = "<group>"; };
 		75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastToggleCard.swift; sourceTree = "<group>"; };
 		75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesBadgeViewModel.swift; sourceTree = "<group>"; };
 		75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxButton.swift; sourceTree = "<group>"; };
 		75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentUserStore.swift; sourceTree = "<group>"; };
-		867F3432B825422BBA8DB009 /* DiscoverCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCardView.swift; sourceTree = "<group>"; };
-		C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverDetailSheetView.swift; sourceTree = "<group>"; };
-		C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverService.swift; sourceTree = "<group>"; };
-		CF916ADE61D344A28E4A3266 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
-		E7E051118A634A34AB907992 /* DiscoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverViewModel.swift; sourceTree = "<group>"; };
-		F5E7962926804ED6997F6667 /* DiscoverModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverModels.swift; sourceTree = "<group>"; };
 		75834A8B2F0D8EED008C51F8 /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
 		75834A8D2F0D8EFB008C51F8 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatApiService.swift; sourceTree = "<group>"; };
@@ -174,6 +172,12 @@
 		79A1C00C2F30000300112233 /* PhotoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCard.swift; sourceTree = "<group>"; };
 		7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
+		867F3432B825422BBA8DB009 /* DiscoverCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCardView.swift; sourceTree = "<group>"; };
+		C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverDetailSheetView.swift; sourceTree = "<group>"; };
+		C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverService.swift; sourceTree = "<group>"; };
+		CF916ADE61D344A28E4A3266 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
+		E7E051118A634A34AB907992 /* DiscoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverViewModel.swift; sourceTree = "<group>"; };
+		F5E7962926804ED6997F6667 /* DiscoverModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -207,15 +211,12 @@
 			path = Features;
 			sourceTree = "<group>";
 		};
-		6517BA20D553470AA96D4092 /* Discover */ = {
+		224691BA00ED401AAA7A13A3 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				4A0B4B02CDEE41DEA9311681 /* Models */,
-				224691BA00ED401AAA7A13A3 /* ViewModels */,
-				7E8FB42CF6554D0CA3737B16 /* Views */,
-				A085BFB803A5416AB21B7CAC /* Services */,
+				E7E051118A634A34AB907992 /* DiscoverViewModel.swift */,
 			);
-			path = Discover;
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		4A0B4B02CDEE41DEA9311681 /* Models */ = {
@@ -226,31 +227,15 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		224691BA00ED401AAA7A13A3 /* ViewModels */ = {
+		6517BA20D553470AA96D4092 /* Discover */ = {
 			isa = PBXGroup;
 			children = (
-				E7E051118A634A34AB907992 /* DiscoverViewModel.swift */,
+				4A0B4B02CDEE41DEA9311681 /* Models */,
+				224691BA00ED401AAA7A13A3 /* ViewModels */,
+				7E8FB42CF6554D0CA3737B16 /* Views */,
+				A085BFB803A5416AB21B7CAC /* Services */,
 			);
-			path = ViewModels;
-			sourceTree = "<group>";
-		};
-		7E8FB42CF6554D0CA3737B16 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				867F3432B825422BBA8DB009 /* DiscoverCardView.swift */,
-				C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */,
-				CF916ADE61D344A28E4A3266 /* DiscoverView.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		A085BFB803A5416AB21B7CAC /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */,
-				759F7B202EC799900012A549 /* LocationService.swift */,
-			);
-			path = Services;
+			path = Discover;
 			sourceTree = "<group>";
 		};
 		756E44A82EFE8FA300F49C30 /* Frameworks */ = {
@@ -405,6 +390,8 @@
 		759F7AF52EC77A9D0012A549 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				7576DF652F1836BE0034BF2A /* ProfileChip.swift */,
+				7576DF632F1835050034BF2A /* ProfilePreviewView.swift */,
 				7576DF312F168B400034BF2A /* UserProfilePreview.swift */,
 				75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */,
 				757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */,
@@ -463,6 +450,25 @@
 				79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		7E8FB42CF6554D0CA3737B16 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				867F3432B825422BBA8DB009 /* DiscoverCardView.swift */,
+				C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */,
+				CF916ADE61D344A28E4A3266 /* DiscoverView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A085BFB803A5416AB21B7CAC /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */,
+				759F7B202EC799900012A549 /* LocationService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -551,6 +557,7 @@
 			files = (
 				79A1C0012F30000100112233 /* Date+Age.swift in Sources */,
 				79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */,
+				7576DF642F1835050034BF2A /* ProfilePreviewView.swift in Sources */,
 				79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */,
 				79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */,
 				79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */,
@@ -598,6 +605,7 @@
 				5BE3C3AF6AB442B096226779 /* DiscoverModels.swift in Sources */,
 				66DB9590C4A94D7BB7C2DABE /* DiscoverViewModel.swift in Sources */,
 				7576DF322F168B470034BF2A /* UserProfilePreview.swift in Sources */,
+				7576DF662F1836BE0034BF2A /* ProfileChip.swift in Sources */,
 				75A174212ED0FFFA00CEB48F /* TrackLikesCluster.swift in Sources */,
 				759F7B022EC782D30012A549 /* NowPlayingView.swift in Sources */,
 				22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */,

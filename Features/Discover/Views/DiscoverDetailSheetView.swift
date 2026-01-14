@@ -13,17 +13,21 @@ struct DiscoverDetailSheetView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 18) {
                 trackHeader
                 actionsSection
-                profileSnapshot
+
+                profileSection // ✅ shared ProfilePreviewView compact
             }
             .padding(.horizontal, AppLayout.screenPadding)
             .padding(.bottom, 24)
+            .padding(.top, 8)
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
+
+    // MARK: - Track header
 
     private var trackHeader: some View {
         HStack(alignment: .center, spacing: 16) {
@@ -38,7 +42,8 @@ struct DiscoverDetailSheetView: View {
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundColor(AppColors.secondaryText)
 
-                if let album = broadcast.track.album, !album.isEmpty {
+                if let album = broadcast.track.album?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !album.isEmpty {
                     Text(album)
                         .font(.system(size: 12, weight: .regular, design: .rounded))
                         .foregroundColor(AppColors.mutedText)
@@ -73,9 +78,8 @@ struct DiscoverDetailSheetView: View {
                     case .empty:
                         artworkPlaceholder
                     case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
+                        image.resizable().scaledToFill()
+                            .transaction { t in t.animation = nil }
                     case .failure:
                         artworkPlaceholder
                     @unknown default:
@@ -87,6 +91,7 @@ struct DiscoverDetailSheetView: View {
             }
         }
         .frame(width: 72, height: 72)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
@@ -102,6 +107,8 @@ struct DiscoverDetailSheetView: View {
                 .foregroundColor(.white.opacity(0.9))
         }
     }
+
+    // MARK: - Actions
 
     private var actionsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -152,39 +159,18 @@ struct DiscoverDetailSheetView: View {
         }
     }
 
-    private var profileSnapshot: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    // MARK: - Profile (shared component)
+
+    private var profileSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Profile")
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundColor(AppColors.secondaryText)
 
-            HStack(alignment: .center, spacing: 14) {
-                profileHero
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("\(broadcast.user.displayName), \(broadcast.user.ageText)")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.primaryText)
-
-                    Text(broadcast.user.locationText)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundColor(AppColors.secondaryText)
-
-                    chipRow
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            if !broadcast.user.photoURLs.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(broadcast.user.photoURLs.prefix(6), id: \.self) { urlString in
-                            photoChip(urlString)
-                        }
-                    }
-                }
-            }
+            ProfilePreviewView(
+                model: profilePreviewModelFromDiscoverUser(broadcast.user),
+                density: .compact
+            )
         }
         .padding(16)
         .background(
@@ -193,117 +179,31 @@ struct DiscoverDetailSheetView: View {
         )
     }
 
-    private var profileHero: some View {
-        ZStack {
-            if let url = broadcast.user.primaryPhotoURL.flatMap(URL.init(string:)) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        heroPlaceholder
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .failure:
-                        heroPlaceholder
-                    @unknown default:
-                        heroPlaceholder
-                    }
-                }
-            } else {
-                heroPlaceholder
-            }
-        }
-        .frame(width: 88, height: 88)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
+    private func profilePreviewModelFromDiscoverUser(_ u: DiscoverUser) -> ProfilePreviewModel {
+        let displayName = u.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
 
-    private var heroPlaceholder: some View {
-        ZStack {
-            LinearGradient(
-                colors: [AppColors.primary.opacity(0.6), AppColors.secondary.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            Image(systemName: "person.fill")
-                .font(.system(size: 30, weight: .semibold))
-                .foregroundColor(.white.opacity(0.9))
-        }
-    }
+        // hero
+        let hero = u.primaryPhotoURL
 
-    private var chipRow: some View {
-        HStack(spacing: 8) {
-            if let gender = broadcast.user.gender, !gender.isEmpty {
-                chip(text: gender)
-            }
-            if let countryCode = broadcast.user.countryCode, !countryCode.isEmpty {
-                chip(text: countryCode)
-            }
-        }
-    }
+        // ✅ additional photos (under each other, fixed size)
+        let additional = u.photoURLs
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .filter { $0 != (hero ?? "") } // avoid duplicate hero
 
-    private func chip(text: String) -> some View {
-        Text(text)
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(AppColors.primary.opacity(0.12))
-            .foregroundColor(AppColors.primary)
-            .clipShape(Capsule())
-    }
+        // Optional: if you have spotify profile URL on user, plug here. Otherwise nil.
+        let spotifyURL: URL? = nil
 
-    private func photoChip(_ urlString: String) -> some View {
-        ZStack {
-            if let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        Color.black.opacity(0.1)
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .failure:
-                        Color.black.opacity(0.1)
-                    @unknown default:
-                        Color.black.opacity(0.1)
-                    }
-                }
-            } else {
-                Color.black.opacity(0.1)
-            }
-        }
-        .frame(width: 56, height: 56)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        return ProfilePreviewModel(
+            displayName: displayName.isEmpty ? "User" : displayName,
+            age: u.age,
+            city: u.city,
+            gender: u.gender,
+            countryCode: u.countryCode,
+            spotifyProfileURL: spotifyURL,
+            heroPhotoURL: hero,
+            photoURLs: additional
+        )
     }
 }
 
-#Preview {
-    DiscoverDetailSheetView(
-        broadcast: DiscoverBroadcast(
-            id: "preview",
-            user: DiscoverUser(
-                id: "user",
-                firstName: "Lina",
-                lastName: "Klein",
-                age: 24,
-                city: "Hamburg",
-                gender: "Female",
-                countryCode: "DE",
-                heroPhotoURL: nil,
-                profilePhotoURL: nil,
-                photoURLs: ["https://example.com/one", "https://example.com/two"]
-            ),
-            track: DiscoverTrack(
-                id: "track",
-                title: "Solar Nights",
-                artist: "Aurora",
-                album: "Skyline",
-                artworkURL: nil,
-                spotifyTrackURL: nil
-            ),
-            broadcastedAt: Date(),
-            location: nil,
-            distanceMeters: 120
-        ),
-        isSending: false,
-        onLike: {},
-        onSendMessage: { _ in }
-    )
-}
