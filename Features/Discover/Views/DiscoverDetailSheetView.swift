@@ -191,19 +191,21 @@ struct DiscoverDetailSheetView: View {
             .filter { !$0.isEmpty }
             .filter { $0 != (hero ?? "") } // avoid duplicate hero
 
-        // Optional: if you have spotify profile URL on user, plug here. Otherwise nil.
-        let spotifyURL: URL? = nil
+        func clean(_ value: String?) -> String? {
+            guard let value else { return nil }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
 
         return ProfilePreviewModel(
-            displayName: displayName.isEmpty ? "User" : displayName,
+            firstName: displayName.isEmpty ? "User" : displayName,
             age: u.age,
-            city: u.city,
-            gender: u.gender,
-            countryCode: u.countryCode,
-            spotifyProfileURL: spotifyURL,
+            city: clean(u.city),
+            gender: clean(u.gender),
+            countryCode: clean(u.countryCode),
             heroPhotoURL: hero,
-            photoURLs: additional
+            photoURLs: additional,
+            spotifyIdOrURL: nil
         )
     }
 }
-
