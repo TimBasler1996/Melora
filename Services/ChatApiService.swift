@@ -134,5 +134,51 @@ actor ChatApiService {
             lastMessageSenderId: likeMessage.isEmpty ? nil : likerId
         )
     }
-}
 
+    // MARK: - Send Message (Discover Like Flow)
+
+    func sendMessage(
+        from senderId: String,
+        to receiverId: String,
+        text: String,
+        createdFromTrackId: String?,
+        createdFromLikeId: String?
+    ) async throws {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let convoId = conversationId(for: senderId, and: receiverId)
+        let convoRef = db.collection(conversationsCollection).document(convoId)
+        let now = Date()
+
+        let snapshot = try await convoRef.getDocument()
+        if !snapshot.exists {
+            let payload: [String: Any] = [
+                "participantIds": [senderId, receiverId],
+                "createdAt": now,
+                "updatedAt": now,
+                "createdFromLikeId": createdFromLikeId as Any,
+                "createdFromTrackId": createdFromTrackId as Any
+            ]
+            try await convoRef.setData(payload, merge: true)
+        } else {
+            try await convoRef.setData(["updatedAt": now], merge: true)
+        }
+
+        let messageRef = convoRef.collection("messages").document()
+        let messagePayload: [String: Any] = [
+            "senderId": senderId,
+            "text": trimmed,
+            "createdAt": now,
+            "type": ChatMessage.MessageType.text.rawValue
+        ]
+        try await messageRef.setData(messagePayload)
+
+        try await convoRef.setData([
+            "lastMessageText": trimmed,
+            "lastMessageAt": now,
+            "lastMessageSenderId": senderId,
+            "updatedAt": now
+        ], merge: true)
+    }
+}

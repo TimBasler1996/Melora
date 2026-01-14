@@ -1,5 +1,6 @@
 import Foundation
 import FirebaseAuth
+import FirebaseFirestore
 
 @MainActor
 final class BroadcastManager: ObservableObject {
@@ -25,6 +26,8 @@ final class BroadcastManager: ObservableObject {
     // MARK: - Dependencies
 
     private let userService: UserApiService
+    private let db = Firestore.firestore()
+    private let broadcastsCollection = "broadcasts"
     private var locationService: LocationService?
 
     // MARK: - Timers (throttle sync)
@@ -99,6 +102,9 @@ final class BroadcastManager: ObservableObject {
 
         // 3) Push initial track (if available) + start periodic sync
         scheduleTrackSync(immediate: true)
+
+        // 4) Create or update broadcast doc for Discover
+        await upsertBroadcast(uid: uid, track: currentTrack, location: locationService?.currentLocation, isNew: true)
     }
 
     func stopBroadcasting() async {
@@ -133,6 +139,9 @@ final class BroadcastManager: ObservableObject {
                 cont.resume()
             }
         }
+
+        // Remove Discover broadcast doc
+        await removeBroadcast(uid: uid)
     }
 
     // MARK: - Sync scheduling
@@ -198,6 +207,8 @@ final class BroadcastManager: ObservableObject {
                 cont.resume()
             }
         }
+
+        await upsertBroadcast(uid: uid, track: currentTrack, location: loc, isNew: false)
     }
 
     private func syncTrack(uid: String) async {
@@ -211,6 +222,57 @@ final class BroadcastManager: ObservableObject {
                 cont.resume()
             }
         }
+
+        await upsertBroadcast(uid: uid, track: currentTrack, location: locationService?.currentLocation, isNew: false)
+    }
+
+    // MARK: - Discover broadcast documents
+
+    private func upsertBroadcast(
+        uid: String,
+        track: Track?,
+        location: LocationPoint?,
+        isNew: Bool
+    ) async {
+        guard let track else { return }
+
+        var payload: [String: Any] = [
+            "userId": uid,
+            "trackId": track.id,
+            "trackTitle": track.title,
+            "trackArtist": track.artist,
+            "trackAlbum": track.album as Any,
+            "trackArtworkURL": track.artworkURL?.absoluteString as Any,
+            "spotifyTrackURL": spotifyTrackURL(for: track.id) as Any
+        ]
+
+        if let location {
+            payload["latitude"] = location.latitude
+            payload["longitude"] = location.longitude
+        }
+
+        if isNew {
+            payload["broadcastedAt"] = Timestamp(date: Date())
+        }
+
+        do {
+            try await db.collection(broadcastsCollection)
+                .document(uid)
+                .setData(payload, merge: true)
+        } catch {
+            self.errorMessage = "Broadcast update failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func removeBroadcast(uid: String) async {
+        do {
+            try await db.collection(broadcastsCollection).document(uid).delete()
+        } catch {
+            self.errorMessage = "Broadcast cleanup failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func spotifyTrackURL(for trackId: String) -> String {
+        "https://open.spotify.com/track/\(trackId)"
     }
 }
-
