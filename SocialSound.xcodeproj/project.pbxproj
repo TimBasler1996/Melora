@@ -26,6 +26,7 @@
 		756E44AA2EFE8FA300F49C30 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44A92EFE8FA300F49C30 /* FirebaseAuth */; };
 		756E44AC2EFE8FB300F49C30 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 756E44AB2EFE8FB300F49C30 /* FirebaseStorage */; };
 		7576DF322F168B470034BF2A /* UserProfilePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7576DF312F168B400034BF2A /* UserProfilePreview.swift */; };
+		7576DF442F18036A0034BF2A /* Readme.txt in Resources */ = {isa = PBXBuildFile; fileRef = 7576DF432F18036A0034BF2A /* Readme.txt */; };
 		757B182E2EFEF8D500801991 /* TrackLikesClusterRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */; };
 		75834A802F091CC0008C51F8 /* BroadcastToggleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */; };
 		75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */; };
@@ -105,6 +106,11 @@
 		756E449D2EFE8C1000F49C30 /* UserProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileDetailView.swift; sourceTree = "<group>"; };
 		756E44A52EFE8C2400F49C30 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		7576DF312F168B400034BF2A /* UserProfilePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfilePreview.swift; sourceTree = "<group>"; };
+		7576DF432F18036A0034BF2A /* Readme.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Readme.txt; sourceTree = "<group>"; };
+		7576DF462F1803A60034BF2A /* Architecture.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Architecture.txt; sourceTree = "<group>"; };
+		7576DF472F1804230034BF2A /* Firebase_Schema.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Firebase_Schema.txt; sourceTree = "<group>"; };
+		7576DF482F1804430034BF2A /* UX_Guidlines.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = UX_Guidlines.txt; sourceTree = "<group>"; };
+		7576DF492F1804510034BF2A /* Codex.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = Codex.txt; sourceTree = "<group>"; };
 		757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesClusterRowView.swift; sourceTree = "<group>"; };
 		75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastToggleCard.swift; sourceTree = "<group>"; };
 		75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesBadgeViewModel.swift; sourceTree = "<group>"; };
@@ -206,12 +212,25 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		7576DF452F1803890034BF2A /* Docs */ = {
+			isa = PBXGroup;
+			children = (
+				7576DF492F1804510034BF2A /* Codex.txt */,
+				7576DF482F1804430034BF2A /* UX_Guidlines.txt */,
+				7576DF472F1804230034BF2A /* Firebase_Schema.txt */,
+				7576DF462F1803A60034BF2A /* Architecture.txt */,
+			);
+			path = Docs;
+			sourceTree = "<group>";
+		};
 		759F7AD22EC779740012A549 = {
 			isa = PBXGroup;
 			children = (
+				7576DF432F18036A0034BF2A /* Readme.txt */,
 				75A174012EC7BC0D00CEB48F /* seestrasse_location.gpx */,
 				759F7B222EC79EC30012A549 /* GoogleService-Info.plist */,
 				759F7B0E2EC7890E0012A549 /* SocialSound-Info.plist */,
+				7576DF452F1803890034BF2A /* Docs */,
 				759F7AF22EC77A810012A549 /* Utils */,
 				759F7AF02EC77A6D0012A549 /* Views */,
 				759F7AEF2EC77A5D0012A549 /* ViewModels */,
@@ -473,6 +492,7 @@
 			files = (
 				759F7B232EC79EC30012A549 /* GoogleService-Info.plist in Resources */,
 				75A174022EC7BC2100CEB48F /* seestrasse_location.gpx in Resources */,
+				7576DF442F18036A0034BF2A /* Readme.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

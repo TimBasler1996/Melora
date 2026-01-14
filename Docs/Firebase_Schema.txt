@@ -1,0 +1,76 @@
+# Firebase Schema (source of truth)
+
+This document defines the expected Firestore/Storage structure for SocialSound.
+If code changes the schema, update this file.
+
+## users/{uid}
+Represents a user profile.
+
+Suggested fields:
+- `firstName`: String
+- `lastName`: String
+- `birthday`: Timestamp (optional)
+- `city`: String
+- `gender`: String
+- `countryCode`: String (optional)
+- `heroPhotoURL`: String (optional)
+- `photoURLs`: [String] (0..6)
+- `spotifyId`: String (optional)
+- `spotifyCountry`: String (optional)
+
+Notes:
+- `photoURLs` should be treated as fixed slots in UI (6 slots, missing -> empty).
+- `heroPhotoURL` is used for preview hero when available (no round crop).
+
+## broadcasts/{broadcastId}
+Represents "user is broadcasting a track".
+
+Required fields:
+- `userId`: String
+- `trackId`: String
+- `trackTitle`: String
+- `trackArtist`: String
+- `trackAlbum`: String (optional)
+- `trackArtworkURL`: String (optional)
+- `spotifyTrackURL`: String (optional)
+- `broadcastedAt`: Timestamp
+
+Location options (choose ONE approach and keep consistent):
+Option A:
+- `location`: GeoPoint
+Option B:
+- `latitude`: Double
+- `longitude`: Double
+
+Notes:
+- Discover feed sorts by distance ascending when location is available.
+- If location permission is missing, fallback sorting is `broadcastedAt` (newest first).
+
+## conversations/{conversationId}
+Represents a chat between two users (or more later).
+
+Suggested fields:
+- `participantIds`: [String]
+- `updatedAt`: Timestamp
+- `lastMessageText`: String (optional)
+- `lastMessageAt`: Timestamp (optional)
+
+## conversations/{conversationId}/messages/{messageId}
+Message inside a conversation.
+
+Suggested fields:
+- `senderId`: String
+- `text`: String
+- `createdAt`: Timestamp
+
+## likes/{likeId}
+A "track like" event from sender to receiver, optionally with a message.
+
+Suggested fields:
+- `senderId`: String
+- `receiverId`: String
+- `trackId`: String
+- `trackTitle`: String
+- `message`: String (optional)
+- `createdAt`: Timestamp
+- `broadcastId`: String (optional)
