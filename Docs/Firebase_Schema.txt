@@ -46,6 +46,14 @@ Notes:
 - Discover feed sorts by distance ascending when location is available.
 - If location permission is missing, fallback sorting is `broadcastedAt` (newest first).
 
+Recommended Firestore rules (minimum for Discover):
+```
+match /broadcasts/{broadcastId} {
+  allow read: if true; // or request.auth != null
+  allow create, update, delete: if request.auth != null;
+}
+```
+
 ## conversations/{conversationId}
 Represents a chat between two users (or more later).
 
