@@ -8,14 +8,19 @@ struct DiscoverCardView: View {
     var body: some View {
         Button(action: onTap) {
             ZStack(alignment: .topTrailing) {
-                HStack(spacing: 0) {
-                    userSide
-                        .frame(maxWidth: .infinity)
+                GeometryReader { proxy in
+                    let halfWidth = proxy.size.width / 2
 
-                    divider
+                    HStack(spacing: 0) {
+                        userSide
+                            .frame(width: halfWidth)
 
-                    trackSide
-                        .frame(maxWidth: .infinity)
+                        divider
+
+                        trackSide
+                            .frame(width: halfWidth)
+                    }
+                    .frame(height: proxy.size.height)
                 }
                 .frame(height: 260)
                 .background(AppColors.cardBackground)
@@ -27,7 +32,7 @@ struct DiscoverCardView: View {
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.white)
                         .padding(10)
-                        .background(Color.black.opacity(0.35), in: Circle())
+                        .background(Color.black.opacity(0.6), in: Circle())
                 }
                 .padding(14)
             }
@@ -40,32 +45,24 @@ struct DiscoverCardView: View {
             userBackground
 
             LinearGradient(
-                colors: [Color.black.opacity(0.1), Color.black.opacity(0.7)],
+                colors: [Color.black.opacity(0.05), Color.black.opacity(0.55)],
                 startPoint: .top,
                 endPoint: .bottom
             )
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("\(broadcast.user.displayName), \(broadcast.user.ageText)")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .lineLimit(1)
 
-                Text(broadcast.user.locationText)
+                Text("\(broadcast.user.locationText) · \(distanceText)")
                     .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.9))
                     .lineLimit(1)
 
-                HStack(spacing: 8) {
-                    Text(distanceText)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.9))
-
-                    if let gender = broadcast.user.gender, !gender.isEmpty {
-                        badge(text: gender)
-                    } else if let country = broadcast.user.countryCode, !country.isEmpty {
-                        badge(text: country)
-                    }
+                if let badgeText = badgeText {
+                    badge(text: badgeText)
                 }
             }
             .padding(16)
@@ -99,12 +96,12 @@ struct DiscoverCardView: View {
 
     private var trackSide: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
                 artwork
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(broadcast.track.title)
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
                         .foregroundColor(AppColors.primaryText)
                         .lineLimit(2)
 
@@ -115,12 +112,14 @@ struct DiscoverCardView: View {
 
                     if let album = broadcast.track.album, !album.isEmpty {
                         Text(album)
-                            .font(AppFonts.footnote())
+                            .font(.system(size: 12, weight: .regular, design: .rounded))
                             .foregroundColor(AppColors.mutedText)
                             .lineLimit(1)
                     }
                 }
             }
+
+            Spacer(minLength: 0)
 
             HStack(spacing: 8) {
                 Image(systemName: "music.note")
@@ -131,12 +130,10 @@ struct DiscoverCardView: View {
                     .foregroundColor(AppColors.secondaryText)
             }
             .opacity(0.7)
-
-            Spacer(minLength: 0)
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color.white.opacity(0.02))
+        .background(AppColors.cardBackground)
     }
 
     private var artwork: some View {
@@ -160,7 +157,7 @@ struct DiscoverCardView: View {
                 artworkPlaceholder
             }
         }
-        .frame(width: 88, height: 88)
+        .frame(width: 104, height: 104)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
@@ -203,6 +200,16 @@ struct DiscoverCardView: View {
             return "—"
         }
         return "\(distance)m"
+    }
+
+    private var badgeText: String? {
+        if let gender = broadcast.user.gender, !gender.isEmpty {
+            return gender
+        }
+        if let country = broadcast.user.countryCode, !country.isEmpty {
+            return country
+        }
+        return nil
     }
 
     private func badge(text: String) -> some View {
