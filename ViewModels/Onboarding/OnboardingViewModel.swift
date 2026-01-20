@@ -24,6 +24,7 @@ final class OnboardingViewModel: ObservableObject {
 
     @Published var selectedImages: [UIImage?] = [nil, nil, nil]
     @Published var uploadedPhotoURLs: [String] = []
+    @Published var originalHeroImage: UIImage? = nil
 
     // MARK: - Step 3: Spotify
 

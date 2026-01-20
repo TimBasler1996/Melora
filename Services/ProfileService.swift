@@ -32,6 +32,14 @@ final class ProfileService {
     func uploadPhoto(image: UIImage, uid: String, index: Int) async throws -> String {
         try await onboardingService.uploadPhoto(image: image, uid: uid, index: index)
     }
+    
+    func uploadHeroPhoto(image: UIImage, uid: String) async throws -> String {
+        try await onboardingService.uploadHeroPhoto(image: image, uid: uid)
+    }
+    
+    func saveHeroPhotoURL(_ heroURL: String, uid: String) async throws {
+        try await onboardingService.saveHeroPhotoURL(heroURL, uid: uid)
+    }
 
     func refreshSpotifyProfile(uid: String) async throws {
         let spotifyProfile = try await SpotifyService.shared.fetchCurrentUserProfile()

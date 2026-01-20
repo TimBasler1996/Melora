@@ -64,6 +64,9 @@ final class OnboardingProfileService {
         return urls
     }
 
+    /// Upload a photo at a specific index
+    /// - Note: Index 0 is the cropped profile/avatar photo (for discovery cards)
+    ///         This should be a square/cropped image from AvatarCropperView
     func uploadPhoto(image: UIImage, uid: String, index: Int) async throws -> String {
         guard let data = image.jpegData(compressionQuality: 0.85) else {
             throw NSError(domain: "Onboarding", code: 2, userInfo: [
@@ -80,12 +83,41 @@ final class OnboardingProfileService {
         let url = try await ref.downloadURL()
         return url.absoluteString
     }
+    
+    /// Upload an uncropped hero photo (for full profile view display)
+    /// This is the original, full-size image before cropping
+    func uploadHeroPhoto(image: UIImage, uid: String) async throws -> String {
+        guard let data = image.jpegData(compressionQuality: 0.90) else {
+            throw NSError(domain: "Onboarding", code: 2, userInfo: [
+                NSLocalizedDescriptionKey: "Invalid image data."
+            ])
+        }
+
+        let ref = storage.reference()
+            .child("userPhotos")
+            .child(uid)
+            .child("hero_photo.jpg")
+
+        _ = try await ref.putDataAsync(data)
+        let url = try await ref.downloadURL()
+        return url.absoluteString
+    }
 
     func savePhotos(photoURLs: [String], uid: String) async throws {
         try await db.collection("users")
             .document(uid)
             .setData([
                 "photoURLs": photoURLs,
+                "updatedAt": FieldValue.serverTimestamp()
+            ], merge: true)
+    }
+    
+    /// Save hero photo URL separately (uncropped version for profile display)
+    func saveHeroPhotoURL(_ heroURL: String, uid: String) async throws {
+        try await db.collection("users")
+            .document(uid)
+            .setData([
+                "heroPhotoURL": heroURL,
                 "updatedAt": FieldValue.serverTimestamp()
             ], merge: true)
     }

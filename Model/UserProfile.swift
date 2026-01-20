@@ -11,6 +11,9 @@ struct UserProfile: Identifiable, Equatable {
     var birthday: Date?
     var gender: String
     var photoURLs: [String]
+    
+    /// Uncropped hero photo for profile view (full size, not cropped)
+    var heroPhotoURL: String?
 
     var spotifyId: String?
     var spotifyCountry: String?
@@ -43,9 +46,20 @@ struct UserProfile: Identifiable, Equatable {
     var age: Int? {
         birthday?.age()
     }
-
-    var heroPhotoURL: String? {
-        photoURLs.first ?? spotifyAvatarURL
+    
+    /// Returns the hero photo URL for large profile display
+    /// Falls back to first photo, then Spotify avatar
+    var displayHeroPhotoURL: String? {
+        if let hero = heroPhotoURL, !hero.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return hero
+        }
+        return photoURLs.first ?? spotifyAvatarURL
+    }
+    
+    /// Returns the cropped profile photo (first photo in photoURLs array)
+    /// This is used for discovery cards and small avatars
+    var croppedProfilePhotoURL: String? {
+        photoURLs.first
     }
 
     func photoURL(at index: Int) -> String? {
@@ -72,6 +86,7 @@ struct UserProfile: Identifiable, Equatable {
             birthday: dateValue("birthday"),
             gender: stringValue("gender") ?? "",
             photoURLs: photoURLs,
+            heroPhotoURL: stringValue("heroPhotoURL"),
             spotifyId: stringValue("spotifyId"),
             spotifyCountry: stringValue("spotifyCountry"),
             countryCode: stringValue("countryCode"),

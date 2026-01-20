@@ -9,6 +9,7 @@ struct OnboardingStepPhotosView: View {
     @State private var photo2PickerItem: PhotosPickerItem?
     @State private var photo3PickerItem: PhotosPickerItem?
     @State private var pendingAvatar: PendingAvatar?
+    @State private var originalHeroImage: UIImage? // Store uncropped version
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -61,7 +62,9 @@ struct OnboardingStepPhotosView: View {
                 },
                 onUse: { cropped in
                     Task { @MainActor in
+                        // Store both versions: cropped for avatars, original for hero
                         setImage(cropped, at: 0)
+                        originalHeroImage = pending.image // Keep original
                         pendingAvatar = nil
                     }
                 }
@@ -85,6 +88,12 @@ struct OnboardingStepPhotosView: View {
             guard let newItem else { return }
             loadImage(from: newItem) { image in
                 setImage(image, at: 2)
+            }
+        }
+        .onDisappear {
+            // Store the original hero image in the ViewModel when leaving this screen
+            if let originalHeroImage {
+                viewModel.originalHeroImage = originalHeroImage
             }
         }
     }

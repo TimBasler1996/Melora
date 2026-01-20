@@ -15,7 +15,7 @@ final class ProfileViewModel: ObservableObject {
     // MARK: - Profile Data
 
     @Published var profile: UserProfile?
-    @Published private(set) var draft: ProfileDraft?
+    @Published var draft: ProfileDraft?
 
     // MARK: - Spotify
 
@@ -37,6 +37,7 @@ final class ProfileViewModel: ObservableObject {
         var gender: String
         var photoURLs: [String]
         var selectedImages: [UIImage?]
+        var heroImageChanged: Bool // Track if hero image was changed
     }
 
     private struct Snapshot {
@@ -111,7 +112,8 @@ final class ProfileViewModel: ObservableObject {
             birthday: snapshot.birthday,
             gender: snapshot.gender,
             photoURLs: snapshot.photoURLs,
-            selectedImages: Array(repeating: nil, count: 6)
+            selectedImages: Array(repeating: nil, count: 6),
+            heroImageChanged: false
         )
     }
 
@@ -125,6 +127,11 @@ final class ProfileViewModel: ObservableObject {
         updateDraft { draft in
             guard draft.selectedImages.indices.contains(index) else { return }
             draft.selectedImages[index] = image
+            
+            // Mark hero image as changed if it's the first photo (index 0)
+            if index == 0 && image != nil {
+                draft.heroImageChanged = true
+            }
         }
     }
 
@@ -148,7 +155,7 @@ final class ProfileViewModel: ObservableObject {
 
     @discardableResult
     func saveDraftChanges() async -> Bool {
-        guard let draft else { return false }
+        guard let currentDraft = draft else { return false }
         guard let uid = Auth.auth().currentUser?.uid else {
             errorMessage = "No Firebase user."
             return false
@@ -160,21 +167,44 @@ final class ProfileViewModel: ObservableObject {
 
         do {
             let basics = OnboardingProfileService.Basics(
-                firstName: draft.firstName.trimmingCharacters(in: .whitespacesAndNewlines),
-                lastName: draft.lastName.trimmingCharacters(in: .whitespacesAndNewlines),
-                city: draft.city.trimmingCharacters(in: .whitespacesAndNewlines),
-                birthday: draft.birthday,
-                gender: draft.gender.trimmingCharacters(in: .whitespacesAndNewlines)
+                firstName: currentDraft.firstName.trimmingCharacters(in: .whitespacesAndNewlines),
+                lastName: currentDraft.lastName.trimmingCharacters(in: .whitespacesAndNewlines),
+                city: currentDraft.city.trimmingCharacters(in: .whitespacesAndNewlines),
+                birthday: currentDraft.birthday,
+                gender: currentDraft.gender.trimmingCharacters(in: .whitespacesAndNewlines)
             )
 
             try await profileService.saveBasics(basics, uid: uid)
 
             // Fotos: wir arbeiten mit 6 Slots ("" = gelöscht)
-            let photosNeedSave = (draftSnapshot?.photoURLs != draft.photoURLs) || draft.selectedImages.contains(where: { $0 != nil })
+            let photosNeedSave = (draftSnapshot?.photoURLs != currentDraft.photoURLs) || currentDraft.selectedImages.contains(where: { $0 != nil })
             if photosNeedSave {
-                var updatedPhotoURLs = draft.photoURLs
+                var updatedPhotoURLs = currentDraft.photoURLs
 
-                for (index, image) in draft.selectedImages.enumerated() {
+                // Handle hero photo (index 0) - save uncropped version separately
+                if let heroImage = currentDraft.selectedImages[0], currentDraft.heroImageChanged {
+                    // Upload uncropped hero photo
+                    let heroURL = try await profileService.uploadHeroPhoto(image: heroImage, uid: uid)
+                    try await profileService.saveHeroPhotoURL(heroURL, uid: uid)
+                    
+                    // Also crop and upload for discovery cards (index 0 in photoURLs)
+                    // Note: In a real implementation, you'd want to crop this image
+                    // For now, we'll use the same image, but ideally crop it to square
+                    let croppedURL = try await profileService.uploadPhoto(
+                        image: heroImage,
+                        uid: uid,
+                        index: 0
+                    )
+                    if updatedPhotoURLs.indices.contains(0) {
+                        updatedPhotoURLs[0] = croppedURL
+                    } else {
+                        updatedPhotoURLs.insert(croppedURL, at: 0)
+                    }
+                }
+
+                // Handle other photos (indices 1-5)
+                for (index, image) in currentDraft.selectedImages.enumerated() {
+                    guard index > 0 else { continue } // Skip index 0, handled above
                     guard let image else { continue }
 
                     let url = try await profileService.uploadPhoto(

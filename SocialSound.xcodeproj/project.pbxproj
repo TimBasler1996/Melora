@@ -72,6 +72,8 @@
 		75A174212ED0FFFA00CEB48F /* TrackLikesCluster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */; };
 		75A174232ED1007200CEB48F /* LikesInboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174222ED1007200CEB48F /* LikesInboxViewModel.swift */; };
 		75A174252ED107AF00CEB48F /* SpotifyConnectionSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174242ED107AF00CEB48F /* SpotifyConnectionSection.swift */; };
+		75DAD86B2F20131200D1219E /* PROFILE_IMPROVEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD86A2F20131200D1219E /* PROFILE_IMPROVEMENTS.md */; };
+		75DAD86D2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD86C2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md */; };
 		76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A02F12345600112233 /* OnboardingStateManager.swift */; };
 		76B0C1A42F12345600112233 /* OnboardingFlowPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */; };
 		76B0C1A72F12345600112233 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A62F12345600112233 /* OnboardingViewModel.swift */; };
@@ -156,6 +158,8 @@
 		75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesCluster.swift; sourceTree = "<group>"; };
 		75A174222ED1007200CEB48F /* LikesInboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxViewModel.swift; sourceTree = "<group>"; };
 		75A174242ED107AF00CEB48F /* SpotifyConnectionSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyConnectionSection.swift; sourceTree = "<group>"; };
+		75DAD86A2F20131200D1219E /* PROFILE_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROFILE_IMPROVEMENTS.md; sourceTree = "<group>"; };
+		75DAD86C2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PHOTO_SYSTEM_IMPROVEMENTS.md; sourceTree = "<group>"; };
 		76B0C1A02F12345600112233 /* OnboardingStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStateManager.swift; sourceTree = "<group>"; };
 		76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowPlaceholderView.swift; sourceTree = "<group>"; };
 		76B0C1A62F12345600112233 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
@@ -405,6 +409,8 @@
 				75A174152ECE547500CEB48F /* LikesInboxView.swift */,
 				75A1740B2EC8C0FA00CEB48F /* ProfileViewModel.swift */,
 				759F7AFD2EC77D9A0012A549 /* ProfileView.swift */,
+				75DAD86A2F20131200D1219E /* PROFILE_IMPROVEMENTS.md */,
+				75DAD86C2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -540,7 +546,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				759F7B232EC79EC30012A549 /* GoogleService-Info.plist in Resources */,
+				75DAD86D2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md in Resources */,
 				7576DF442F18036A0034BF2A /* Readme.txt in Resources */,
+				75DAD86B2F20131200D1219E /* PROFILE_IMPROVEMENTS.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
