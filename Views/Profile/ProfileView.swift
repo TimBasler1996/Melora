@@ -264,7 +264,7 @@ struct ProfileView: View {
                 }
             }
             .accessibilityLabel(Text("Photo \(index + 1)"))
-            .onChange(of: binding.wrappedValue) { newItem in
+            .onChange(of: binding.wrappedValue) { _, newItem in
                 guard let newItem else {
                     viewModel.setSelectedImage(nil, index: index)
                     return
