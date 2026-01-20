@@ -78,15 +78,29 @@ struct NowPlayingView: View {
                 }
 
                 if let track = vm.currentTrack {
-                    TrackCard(track: track)
-
-                    ControlsRow(
+                    LargeNowPlaying(
+                        track: track,
+                        progressMs: vm.progressMs,
                         isPlaying: vm.isPlaying,
-                        isBusy: vm.isLoading,
-                        onPrevious: { Task { await vm.previous() } },
-                        onToggle: { Task { await vm.togglePlayPause() } },
-                        onNext: { Task { await vm.next() } }
+                        onSeek: { newProgress in Task { await vm.seek(to: newProgress) } }
                     )
+                    .padding(.top, 8)
+
+                    VStack(spacing: 10) {
+                        ControlsRow(
+                            isPlaying: vm.isPlaying,
+                            isBusy: vm.isLoading,
+                            onPrevious: { Task { await vm.previous() } },
+                            onToggle: { Task { await vm.togglePlayPause() } },
+                            onNext: { Task { await vm.next() } }
+                        )
+                        PlaybackExtrasRow(
+                            isShuffling: vm.isShuffling,
+                            repeatMode: vm.repeatMode,
+                            onToggleShuffle: { Task { await vm.toggleShuffle() } },
+                            onCycleRepeat: { Task { await vm.cycleRepeatMode() } }
+                        )
+                    }
                 } else {
                     EmptyStateCard()
                 }
@@ -191,6 +205,129 @@ private struct TrackCard: View {
     }
 }
 
+private struct LargeNowPlaying: View {
+    let track: Track
+    let progressMs: Int
+    let isPlaying: Bool
+    let onSeek: (Int) -> Void
+
+    @State private var isScrubbing = false
+    @State private var localProgress: Double = 0
+    @State private var showRemaining = false
+
+    private func format(ms: Int, showRemaining: Bool = false, durationMs: Int? = nil) -> String {
+        var value = ms
+        if showRemaining, let durationMs {
+            value = max(durationMs - ms, 0)
+        }
+        let totalSeconds = max(value / 1000, 0)
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        let prefix = showRemaining ? "-" : ""
+        return String(format: "%@%d:%02d", prefix, minutes, seconds)
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Big artwork with animated transition when track changes
+            Group {
+                if let url = track.artworkURL {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ZStack { Rectangle().fill(Color.white.opacity(0.08)); ProgressView().tint(.white) }
+                        case .success(let img):
+                            img.resizable().scaledToFit()
+                                .transition(.scale.combined(with: .opacity))
+                        default:
+                            ZStack { Rectangle().fill(Color.white.opacity(0.08)); Image(systemName: "music.note").foregroundColor(.white) }
+                        }
+                    }
+                } else {
+                    ZStack { Rectangle().fill(Color.white.opacity(0.08)); Image(systemName: "music.note").foregroundColor(.white) }
+                }
+            }
+            .id(track.id) // animate on track change
+            .animation(.spring(response: 0.5, dampingFraction: 0.85), value: track.id)
+            .aspectRatio(1, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: Color.black.opacity(0.25), radius: 18, x: 0, y: 12)
+
+            // Title / artist centered
+            VStack(spacing: 6) {
+                Text(track.title)
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                Text(track.artist)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.9))
+                    .lineLimit(1)
+            }
+            .padding(.top, 4)
+
+            // Timeline with scrubbing debounce
+            if let durationMs = track.durationMs {
+                VStack(spacing: 8) {
+                    Slider(
+                        value: .init(
+                            get: { isScrubbing ? localProgress : Double(progressMs) },
+                            set: { newVal in
+                                if !isScrubbing {
+                                    isScrubbing = true
+                                    localProgress = Double(progressMs)
+                                }
+                                localProgress = newVal
+                            }
+                        ),
+                        in: 0...Double(durationMs)
+                    )
+                    .tint(.white)
+                    .onChange(of: isScrubbing) { old, new in
+                        // When scrubbing ends, commit seek with haptic
+                        if old == true && new == false {
+                            let final = Int(localProgress)
+                            onSeek(final)
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }
+                    }
+                    .gesture(DragGesture(minimumDistance: 0).onEnded { _ in
+                        // End scrubbing when the drag ends on the Slider
+                        isScrubbing = false
+                    })
+                    .onAppear { localProgress = Double(progressMs) }
+                    .onChange(of: progressMs) { _, newVal in
+                        if !isScrubbing { localProgress = Double(newVal) }
+                        if newVal >= (durationMs - 500) {
+                            // Haptic when reaching end
+                            UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+                        }
+                    }
+
+                    HStack {
+                        Text(format(ms: min(Int(isScrubbing ? localProgress : Double(progressMs)), durationMs), showRemaining: false))
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.9))
+                            .onTapGesture { showRemaining.toggle() }
+                        Spacer()
+                        Text(format(ms: min(Int(isScrubbing ? localProgress : Double(progressMs)), durationMs), showRemaining: showRemaining, durationMs: durationMs))
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.9))
+                            .onTapGesture { showRemaining.toggle() }
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.white.opacity(0.12))
+        )
+    }
+}
+
 private struct ControlsRow: View {
 
     let isPlaying: Bool
@@ -234,6 +371,46 @@ private struct ControlsRow: View {
             .disabled(isBusy)
         }
         .padding(.top, 6)
+    }
+}
+
+private struct PlaybackExtrasRow: View {
+    let isShuffling: Bool
+    let repeatMode: NowPlayingViewModel.RepeatMode
+    let onToggleShuffle: () -> Void
+    let onCycleRepeat: () -> Void
+
+    var body: some View {
+        HStack(spacing: 20) {
+            Button(action: onToggleShuffle) {
+                Image(systemName: "shuffle")
+                    .symbolVariant(isShuffling ? .fill : .none)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Capsule().fill(Color.white.opacity(0.16)))
+            }
+            .buttonStyle(.plain)
+
+            Button(action: onCycleRepeat) {
+                let name: String = {
+                    switch repeatMode {
+                    case .off: return "repeat"
+                    case .context: return "repeat"
+                    case .track: return "repeat.1"
+                    }
+                }()
+                Image(systemName: name)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Capsule().fill(Color.white.opacity(0.16)))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.top, 2)
     }
 }
 

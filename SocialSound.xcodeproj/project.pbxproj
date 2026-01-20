@@ -58,7 +58,6 @@
 		759F7B232EC79EC30012A549 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 759F7B222EC79EC30012A549 /* GoogleService-Info.plist */; };
 		759F7B262EC7A05A0012A549 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 759F7B252EC7A05A0012A549 /* FirebaseCore */; };
 		759F7B282EC7A05A0012A549 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 759F7B272EC7A05A0012A549 /* FirebaseFirestore */; };
-		75A174022EC7BC2100CEB48F /* seestrasse_location.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 75A174012EC7BC0D00CEB48F /* seestrasse_location.gpx */; };
 		75A174042EC7E40D00CEB48F /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174032EC7E40D00CEB48F /* AppTheme.swift */; };
 		75A174082EC8B0E400CEB48F /* UserApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174072EC8B0E400CEB48F /* UserApiService.swift */; };
 		75A1740A2EC8BBFA00CEB48F /* AppUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174092EC8BBFA00CEB48F /* AppUser.swift */; };
@@ -143,7 +142,6 @@
 		759F7B1E2EC7974A0012A549 /* NearbyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyViewModel.swift; sourceTree = "<group>"; };
 		759F7B202EC799900012A549 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		759F7B222EC79EC30012A549 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		75A174012EC7BC0D00CEB48F /* seestrasse_location.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = seestrasse_location.gpx; path = ../../Downloads/seestrasse_location.gpx; sourceTree = "<group>"; };
 		75A174032EC7E40D00CEB48F /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		75A174072EC8B0E400CEB48F /* UserApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserApiService.swift; sourceTree = "<group>"; };
 		75A174092EC8BBFA00CEB48F /* AppUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUser.swift; sourceTree = "<group>"; };
@@ -260,7 +258,6 @@
 			isa = PBXGroup;
 			children = (
 				7576DF432F18036A0034BF2A /* Readme.txt */,
-				75A174012EC7BC0D00CEB48F /* seestrasse_location.gpx */,
 				759F7B222EC79EC30012A549 /* GoogleService-Info.plist */,
 				759F7B0E2EC7890E0012A549 /* SocialSound-Info.plist */,
 				7576DF452F1803890034BF2A /* Docs */,
@@ -543,7 +540,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				759F7B232EC79EC30012A549 /* GoogleService-Info.plist in Resources */,
-				75A174022EC7BC2100CEB48F /* seestrasse_location.gpx in Resources */,
 				7576DF442F18036A0034BF2A /* Readme.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
