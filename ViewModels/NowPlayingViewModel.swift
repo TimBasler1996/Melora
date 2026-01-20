@@ -64,8 +64,6 @@ final class NowPlayingViewModel: ObservableObject {
             currentTrack = state.track
             isPlaying = state.isPlaying
             progressMs = state.progressMs ?? 0
-            isShuffling = state.isShuffling
-            repeatMode = RepeatMode(rawValue: state.repeatMode) ?? .off
             restartProgressTickerIfNeeded(durationMs: currentTrack?.durationMs)
             errorMessage = nil
             await refreshPlayerState()
@@ -199,4 +197,3 @@ final class NowPlayingViewModel: ObservableObject {
         }
     }
 }
-
