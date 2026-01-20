@@ -67,48 +67,53 @@ struct NowPlayingView: View {
 
     @ViewBuilder
     private var content: some View {
-        ScrollView {
-            VStack(spacing: 14) {
+        VStack(spacing: 14) {
 
-                // ✅ Broadcast Toggle UI (back)
-                BroadcastToggleCard()
+            // ✅ Broadcast Toggle UI (back)
+            BroadcastToggleCard()
 
-                if let err = vm.errorMessage, !err.isEmpty {
-                    InfoBanner(text: err)
-                }
-
-                if let track = vm.currentTrack {
-                    LargeNowPlaying(
-                        track: track,
-                        progressMs: vm.progressMs,
-                        isPlaying: vm.isPlaying,
-                        onSeek: { newProgress in Task { await vm.seek(to: newProgress) } }
-                    )
-                    .padding(.top, 8)
-
-                    VStack(spacing: 10) {
-                        ControlsRow(
-                            isPlaying: vm.isPlaying,
-                            isBusy: vm.isLoading,
-                            onPrevious: { Task { await vm.previous() } },
-                            onToggle: { Task { await vm.togglePlayPause() } },
-                            onNext: { Task { await vm.next() } }
-                        )
-                        PlaybackExtrasRow(
-                            isShuffling: vm.isShuffling,
-                            repeatMode: vm.repeatMode,
-                            onToggleShuffle: { Task { await vm.toggleShuffle() } },
-                            onCycleRepeat: { Task { await vm.cycleRepeatMode() } }
-                        )
-                    }
-                } else {
-                    EmptyStateCard()
-                }
+            if let err = vm.errorMessage, !err.isEmpty {
+                InfoBanner(text: err)
             }
-            .padding(.horizontal, AppLayout.screenPadding)
-            .padding(.vertical, 12)
+
+            if let track = vm.currentTrack {
+                LargeNowPlaying(
+                    track: track,
+                    progressMs: vm.progressMs,
+                    isPlaying: vm.isPlaying,
+                    onSeek: { newProgress in Task { await vm.seek(to: newProgress) } }
+                )
+                .padding(.top, 6)
+
+                VStack(spacing: 12) {
+                    ControlsRow(
+                        isPlaying: vm.isPlaying,
+                        isBusy: vm.isLoading,
+                        onPrevious: { Task { await vm.previous() } },
+                        onToggle: { Task { await vm.togglePlayPause() } },
+                        onNext: { Task { await vm.next() } }
+                    )
+                    PlaybackExtrasRow(
+                        isShuffling: vm.isShuffling,
+                        repeatMode: vm.repeatMode,
+                        onToggleShuffle: { Task { await vm.toggleShuffle() } },
+                        onCycleRepeat: { Task { await vm.cycleRepeatMode() } }
+                    )
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.white.opacity(0.14))
+                )
+            } else {
+                EmptyStateCard()
+            }
+
+            Spacer(minLength: 0)
         }
-        .scrollIndicators(.hidden)
+        .padding(.horizontal, AppLayout.screenPadding)
+        .padding(.vertical, 12)
     }
 
     private func openSpotifyLibrary() {
@@ -250,6 +255,7 @@ private struct LargeNowPlaying: View {
             .id(track.id) // animate on track change
             .animation(.spring(response: 0.5, dampingFraction: 0.85), value: track.id)
             .aspectRatio(1, contentMode: .fit)
+            .frame(maxHeight: 280)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .shadow(color: Color.black.opacity(0.25), radius: 18, x: 0, y: 12)
 
@@ -271,31 +277,19 @@ private struct LargeNowPlaying: View {
             if let durationMs = track.durationMs {
                 VStack(spacing: 8) {
                     Slider(
-                        value: .init(
-                            get: { isScrubbing ? localProgress : Double(progressMs) },
-                            set: { newVal in
-                                if !isScrubbing {
-                                    isScrubbing = true
-                                    localProgress = Double(progressMs)
-                                }
-                                localProgress = newVal
+                        value: $localProgress,
+                        in: 0...Double(durationMs),
+                        onEditingChanged: { editing in
+                            isScrubbing = editing
+                            if editing {
+                                localProgress = Double(progressMs)
+                            } else {
+                                onSeek(Int(localProgress))
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             }
-                        ),
-                        in: 0...Double(durationMs)
+                        }
                     )
                     .tint(.white)
-                    .onChange(of: isScrubbing) { old, new in
-                        // When scrubbing ends, commit seek with haptic
-                        if old == true && new == false {
-                            let final = Int(localProgress)
-                            onSeek(final)
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        }
-                    }
-                    .gesture(DragGesture(minimumDistance: 0).onEnded { _ in
-                        // End scrubbing when the drag ends on the Slider
-                        isScrubbing = false
-                    })
                     .onAppear { localProgress = Double(progressMs) }
                     .onChange(of: progressMs) { _, newVal in
                         if !isScrubbing { localProgress = Double(newVal) }
@@ -309,11 +303,13 @@ private struct LargeNowPlaying: View {
                         Text(format(ms: min(Int(isScrubbing ? localProgress : Double(progressMs)), durationMs), showRemaining: false))
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.9))
+                            .monospacedDigit()
                             .onTapGesture { showRemaining.toggle() }
                         Spacer()
                         Text(format(ms: min(Int(isScrubbing ? localProgress : Double(progressMs)), durationMs), showRemaining: showRemaining, durationMs: durationMs))
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.9))
+                            .monospacedDigit()
                             .onTapGesture { showRemaining.toggle() }
                     }
                 }
