@@ -14,8 +14,9 @@ final class DiscoverViewModel: ObservableObject {
     @Published var selectedBroadcast: DiscoverBroadcast?
     @Published var dismissTarget: DiscoverBroadcast?
     
-    // Track broadcasts that have been liked
+    // Track broadcasts that have been liked and messaged
     @Published private(set) var likedBroadcastIds: Set<String> = []
+    @Published private(set) var messagedBroadcastIds: Set<String> = []
 
     private let service: DiscoverService
     private let likeService: LikeApiService
@@ -41,6 +42,7 @@ final class DiscoverViewModel: ObservableObject {
         self.likeService = likeService
         self.chatService = chatService
         loadLikedBroadcastsFromCache()
+        loadMessagedBroadcastsFromCache()
     }
 
     deinit {
@@ -183,6 +185,9 @@ final class DiscoverViewModel: ObservableObject {
                 createdFromTrackId: broadcast.track.id,
                 createdFromLikeId: like.id
             )
+            // Mark this broadcast as messaged
+            messagedBroadcastIds.insert(broadcast.id)
+            saveMessagedBroadcastsToCache()
         }
         
         // Mark this broadcast as liked
@@ -195,10 +200,39 @@ final class DiscoverViewModel: ObservableObject {
     }
     
     func hasMessage(_ broadcast: DiscoverBroadcast) -> Bool {
-        // Check if user sent a message with this like
-        // For now, we'll track this separately if needed
-        // This could be enhanced to check if message exists
-        return false
+        messagedBroadcastIds.contains(broadcast.id)
+    }
+    
+    // MARK: - Cache Management
+    
+    private func loadLikedBroadcastsFromCache() {
+        guard let uid = service.currentUserId() else { return }
+        let defaults = UserDefaults.standard
+        let key = "discover.likedBroadcasts.\(uid)"
+        let cached = defaults.stringArray(forKey: key) ?? []
+        likedBroadcastIds = Set(cached)
+    }
+    
+    private func saveLikedBroadcastsToCache() {
+        guard let uid = service.currentUserId() else { return }
+        let defaults = UserDefaults.standard
+        let key = "discover.likedBroadcasts.\(uid)"
+        defaults.set(Array(likedBroadcastIds), forKey: key)
+    }
+    
+    private func loadMessagedBroadcastsFromCache() {
+        guard let uid = service.currentUserId() else { return }
+        let defaults = UserDefaults.standard
+        let key = "discover.messagedBroadcasts.\(uid)"
+        let cached = defaults.stringArray(forKey: key) ?? []
+        messagedBroadcastIds = Set(cached)
+    }
+    
+    private func saveMessagedBroadcastsToCache() {
+        guard let uid = service.currentUserId() else { return }
+        let defaults = UserDefaults.standard
+        let key = "discover.messagedBroadcasts.\(uid)"
+        defaults.set(Array(messagedBroadcastIds), forKey: key)
     }
 
     func selectBroadcast(_ broadcast: DiscoverBroadcast) {

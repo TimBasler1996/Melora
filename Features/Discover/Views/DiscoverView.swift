@@ -27,9 +27,10 @@ struct DiscoverView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(item: $viewModel.selectedBroadcast) { broadcast in
-                DiscoverDetailSheetView(
+                BroadcastProfileView(
                     broadcast: broadcast,
-                    isSending: viewModel.isSendingLike,
+                    hasAlreadyLiked: viewModel.isLiked(broadcast),
+                    hasAlreadyMessaged: viewModel.hasMessage(broadcast),
                     onLike: {
                         Task {
                             try? await viewModel.sendLike(
@@ -39,7 +40,7 @@ struct DiscoverView: View {
                             )
                         }
                     },
-                    onSendMessage: { message in
+                    onMessage: { message in
                         Task {
                             try? await viewModel.sendLike(
                                 for: broadcast,
@@ -49,6 +50,7 @@ struct DiscoverView: View {
                         }
                     }
                 )
+                .presentationDetents([.large])
             }
             .confirmationDialog(
                 "Not interested?",
@@ -147,7 +149,27 @@ struct DiscoverView: View {
                             },
                             onDismiss: {
                                 viewModel.requestDismiss(for: broadcast)
-                            }
+                            },
+                            onLikeTrack: {
+                                Task {
+                                    try? await viewModel.sendLike(
+                                        for: broadcast,
+                                        from: currentUserStore.user,
+                                        message: nil
+                                    )
+                                }
+                            },
+                            onMessage: { message in
+                                Task {
+                                    try? await viewModel.sendLike(
+                                        for: broadcast,
+                                        from: currentUserStore.user,
+                                        message: message
+                                    )
+                                }
+                            },
+                            hasLiked: viewModel.isLiked(broadcast),
+                            hasMessaged: viewModel.hasMessage(broadcast)
                         )
                         // Keep the card big, but NEVER touch screen edges:
                         .frame(maxWidth: 420)

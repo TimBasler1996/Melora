@@ -148,19 +148,25 @@ struct TrackLikesDetailView: View {
     }
 
     private var likesSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("People who liked this")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundColor(.white.opacity(0.7))
-                .padding(.horizontal, 4)
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
 
             if localLikes.isEmpty {
-                Text("No likes yet")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.5))
-                    .padding(.horizontal, 4)
+                VStack(spacing: 8) {
+                    Image(systemName: "heart.slash")
+                        .font(.system(size: 40, weight: .light))
+                        .foregroundColor(.white.opacity(0.3))
+                    
+                    Text("No likes yet")
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
             } else {
-                VStack(spacing: 16) {
+                VStack(spacing: 12) {
                     ForEach(localLikes) { like in
                         ModernLikeRow(
                             receiverUserId: user.uid,
@@ -169,11 +175,6 @@ struct TrackLikesDetailView: View {
                             onAccept: { Task { await accept(like: like) } },
                             onReject: { Task { await update(like: like, status: .rejected) } }
                         )
-                        
-                        if like.id != localLikes.last?.id {
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                        }
                     }
                 }
             }
