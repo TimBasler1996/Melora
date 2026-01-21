@@ -20,9 +20,9 @@ final class OnboardingViewModel: ObservableObject {
     @Published var birthday: Date = Calendar.current.date(byAdding: .year, value: -20, to: Date()) ?? Date()
     @Published var gender: String = ""
 
-    // MARK: - Step 2: Photos (3 required)
+    // MARK: - Step 2: Photos (2-5 required)
 
-    @Published var selectedImages: [UIImage?] = [nil, nil, nil]
+    @Published var selectedImages: [UIImage?] = [nil, nil, nil, nil, nil] // Max 5 photos
     @Published var uploadedPhotoURLs: [String] = []
 
     // MARK: - Step 3: Spotify
@@ -58,7 +58,12 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     var canContinueStep2: Bool {
-        selectedImages.allSatisfy { $0 != nil }
+        let nonNilImages = selectedImages.compactMap { $0 }
+        return nonNilImages.count >= 2 // Minimum 2 photos required
+    }
+    
+    var selectedImagesCount: Int {
+        selectedImages.compactMap { $0 }.count
     }
 
     /// ✅ Used by the FlowView (no bindings, pure Bool)
@@ -157,7 +162,7 @@ final class OnboardingViewModel: ObservableObject {
     func finish(using spotifyAuth: SpotifyAuthManager) async {
         finishErrorMessage = nil
         guard canContinueStep1 else { finishErrorMessage = "Please complete your profile details."; return }
-        guard canContinueStep2 else { finishErrorMessage = "Please add all 3 photos."; return }
+        guard canContinueStep2 else { finishErrorMessage = "Please add at least 2 photos."; return }
         guard spotifyConnected else { finishErrorMessage = "Spotify is required."; return }
 
         guard let uid = Auth.auth().currentUser?.uid else {

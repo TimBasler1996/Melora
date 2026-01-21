@@ -15,19 +15,7 @@ final class ProfileViewModel: ObservableObject {
     // MARK: - Profile Data
 
     @Published var profile: UserProfile?
-
-    @Published var firstName: String = ""
-    @Published var lastName: String = ""
-    @Published var city: String = ""
-    @Published var birthday: Date = Date()
-    @Published var gender: String = ""
-
-    /// URLs aus Firestore (kann 0...6 enthalten)
-    /// Immer 6 Slots ("" = leer)
-    @Published var photoURLs: [String] = Array(repeating: "", count: 6)
-
-    /// Lokale Änderungen (immer 6 Slots, nil = unverändert/leer)
-    @Published var selectedImages: [UIImage?] = Array(repeating: nil, count: 6)
+    @Published var draft: ProfileDraft?
 
     // MARK: - Spotify
 
@@ -37,9 +25,20 @@ final class ProfileViewModel: ObservableObject {
 
     private let profileService: ProfileService
 
-    // MARK: - Soft discard snapshot (lokal)
+    // MARK: - Draft snapshot (for change detection)
 
-    private var snapshot: Snapshot?
+    private var draftSnapshot: Snapshot?
+
+    struct ProfileDraft {
+        var firstName: String
+        var lastName: String
+        var city: String
+        var birthday: Date
+        var gender: String
+        var photoURLs: [String]
+        var selectedImages: [UIImage?]
+        var heroImageChanged: Bool // Track if hero image was changed
+    }
 
     private struct Snapshot {
         let firstName: String
@@ -48,26 +47,21 @@ final class ProfileViewModel: ObservableObject {
         let birthday: Date
         let gender: String
         let photoURLs: [String]
-        let profile: UserProfile?
     }
 
     // MARK: - Computed
 
-    var ageText: String {
-        birthday.age().map(String.init) ?? ""
-    }
-
-    var hasChanges: Bool {
-        guard let snapshot else { return false }
+    var hasDraftChanges: Bool {
+        guard let draft, let snapshot = draftSnapshot else { return false }
 
         let basicsChanged =
-            firstName != snapshot.firstName ||
-            lastName != snapshot.lastName ||
-            city != snapshot.city ||
-            gender != snapshot.gender ||
-            birthday != snapshot.birthday
+            draft.firstName != snapshot.firstName ||
+            draft.lastName != snapshot.lastName ||
+            draft.city != snapshot.city ||
+            draft.gender != snapshot.gender ||
+            draft.birthday != snapshot.birthday
 
-        let photosChanged = (photoURLs != snapshot.photoURLs) || selectedImages.contains { $0 != nil }
+        let photosChanged = (draft.photoURLs != snapshot.photoURLs) || draft.selectedImages.contains { $0 != nil }
         return basicsChanged || photosChanged
     }
 
@@ -103,44 +97,68 @@ final class ProfileViewModel: ObservableObject {
         isLoading = false
     }
 
-    // MARK: - Photos
+    // MARK: - Draft management
 
-    func setSelectedImage(_ image: UIImage?, index: Int) {
-        guard selectedImages.indices.contains(index) else { return }
-        selectedImages[index] = image
+    func beginEditing() {
+        guard draft == nil else { return }
+
+        let snapshot = snapshotFromProfile(profile)
+        draftSnapshot = snapshot
+
+        draft = ProfileDraft(
+            firstName: snapshot.firstName,
+            lastName: snapshot.lastName,
+            city: snapshot.city,
+            birthday: snapshot.birthday,
+            gender: snapshot.gender,
+            photoURLs: snapshot.photoURLs,
+            selectedImages: Array(repeating: nil, count: 6),
+            heroImageChanged: false
+        )
+    }
+
+    func updateDraft(_ update: (inout ProfileDraft) -> Void) {
+        guard var draft else { return }
+        update(&draft)
+        self.draft = draft
+    }
+
+    func setDraftSelectedImage(_ image: UIImage?, index: Int) {
+        updateDraft { draft in
+            guard draft.selectedImages.indices.contains(index) else { return }
+            draft.selectedImages[index] = image
+            
+            // Mark hero image as changed if it's the first photo (index 0)
+            if index == 0 && image != nil {
+                draft.heroImageChanged = true
+            }
+        }
     }
 
     /// Entfernt ein Foto aus dem Slot (soft delete) und markiert es für Save.
-    func removePhoto(at index: Int) {
-        guard photoURLs.indices.contains(index) else { return }
-        photoURLs[index] = ""
-        selectedImages[index] = nil
+    func removeDraftPhoto(at index: Int) {
+        updateDraft { draft in
+            guard draft.photoURLs.indices.contains(index) else { return }
+            draft.photoURLs[index] = ""
+            draft.selectedImages[index] = nil
+        }
     }
 
-    // MARK: - Discard (soft)
-
-    func discardChanges() {
-        guard let snapshot else { return }
-
-        self.firstName = snapshot.firstName
-        self.lastName = snapshot.lastName
-        self.city = snapshot.city
-        self.birthday = snapshot.birthday
-        self.gender = snapshot.gender
-        self.photoURLs = snapshot.photoURLs
-        self.profile = snapshot.profile
-
-        self.selectedImages = Array(repeating: nil, count: 6)
-        self.saveSucceeded = false
-        self.errorMessage = nil
+    func discardDraft() {
+        draft = nil
+        draftSnapshot = nil
+        saveSucceeded = false
+        errorMessage = nil
     }
 
     // MARK: - Saving
 
-    func saveChanges() async {
+    @discardableResult
+    func saveDraftChanges() async -> Bool {
+        guard let currentDraft = draft else { return false }
         guard let uid = Auth.auth().currentUser?.uid else {
             errorMessage = "No Firebase user."
-            return
+            return false
         }
 
         isSaving = true
@@ -149,21 +167,44 @@ final class ProfileViewModel: ObservableObject {
 
         do {
             let basics = OnboardingProfileService.Basics(
-                firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
-                lastName: lastName.trimmingCharacters(in: .whitespacesAndNewlines),
-                city: city.trimmingCharacters(in: .whitespacesAndNewlines),
-                birthday: birthday,
-                gender: gender.trimmingCharacters(in: .whitespacesAndNewlines)
+                firstName: currentDraft.firstName.trimmingCharacters(in: .whitespacesAndNewlines),
+                lastName: currentDraft.lastName.trimmingCharacters(in: .whitespacesAndNewlines),
+                city: currentDraft.city.trimmingCharacters(in: .whitespacesAndNewlines),
+                birthday: currentDraft.birthday,
+                gender: currentDraft.gender.trimmingCharacters(in: .whitespacesAndNewlines)
             )
 
             try await profileService.saveBasics(basics, uid: uid)
 
             // Fotos: wir arbeiten mit 6 Slots ("" = gelöscht)
-            let photosNeedSave = (snapshot?.photoURLs != photoURLs) || selectedImages.contains(where: { $0 != nil })
+            let photosNeedSave = (draftSnapshot?.photoURLs != currentDraft.photoURLs) || currentDraft.selectedImages.contains(where: { $0 != nil })
             if photosNeedSave {
-                var updatedPhotoURLs = photoURLs
+                var updatedPhotoURLs = currentDraft.photoURLs
 
-                for (index, image) in selectedImages.enumerated() {
+                // Handle hero photo (index 0) - save uncropped version separately
+                if let heroImage = currentDraft.selectedImages[0], currentDraft.heroImageChanged {
+                    // Upload uncropped hero photo
+                    let heroURL = try await profileService.uploadHeroPhoto(image: heroImage, uid: uid)
+                    try await profileService.saveHeroPhotoURL(heroURL, uid: uid)
+                    
+                    // Also crop and upload for discovery cards (index 0 in photoURLs)
+                    // Note: In a real implementation, you'd want to crop this image
+                    // For now, we'll use the same image, but ideally crop it to square
+                    let croppedURL = try await profileService.uploadPhoto(
+                        image: heroImage,
+                        uid: uid,
+                        index: 0
+                    )
+                    if updatedPhotoURLs.indices.contains(0) {
+                        updatedPhotoURLs[0] = croppedURL
+                    } else {
+                        updatedPhotoURLs.insert(croppedURL, at: 0)
+                    }
+                }
+
+                // Handle other photos (indices 1-5)
+                for (index, image) in currentDraft.selectedImages.enumerated() {
+                    guard index > 0 else { continue } // Skip index 0, handled above
                     guard let image else { continue }
 
                     let url = try await profileService.uploadPhoto(
@@ -180,18 +221,19 @@ final class ProfileViewModel: ObservableObject {
                 }
 
                 try await profileService.savePhotos(photoURLs: updatedPhotoURLs, uid: uid)
-                photoURLs = updatedPhotoURLs
             }
 
             saveSucceeded = true
-            selectedImages = Array(repeating: nil, count: 6)
+            draft = nil
+            draftSnapshot = nil
             await loadProfile()
-
+            isSaving = false
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            isSaving = false
+            return false
         }
-
-        isSaving = false
     }
 
     // MARK: - Spotify
@@ -219,32 +261,29 @@ final class ProfileViewModel: ObservableObject {
 
     private func applyProfile(_ profile: UserProfile) {
         self.profile = profile
-        firstName = profile.firstName
-        lastName = profile.lastName
-        city = profile.city
-        birthday = profile.birthday ?? Date()
-        gender = profile.gender
+    }
 
-        // Immer 6 Slots ("" für leere)
-        var padded = profile.photoURLs
+    private func snapshotFromProfile(_ profile: UserProfile?) -> Snapshot {
+        let fallbackDate = Date()
+        let photoURLs = paddedPhotoURLs(profile?.photoURLs ?? [])
+
+        return Snapshot(
+            firstName: profile?.firstName ?? "",
+            lastName: profile?.lastName ?? "",
+            city: profile?.city ?? "",
+            birthday: profile?.birthday ?? fallbackDate,
+            gender: profile?.gender ?? "",
+            photoURLs: photoURLs
+        )
+    }
+
+    private func paddedPhotoURLs(_ urls: [String]) -> [String] {
+        var padded = urls
         if padded.count < 6 {
             padded.append(contentsOf: Array(repeating: "", count: 6 - padded.count))
         } else if padded.count > 6 {
             padded = Array(padded.prefix(6))
         }
-        photoURLs = padded
-
-        snapshot = Snapshot(
-            firstName: firstName,
-            lastName: lastName,
-            city: city,
-            birthday: birthday,
-            gender: gender,
-            photoURLs: photoURLs,
-            profile: profile
-        )
-
-        selectedImages = Array(repeating: nil, count: 6)
+        return padded
     }
 }
-

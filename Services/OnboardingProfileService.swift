@@ -48,9 +48,9 @@ final class OnboardingProfileService {
     // MARK: - Step 2: Photos
 
     func uploadPhotos(images: [UIImage], uid: String) async throws -> [String] {
-        guard images.count == 3 else {
+        guard images.count >= 2 && images.count <= 5 else {
             throw NSError(domain: "Onboarding", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: "Exactly 3 photos are required."
+                NSLocalizedDescriptionKey: "Between 2 and 5 photos are required."
             ])
         }
 
@@ -64,6 +64,9 @@ final class OnboardingProfileService {
         return urls
     }
 
+    /// Upload a photo at a specific index
+    /// - Note: Index 0 is the profile photo (shown on discovery cards and as avatar)
+    ///         All photos are uploaded in their original quality
     func uploadPhoto(image: UIImage, uid: String, index: Int) async throws -> String {
         guard let data = image.jpegData(compressionQuality: 0.85) else {
             throw NSError(domain: "Onboarding", code: 2, userInfo: [
@@ -86,6 +89,33 @@ final class OnboardingProfileService {
             .document(uid)
             .setData([
                 "photoURLs": photoURLs,
+                "updatedAt": FieldValue.serverTimestamp()
+            ], merge: true)
+    }
+
+    /// Upload a hero photo (large banner image for profile)
+    func uploadHeroPhoto(image: UIImage, uid: String) async throws -> String {
+        guard let data = image.jpegData(compressionQuality: 0.85) else {
+            throw NSError(domain: "Onboarding", code: 2, userInfo: [
+                NSLocalizedDescriptionKey: "Invalid image data."
+            ])
+        }
+
+        let ref = storage.reference()
+            .child("userPhotos")
+            .child(uid)
+            .child("hero_photo.jpg")
+
+        _ = try await ref.putDataAsync(data)
+        let url = try await ref.downloadURL()
+        return url.absoluteString
+    }
+
+    func saveHeroPhotoURL(_ heroURL: String, uid: String) async throws {
+        try await db.collection("users")
+            .document(uid)
+            .setData([
+                "heroPhotoURL": heroURL,
                 "updatedAt": FieldValue.serverTimestamp()
             ], merge: true)
     }

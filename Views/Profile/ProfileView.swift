@@ -10,14 +10,20 @@ struct ProfileView: View {
         var id: String { rawValue }
     }
 
-    // ✅ inject for previews / testing
+    struct DetailRow: Identifiable {
+        let id = UUID()
+        let title: String
+        let value: String
+    }
+
+    // ✅ Inject for previews/testing
     @StateObject private var viewModel: ProfileViewModel
 
     init(viewModel: ProfileViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
-    // Convenience init für die App (MainActor-safe)
+    // ✅ Convenience init for app usage (MainActor safe)
     @MainActor
     init() {
         _viewModel = StateObject(wrappedValue: ProfileViewModel())
@@ -26,8 +32,11 @@ struct ProfileView: View {
     @State private var mode: Mode = .preview
     @State private var showSettings = false
     @State private var photoPickerItems: [PhotosPickerItem?] = Array(repeating: nil, count: 6)
+    @State private var avatarPickerItem: PhotosPickerItem?
+    @State private var showDiscardAlert = false
 
     private let genderOptions = ["Female", "Male", "Non-binary", "Other"]
+    private let avatarSize: CGFloat = 84
 
     private var isXcodePreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
@@ -40,7 +49,7 @@ struct ProfileView: View {
             ZStack {
                 AppColors.background.ignoresSafeArea()
 
-                VStack(spacing: 16) {
+                VStack(spacing: 14) {
                     header
 
                     Picker("Profile mode", selection: $mode) {
@@ -61,27 +70,39 @@ struct ProfileView: View {
                                 if mode == .preview {
                                     previewContent
                                 } else {
-                                    editContent(contentWidth: contentWidth)
+                                    editContent()
                                 }
                             }
                         }
                         .frame(width: contentWidth, alignment: .center)
-                        .padding(.bottom, 24)
+                        .padding(.bottom, 28)
                         .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
             }
         }
         .sheet(isPresented: $showSettings) { settingsSheet }
+        .alert("Discard changes?", isPresented: $showDiscardAlert) {
+            Button("Discard", role: .destructive) {
+                viewModel.discardDraft()
+                mode = .preview
+            }
+            Button("Keep Editing", role: .cancel) {}
+        } message: {
+            Text("You have unsaved edits. Discard them and return to Preview?")
+        }
         .task {
             if !isXcodePreview {
                 await viewModel.loadProfile()
             }
         }
+        .onChange(of: mode) { oldValue, newValue in
+            handleModeChange(oldValue: oldValue, newValue: newValue)
+        }
         .animation(.easeInOut(duration: 0.18), value: mode)
     }
 
-    // MARK: Header
+    // MARK: - Header
 
     private var header: some View {
         HStack(alignment: .center) {
@@ -102,304 +123,152 @@ struct ProfileView: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(AppColors.primary)
                     .frame(width: 40, height: 40)
-                    .background(
-                        Circle().fill(AppColors.tintedBackground.opacity(0.35))
-                    )
+                    .background(Circle().fill(AppColors.tintedBackground.opacity(0.35)))
             }
+            .buttonStyle(.plain)
             .accessibilityLabel("Settings")
         }
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.top, 12)
     }
 
-    // MARK: Preview Content
+    // MARK: - Preview Content
 
     private var previewContent: some View {
-        VStack(spacing: 12) {
-            heroCard
-            topInfoRow
-            additionalPhotosGrid
-        }
-    }
+        VStack(spacing: 16) {
+            previewHeader
+            previewDetailsSection
 
-    // ✅ Not round. Smaller. No left/right cropping.
-    private var heroCard: some View {
-        ZStack(alignment: .bottomLeading) {
-            heroImageNonCropping
-
-            LinearGradient(
-                colors: [Color.black.opacity(0.00), Color.black.opacity(0.60)],
-                startPoint: .center,
-                endPoint: .bottom
-            )
-            .allowsHitTesting(false)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(heroTitle)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-
-                Text(heroSubtitle)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.88))
+            if !previewPhotoURLs.isEmpty {
+                previewPhotosSection(urls: previewPhotoURLs)
             }
-            .padding(14)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: heroHeight)
-        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
-        .shadow(color: Color.black.opacity(0.14), radius: 14, x: 0, y: 10)
     }
 
-    private var heroHeight: CGFloat {
-        // Dating-app-ish hero: tall enough to feel premium, but not "endless".
-        let screenWidth = UIScreen.main.bounds.width
-        let proposed = (screenWidth - (AppLayout.screenPadding * 2)) * 1.18
-        return min(max(proposed, 420), 520)
-    }
+    private var previewHeader: some View {
+        let profile = viewModel.profile
+        let heroURL = profile?.displayHeroPhotoURL
+        let rawName = profile?.fullName ?? "Your Name"
+        let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Your Name" : rawName
+        let ageText = profile?.age.map { ", \($0)" } ?? ""
+        let gender = (profile?.gender ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let city = (profile?.city ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
 
-    private var heroImageNonCropping: some View {
-        Group {
-            if let urlString = viewModel.profile?.heroPhotoURL,
-               let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        heroPlaceholder
-                    case .success(let image):
-                        ZStack {
-                            // Background blur so we NEVER get ugly bars.
+        return VStack(spacing: 0) {
+            // Hero Image - Large, not round-cropped (uses uncropped version)
+            ZStack(alignment: .bottomLeading) {
+                if let heroURL, let url = URL(string: heroURL), !heroURL.isEmpty {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            heroPlaceholder
+                        case .success(let image):
                             image
                                 .resizable()
                                 .scaledToFill()
-                                .blur(radius: 18)
-                                .opacity(0.35)
-                                .clipped()
-                                .allowsHitTesting(false)
-
-                            // Foreground: slight fill (premium), but we avoid aggressive cropping by
-                            // padding + clipping inside the card.
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .clipped()
                                 .transaction { t in t.animation = nil }
+                        case .failure:
+                            heroPlaceholder
+                        @unknown default:
+                            heroPlaceholder
                         }
-                    case .failure:
-                        heroPlaceholder
-                    @unknown default:
-                        heroPlaceholder
+                    }
+                } else {
+                    heroPlaceholder
+                }
+                
+                // Gradient overlay for text readability
+                LinearGradient(
+                    colors: [Color.black.opacity(0.7), Color.black.opacity(0.2), Color.clear],
+                    startPoint: .bottom,
+                    endPoint: .top
+                )
+                
+                // Name and info overlay
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(name)\(ageText)")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                    
+                    if !city.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                            Text(city)
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                        }
+                        .foregroundColor(.white.opacity(0.95))
+                        .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+                    }
+                    
+                    if !gender.isEmpty {
+                        Text(gender)
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.9))
+                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
                     }
                 }
-            } else {
-                heroPlaceholder
+                .padding(20)
             }
+            .frame(height: 420)
+            .frame(maxWidth: .infinity)
+            .clipped()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
+        .shadow(color: Color.black.opacity(0.15), radius: 16, x: 0, y: 8)
     }
-
-    private var additionalPhotosGrid: some View {
-        let urls: [String] = (1..<6).compactMap { viewModel.profile?.photoURL(at: $0) }
-        guard !urls.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ForEach(Array(urls.enumerated()), id: \.offset) { _, url in
-                    photoCard(urlString: url)
-                }
-            }
-        )
-    }
-
+    
     private var heroPlaceholder: some View {
         ZStack {
             RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [AppColors.primary.opacity(0.6), AppColors.secondary.opacity(0.6)],
+                        colors: [AppColors.primary.opacity(0.3), AppColors.primary.opacity(0.1)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-            Image(systemName: "person.crop.square.fill")
-                .font(.system(size: 40, weight: .semibold))
-                .foregroundColor(.white.opacity(0.85))
-        }
-    }
-
-    private var heroTitle: String {
-        let name = viewModel.profile?.displayFirstName ?? "Your Name"
-        if let age = viewModel.profile?.age {
-            return "\(name), \(age)"
-        }
-        return name
-    }
-
-    private var heroSubtitle: String {
-        let city = viewModel.profile?.city.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return city.isEmpty ? "Add your city" : city
-    }
-
-    // ✅ Male + CH first, then Age + City somewhere, and spotify link
-    private var topInfoRow: some View {
-        HStack(spacing: 10) {
-            if let gender = trimmedValue(viewModel.profile?.gender) {
-                ProfileChip(text: gender, icon: "person.fill")
-            }
-
-            if let country = trimmedValue(viewModel.profile?.spotifyCountry ?? viewModel.profile?.countryCode) {
-                ProfileChip(text: country.uppercased(), icon: "globe")
-            }
-
-            if let age = viewModel.profile?.age {
-                let city = trimmedValue(viewModel.profile?.city) ?? ""
-                let text = city.isEmpty ? "\(age)" : "\(age) · \(city)"
-                ProfileChip(text: text, icon: "location.fill")
-            } else if let city = trimmedValue(viewModel.profile?.city) {
-                ProfileChip(text: city, icon: "location.fill")
-            }
-
-            Spacer(minLength: 0)
-
-            if let spotifyURL = spotifyProfileURL {
-                Link(destination: spotifyURL) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 14, weight: .semibold))
-                        Text("Spotify")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Capsule().fill(AppColors.tintedBackground.opacity(0.55)))
-                    .foregroundColor(AppColors.primaryText)
-                }
-                .accessibilityLabel("Open Spotify profile")
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var spotifyProfileURL: URL? {
-        let raw = (viewModel.profile?.spotifyId ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !raw.isEmpty else { return nil }
-        if let url = URL(string: raw), url.scheme != nil { return url }
-        return URL(string: "https://open.spotify.com/user/\(raw)")
-    }
-
-    private func photoCard(urlString: String?) -> some View {
-        ZStack {
-            Group {
-                if let urlString, let url = URL(string: urlString) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            photoPlaceholder
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .clipped()
-                                .transaction { t in t.animation = nil }
-                        case .failure:
-                            photoPlaceholder
-                        @unknown default:
-                            photoPlaceholder
-                        }
-                    }
-                } else {
-                    photoPlaceholder
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .aspectRatio(3 / 4, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
-        .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 10)
-    }
-
-    private var photoPlaceholder: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                .fill(AppColors.tintedBackground.opacity(0.35))
-            Image(systemName: "photo.fill")
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundColor(AppColors.secondaryText)
-        }
-    }
-
-    private func trimmedValue(_ value: String?) -> String? {
-        guard let value else { return nil }
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
-    }
-
-    // MARK: Edit Content (kept as-is, only layout safe)
-
-    private func editContent(contentWidth: CGFloat) -> some View {
-        VStack(spacing: 18) {
-            photoEditorSection(contentWidth: contentWidth)
-            basicsSection
-
-            HStack(spacing: 12) {
-                Button {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    viewModel.discardChanges()
-                } label: {
-                    Text("Discard")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                                .fill(AppColors.tintedBackground)
-                        )
-                        .foregroundColor(AppColors.primaryText)
-                }
-                .disabled(viewModel.isSaving || !viewModel.hasChanges)
-
-                Button {
-                    Task { await viewModel.saveChanges() }
-                } label: {
-                    HStack(spacing: 8) {
-                        if viewModel.isSaving {
-                            ProgressView().tint(.white)
-                        }
-                        Text(viewModel.isSaving ? "Saving…" : "Save")
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                            .fill(viewModel.hasChanges ? AppColors.primary : AppColors.primary.opacity(0.4))
-                    )
-                    .foregroundColor(.white)
-                }
-                .disabled(viewModel.isSaving || !viewModel.hasChanges)
-            }
-
-            if viewModel.saveSucceeded {
-                Text("Changes saved ✅")
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.green)
+            VStack(spacing: 12) {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 60, weight: .semibold))
+                    .foregroundColor(AppColors.secondaryText.opacity(0.6))
+                Text("Add your profile photo")
+                    .font(AppFonts.body())
+                    .foregroundColor(AppColors.secondaryText)
             }
         }
     }
 
-    private func photoEditorSection(contentWidth: CGFloat) -> some View {
-        let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    private var previewDetailsSection: some View {
+        let rows = previewDetailRows
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("Photos")
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("About")
                 .font(AppFonts.sectionTitle())
                 .foregroundColor(AppColors.primaryText)
 
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(0..<6, id: \.self) { index in
-                    photoEditorTile(index: index)
+            if rows.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(AppColors.primary.opacity(0.7))
+                    
+                    Text("Add details in Edit mode to complete your profile.")
+                        .font(AppFonts.body())
+                        .foregroundColor(AppColors.secondaryText)
+                }
+                .padding(.vertical, 8)
+            } else {
+                VStack(spacing: 14) {
+                    ForEach(rows) { row in
+                        previewDetailRow(title: row.title, value: row.value)
+                        
+                        if row.id != rows.last?.id {
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                        }
+                    }
                 }
             }
         }
@@ -407,20 +276,389 @@ struct ProfileView: View {
         .background(cardBackground)
     }
 
-    private func photoEditorTile(index: Int) -> some View {
-        let localImage = viewModel.selectedImages.indices.contains(index) ? viewModel.selectedImages[index] : nil
-        let remoteURL = viewModel.photoURLs.indices.contains(index) ? viewModel.photoURLs[index] : nil
+    private func previewDetailRow(title: String, value: String) -> some View {
+        HStack(alignment: .center, spacing: 14) {
+            Text(title)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundColor(AppColors.mutedText)
+                .frame(width: 90, alignment: .leading)
 
-        let hasRemote = (remoteURL ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            Text(value)
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundColor(AppColors.primaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func previewPhotosSection(urls: [String]) -> some View {
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 14), count: 2)
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("More Photos")
+                    .font(AppFonts.sectionTitle())
+                    .foregroundColor(AppColors.primaryText)
+                
+                Spacer()
+                
+                Text("\(urls.count) of 5")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.mutedText)
+            }
+
+            LazyVGrid(columns: columns, spacing: 14) {
+                ForEach(Array(urls.enumerated()), id: \.offset) { index, url in
+                    previewPhotoTile(urlString: url, index: index)
+                }
+            }
+            
+            if urls.count < 5 {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(AppColors.primary.opacity(0.7))
+                    
+                    Text("Add more photos in Edit mode to make your profile stand out")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(AppColors.secondaryText)
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding(AppLayout.cardPadding)
+        .background(cardBackground)
+    }
+
+    private func previewPhotoTile(urlString: String, index: Int) -> some View {
+        ZStack(alignment: .topTrailing) {
+            if let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        ZStack {
+                            previewPhotoPlaceholder
+                            ProgressView()
+                                .tint(AppColors.primary)
+                        }
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .transaction { t in t.animation = nil }
+                    case .failure:
+                        ZStack {
+                            previewPhotoPlaceholder
+                            VStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(AppColors.secondaryText.opacity(0.6))
+                                Text("Failed to load")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(AppColors.secondaryText.opacity(0.6))
+                            }
+                        }
+                    @unknown default:
+                        previewPhotoPlaceholder
+                    }
+                }
+            } else {
+                previewPhotoPlaceholder
+            }
+            
+            // Photo number badge
+            Text("\(index + 2)")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(Color.black.opacity(0.5))
+                )
+                .padding(10)
+        }
+        .frame(maxWidth: .infinity)
+        .aspectRatio(3/4, contentMode: .fit)
+        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+    }
+
+    private var previewPhotoPlaceholder: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.tintedBackground.opacity(0.5), AppColors.tintedBackground.opacity(0.3)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            Image(systemName: "photo")
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundColor(AppColors.secondaryText.opacity(0.6))
+        }
+    }
+
+    private var previewDetailRows: [DetailRow] {
+        guard let profile = viewModel.profile else { return [] }
+
+        var rows: [DetailRow] = []
+        let city = profile.city.trimmingCharacters(in: .whitespacesAndNewlines)
+        let gender = profile.gender.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !city.isEmpty { rows.append(DetailRow(title: "City", value: city)) }
+        if !gender.isEmpty { rows.append(DetailRow(title: "Gender", value: gender)) }
+
+        if let birthday = profile.birthday {
+            rows.append(DetailRow(title: "Birthday", value: birthday.formatted(date: .abbreviated, time: .omitted)))
+        }
+
+        return rows
+    }
+
+    private var previewPhotoURLs: [String] {
+        let urls = viewModel.profile?.photoURLs ?? []
+        return Array(urls.dropFirst()).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    }
+
+    // MARK: - Edit Content
+
+    @ViewBuilder
+    private func editContent() -> some View {
+        if let draft = viewModel.draft {
+            VStack(spacing: 18) {
+                editHeader(draft: draft)
+                basicsSection(draft: draft)
+                photoEditorSection(draft: draft)
+
+                VStack(spacing: 14) {
+                    // Save button
+                    Button {
+                        Task {
+                            let didSave = await viewModel.saveDraftChanges()
+                            if didSave { mode = .preview }
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            if viewModel.isSaving {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.9)
+                            }
+                            Text(viewModel.isSaving ? "Saving..." : "Save Changes")
+                                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                                .fill(viewModel.hasDraftChanges && !viewModel.isSaving ? AppColors.primary : AppColors.primary.opacity(0.5))
+                        )
+                        .foregroundColor(.white)
+                        .shadow(color: viewModel.hasDraftChanges ? AppColors.primary.opacity(0.3) : .clear, radius: 12, x: 0, y: 6)
+                    }
+                    .disabled(viewModel.isSaving || !viewModel.hasDraftChanges)
+                    
+                    // Discard button
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        viewModel.discardDraft()
+                        mode = .preview
+                    } label: {
+                        Text("Discard Changes")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                                    .fill(AppColors.tintedBackground.opacity(0.6))
+                            )
+                            .foregroundColor(AppColors.primaryText.opacity(viewModel.hasDraftChanges ? 1.0 : 0.5))
+                    }
+                    .disabled(viewModel.isSaving || !viewModel.hasDraftChanges)
+                }
+                .padding(.top, 6)
+
+                if viewModel.saveSucceeded {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Changes saved successfully")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                    }
+                    .foregroundColor(.green)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 16)
+                    .background(
+                        Capsule()
+                            .fill(Color.green.opacity(0.15))
+                    )
+                }
+            }
+        } else {
+            VStack(spacing: 16) {
+                ProgressView()
+                    .tint(AppColors.primary)
+                Text("Preparing editor…")
+                    .font(AppFonts.footnote())
+                    .foregroundColor(AppColors.secondaryText)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 48)
+        }
+    }
+
+    private func editHeader(draft: ProfileViewModel.ProfileDraft) -> some View {
+        let avatarURL = draft.photoURLs.first?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallbackAvatarURL = viewModel.profile?.spotifyAvatarURL
+        let displayURL = (avatarURL?.isEmpty == false) ? avatarURL : fallbackAvatarURL
+        let localImage = draft.selectedImages.first ?? nil
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("Profile Photo")
+                .font(AppFonts.sectionTitle())
+                .foregroundColor(AppColors.primaryText)
+            
+            PhotosPicker(selection: $avatarPickerItem, matching: .images, photoLibrary: .shared()) {
+                ZStack(alignment: .bottomTrailing) {
+                    // Large hero image preview
+                    Group {
+                        if let localImage {
+                            Image(uiImage: localImage)
+                                .resizable()
+                                .scaledToFill()
+                        } else if let displayURL, let url = URL(string: displayURL), !displayURL.isEmpty {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .empty:
+                                    heroEditPlaceholder
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                        .transaction { t in t.animation = nil }
+                                case .failure:
+                                    heroEditPlaceholder
+                                @unknown default:
+                                    heroEditPlaceholder
+                                }
+                            }
+                        } else {
+                            heroEditPlaceholder
+                        }
+                    }
+                    .frame(height: 280)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    
+                    // Edit button overlay
+                    HStack(spacing: 8) {
+                        Image(systemName: "pencil.circle.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                        Text("Tap to change")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(Color.black.opacity(0.6))
+                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    )
+                    .padding(16)
+                }
+            }
+            .buttonStyle(.plain)
+            .onChange(of: avatarPickerItem) { _, newItem in
+                guard let newItem else { return }
+
+                Task {
+                    let data = try? await newItem.loadTransferable(type: Data.self)
+                    let image = data.flatMap { UIImage(data: $0) }
+
+                    await MainActor.run {
+                        viewModel.setDraftSelectedImage(image, index: 0)
+                        avatarPickerItem = nil
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    }
+                }
+            }
+        }
+        .padding(AppLayout.cardPadding)
+        .background(cardBackground)
+    }
+    
+    private var heroEditPlaceholder: some View {
+        ZStack {
+            LinearGradient(
+                colors: [AppColors.primary.opacity(0.3), AppColors.primary.opacity(0.1)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            VStack(spacing: 12) {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(.system(size: 56, weight: .semibold))
+                    .foregroundColor(AppColors.secondaryText.opacity(0.6))
+                Text("Add your main photo")
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.secondaryText)
+            }
+        }
+    }
+
+    // MARK: Photos editor
+
+    private func photoEditorSection(draft: ProfileViewModel.ProfileDraft) -> some View {
+        // 2x3 grid as per UX guidelines (Hinge-like)
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 2)
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Photos")
+                    .font(AppFonts.sectionTitle())
+                    .foregroundColor(AppColors.primaryText)
+                
+                Spacer()
+                
+                Text("Tap to add or replace")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(AppColors.mutedText)
+            }
+
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(1..<6, id: \.self) { index in
+                    photoEditorTile(index: index, draft: draft)
+                }
+            }
+        }
+        .padding(AppLayout.cardPadding)
+        .background(cardBackground)
+    }
+
+    private func photoEditorTile(index: Int, draft: ProfileViewModel.ProfileDraft) -> some View {
+        let localImage = draft.selectedImages.indices.contains(index) ? draft.selectedImages[index] : nil
+        let remoteURL = draft.photoURLs.indices.contains(index) ? draft.photoURLs[index] : nil
+
+        let hasRemote = !(remoteURL ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasLocal = localImage != nil
         let hasAnyPhoto = hasLocal || hasRemote
 
         let binding = Binding<PhotosPickerItem?>(
             get: { photoPickerItems.indices.contains(index) ? photoPickerItems[index] : nil },
             set: { newValue in
-                if photoPickerItems.indices.contains(index) {
-                    photoPickerItems[index] = newValue
-                }
+                if photoPickerItems.indices.contains(index) { photoPickerItems[index] = newValue }
             }
         )
 
@@ -432,16 +670,13 @@ struct ProfileView: View {
                             .resizable()
                             .scaledToFill()
                             .clipped()
-                    } else if let remoteURL, let url = URL(string: remoteURL) {
+                    } else if let remoteURL, let url = URL(string: remoteURL), !remoteURL.isEmpty {
                         AsyncImage(url: url) { phase in
                             switch phase {
                             case .empty:
                                 editPhotoPlaceholder(index: index)
                             case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                                    .clipped()
+                                image.resizable().scaledToFill().clipped()
                                     .transaction { t in t.animation = nil }
                             case .failure:
                                 editPhotoPlaceholder(index: index)
@@ -457,13 +692,14 @@ struct ProfileView: View {
                 photoBadge("\(index + 1)")
             }
             .frame(maxWidth: .infinity)
-            .aspectRatio(3 / 4, contentMode: .fit)
+            .aspectRatio(3/4, contentMode: .fit)
             .background(AppColors.tintedBackground)
             .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                    .stroke(Color.white.opacity(index == 0 ? 0.22 : 0.14), lineWidth: 1)
+                    .stroke(hasAnyPhoto ? Color.clear : Color.white.opacity(0.12), lineWidth: 1.5)
             )
+            .shadow(color: Color.black.opacity(hasAnyPhoto ? 0.1 : 0.05), radius: 8, x: 0, y: 4)
         }
 
         return picker
@@ -471,24 +707,26 @@ struct ProfileView: View {
                 if hasAnyPhoto {
                     Button {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        // Remove local override + remote URL (soft delete)
-                        viewModel.removePhoto(at: index)
+                        viewModel.removeDraftPhoto(at: index)
                     } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24, weight: .semibold))
                             .foregroundColor(.white)
-                            .frame(width: 28, height: 28)
-                            .background(Circle().fill(Color.black.opacity(0.55)))
-                            .padding(8)
+                            .background(
+                                Circle()
+                                    .fill(Color.black.opacity(0.4))
+                                    .frame(width: 26, height: 26)
+                            )
+                            .padding(10)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Remove photo \(index + 1)")
                 }
             }
             .accessibilityLabel(Text("Photo \(index + 1)"))
-            .onChange(of: binding.wrappedValue) { newItem in
+            .onChange(of: binding.wrappedValue) { _, newItem in
                 guard let newItem else {
-                    viewModel.setSelectedImage(nil, index: index)
+                    viewModel.setDraftSelectedImage(nil, index: index)
                     return
                 }
 
@@ -497,39 +735,50 @@ struct ProfileView: View {
                     let image = data.flatMap { UIImage(data: $0) }
 
                     await MainActor.run {
-                        viewModel.setSelectedImage(image, index: index)
-                        if image != nil {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        }
+                        viewModel.setDraftSelectedImage(image, index: index)
+                        if image != nil { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
                     }
                 }
             }
     }
 
     private func editPhotoPlaceholder(index: Int) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: "plus")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(AppColors.secondaryText)
+        VStack(spacing: 10) {
+            Image(systemName: "plus.circle.fill")
+                .font(.system(size: 32, weight: .semibold))
+                .foregroundColor(AppColors.primary.opacity(0.7))
 
-            Text(index == 0 ? "Profile" : "Add")
-                .font(AppFonts.footnote())
+            Text("Add Photo")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundColor(AppColors.secondaryText)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            LinearGradient(
+                colors: [AppColors.tintedBackground.opacity(0.5), AppColors.tintedBackground.opacity(0.3)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
     }
 
     private func photoBadge(_ badge: String) -> some View {
         Text(badge)
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .font(.system(size: 13, weight: .bold, design: .rounded))
             .foregroundColor(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Capsule().fill(Color.black.opacity(0.4)))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                Capsule()
+                    .fill(Color.black.opacity(0.5))
+                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+            )
             .padding(10)
     }
 
-    private var basicsSection: some View {
+    // MARK: Basics section
+
+    private func basicsSection(draft: ProfileViewModel.ProfileDraft) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Basics")
                 .font(AppFonts.sectionTitle())
@@ -537,13 +786,13 @@ struct ProfileView: View {
 
             VStack(spacing: 14) {
                 labeledField(title: "First name", isProminent: true) {
-                    TextField("First name", text: $viewModel.firstName)
+                    TextField("First name", text: draftBinding(\.firstName))
                         .textInputAutocapitalization(.words)
                         .keyboardType(.namePhonePad)
                 }
 
                 labeledField(title: "Last name") {
-                    TextField("Last name", text: $viewModel.lastName)
+                    TextField("Last name", text: draftBinding(\.lastName))
                         .textInputAutocapitalization(.words)
                         .keyboardType(.namePhonePad)
                 }
@@ -551,12 +800,12 @@ struct ProfileView: View {
                 birthdayPicker
 
                 labeledField(title: "City") {
-                    TextField("City", text: $viewModel.city)
+                    TextField("City", text: draftBinding(\.city))
                         .textInputAutocapitalization(.words)
                         .keyboardType(.default)
                 }
 
-                genderSelector
+                genderSelector(currentGender: draft.gender)
             }
         }
         .padding(AppLayout.cardPadding)
@@ -573,7 +822,7 @@ struct ProfileView: View {
                 HStack(spacing: 12) {
                     DatePicker(
                         "",
-                        selection: $viewModel.birthday,
+                        selection: draftDateBinding(\.birthday),
                         in: minimumDate...Date(),
                         displayedComponents: .date
                     )
@@ -582,7 +831,7 @@ struct ProfileView: View {
 
                     Spacer(minLength: 0)
 
-                    if let age = viewModel.birthday.age() {
+                    if let age = viewModel.draft?.birthday.age() {
                         Text("\(age)")
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundColor(AppColors.primaryText)
@@ -595,7 +844,7 @@ struct ProfileView: View {
         }
     }
 
-    private var genderSelector: some View {
+    private func genderSelector(currentGender: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Gender")
                 .font(AppFonts.footnote())
@@ -607,15 +856,15 @@ struct ProfileView: View {
                         ForEach(genderOptions, id: \.self) { option in
                             Button {
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                viewModel.gender = option
+                                viewModel.updateDraft { $0.gender = option }
                             } label: {
                                 Text(option)
                                     .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                    .foregroundColor(viewModel.gender == option ? .white : AppColors.primaryText)
+                                    .foregroundColor(currentGender == option ? .white : AppColors.primaryText)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                                     .background(
-                                        Capsule().fill(viewModel.gender == option ? AppColors.primary : AppColors.tintedBackground.opacity(0.8))
+                                        Capsule().fill(currentGender == option ? AppColors.primary : AppColors.tintedBackground.opacity(0.8))
                                     )
                             }
                             .buttonStyle(.plain)
@@ -656,6 +905,24 @@ struct ProfileView: View {
             )
     }
 
+    private func draftBinding(_ keyPath: WritableKeyPath<ProfileViewModel.ProfileDraft, String>) -> Binding<String> {
+        Binding(
+            get: { viewModel.draft?[keyPath: keyPath] ?? "" },
+            set: { newValue in
+                viewModel.updateDraft { $0[keyPath: keyPath] = newValue }
+            }
+        )
+    }
+
+    private func draftDateBinding(_ keyPath: WritableKeyPath<ProfileViewModel.ProfileDraft, Date>) -> Binding<Date> {
+        Binding(
+            get: { viewModel.draft?[keyPath: keyPath] ?? Date() },
+            set: { newValue in
+                viewModel.updateDraft { $0[keyPath: keyPath] = newValue }
+            }
+        )
+    }
+
     private var minimumDate: Date {
         Calendar.current.date(from: DateComponents(year: 1900, month: 1, day: 1)) ?? .distantPast
     }
@@ -665,6 +932,8 @@ struct ProfileView: View {
             .fill(AppColors.cardBackground)
             .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 8)
     }
+
+    // MARK: Loading / error
 
     private var loadingState: some View {
         VStack(spacing: 16) {
@@ -685,6 +954,8 @@ struct ProfileView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 32)
     }
+
+    // MARK: Settings sheet
 
     private var settingsSheet: some View {
         NavigationStack {
@@ -711,30 +982,75 @@ struct ProfileView: View {
             }
         }
     }
-}
 
-private struct ProfileChip: View {
-    let text: String
-    let icon: String
+    // MARK: - Mode handling
 
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-            Text(text)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+    private func handleModeChange(oldValue: Mode, newValue: Mode) {
+        if newValue == .edit {
+            viewModel.beginEditing()
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(AppColors.tintedBackground.opacity(0.5)))
-        .foregroundColor(AppColors.primaryText)
+
+        if oldValue == .edit && newValue == .preview {
+            if viewModel.hasDraftChanges {
+                showDiscardAlert = true
+                mode = .edit
+            } else {
+                viewModel.discardDraft()
+            }
+        }
     }
 }
 
 #if DEBUG
-
 #Preview {
     ProfileView(viewModel: ProfileViewModel(preview: true))
 }
-
 #endif
+
+struct ProfileAvatarView: View {
+    let image: UIImage?
+    let urlString: String?
+    let size: CGFloat
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else if let urlString, let url = URL(string: urlString), !urlString.isEmpty {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        placeholder
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .transaction { t in t.animation = nil }
+                    case .failure:
+                        placeholder
+                    @unknown default:
+                        placeholder
+                    }
+                }
+            } else {
+                placeholder
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(
+            Circle().stroke(Color.white.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private var placeholder: some View {
+        ZStack {
+            Circle().fill(AppColors.tintedBackground.opacity(0.6))
+            Image(systemName: "person.fill")
+                .font(.system(size: size * 0.35, weight: .semibold))
+                .foregroundColor(AppColors.secondaryText)
+        }
+    }
+}

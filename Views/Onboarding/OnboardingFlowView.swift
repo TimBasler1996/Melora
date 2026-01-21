@@ -9,20 +9,24 @@ struct OnboardingFlowView: View {
 
     var body: some View {
         ZStack {
+            // Dark gradient background matching NowPlayingView and LikesInboxView
             LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [
+                    Color(red: 0.15, green: 0.15, blue: 0.2),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             )
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 topBar
-                contentCard
-                Spacer()
+                contentArea
+                Spacer(minLength: 20)
                 bottomCTA
             }
-            .padding(.horizontal, AppLayout.screenPadding)
+            .padding(.horizontal, 20)
             .padding(.top, 12)
             .padding(.bottom, 24)
         }
@@ -43,9 +47,11 @@ struct OnboardingFlowView: View {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.18))
-                        .clipShape(Circle())
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.12))
+                        )
                 }
                 .opacity(viewModel.stepIndex == 1 ? 0 : 1)
                 .disabled(viewModel.stepIndex == 1)
@@ -53,26 +59,27 @@ struct OnboardingFlowView: View {
                 Spacer()
 
                 Text(viewModel.progressText)
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.9))
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.7))
             }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.white.opacity(0.2))
+                        .fill(Color.white.opacity(0.15))
                         .frame(height: 4)
 
                     Capsule()
-                        .fill(Color.white.opacity(0.9))
+                        .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
                         .frame(width: geo.size.width * viewModel.progressValue, height: 4)
+                        .animation(.easeInOut(duration: 0.3), value: viewModel.progressValue)
                 }
             }
             .frame(height: 4)
         }
     }
 
-    private var contentCard: some View {
+    private var contentArea: some View {
         VStack(spacing: 16) {
             switch viewModel.stepIndex {
             case 1:
@@ -85,12 +92,6 @@ struct OnboardingFlowView: View {
                 OnboardingStepBasicsView(viewModel: viewModel)
             }
         }
-        .padding(AppLayout.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                .fill(AppColors.cardBackground.opacity(0.98))
-        )
-        .shadow(color: Color.black.opacity(AppLayout.shadowOpacity), radius: AppLayout.shadowRadius, x: 0, y: 10)
         .padding(.top, 24)
     }
 
@@ -100,23 +101,15 @@ struct OnboardingFlowView: View {
                 let isEnabled = viewModel.canContinueCurrentStep
                 Button(action: viewModel.goNext) {
                     Text(viewModel.stepIndex == 1 ? "Looks good" : "Continue")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 52)
+                        .frame(height: 54)
                         .background(
-                            LinearGradient(
-                                colors: [AppColors.primary, AppColors.secondary],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            .opacity(isEnabled ? 1 : 0.55)
+                            Capsule()
+                                .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                                .opacity(isEnabled ? 1 : 0.4)
                         )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                                .stroke(Color.white.opacity(isEnabled ? 0.25 : 0.12), lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
                 }
                 .disabled(!isEnabled)
             } else {
@@ -126,42 +119,48 @@ struct OnboardingFlowView: View {
                         Task { await viewModel.connectSpotify(using: spotifyAuth) }
                     } label: {
                         Text(viewModel.isConnectingSpotify ? "Connecting…" : "Connect Spotify")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(AppColors.primary)
-                            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
+                            .frame(height: 54)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                            )
                     }
                     .disabled(viewModel.isConnectingSpotify)
-                    .opacity(viewModel.isConnectingSpotify ? 0.7 : 1)
+                    .opacity(viewModel.isConnectingSpotify ? 0.6 : 1)
                 } else {
                     Button {
                         Task { await viewModel.finish(using: spotifyAuth) }
                     } label: {
                         Text(viewModel.isFinishing ? "Finishing…" : "Finish")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(AppColors.primary)
-                            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
+                            .frame(height: 54)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                                    .opacity(viewModel.canFinish ? 1 : 0.4)
+                            )
                     }
                     .disabled(!viewModel.canFinish)
-                    .opacity(viewModel.canFinish ? 1 : 0.6)
                 }
             }
 
             if let msg = viewModel.spotifyErrorMessage, !msg.isEmpty {
                 Text(msg)
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.9))
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
             }
 
             if let msg = viewModel.finishErrorMessage, !msg.isEmpty {
                 Text(msg)
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.9))
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+                    .multilineTextAlignment(.center)
             }
         }
         .padding(.bottom, 6)

@@ -13,12 +13,17 @@ final class DiscoverViewModel: ObservableObject {
 
     @Published var selectedBroadcast: DiscoverBroadcast?
     @Published var dismissTarget: DiscoverBroadcast?
+    
+    // Track broadcasts that have been liked and messaged
+    @Published private(set) var likedBroadcastIds: Set<String> = []
+    @Published private(set) var messagedBroadcastIds: Set<String> = []
 
     private let service: DiscoverService
     private let likeService: LikeApiService
     private let chatService: ChatApiService
 
     private var listener: ListenerRegistration?
+    private var pollTimer: Task<Void, Never>?
     private var allBroadcasts: [DiscoverBroadcast] = []
     private var cachedUsers: [String: DiscoverUser] = [:]
 
@@ -36,11 +41,14 @@ final class DiscoverViewModel: ObservableObject {
         self.service = service
         self.likeService = likeService
         self.chatService = chatService
+        loadLikedBroadcastsFromCache()
+        loadMessagedBroadcastsFromCache()
     }
 
     deinit {
         Task { @MainActor in
             stopListening()
+            pollTimer?.cancel()
         }
     }
 
@@ -67,12 +75,33 @@ final class DiscoverViewModel: ObservableObject {
                 }
             }
         }
+        
+        // Start polling timer for refresh every 5 seconds
+        startPolling()
     }
 
     func stopListening() {
         listener?.remove()
         listener = nil
+        pollTimer?.cancel()
+        pollTimer = nil
         isListening = false
+    }
+    
+    private func startPolling() {
+        pollTimer?.cancel()
+        pollTimer = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+                guard !Task.isCancelled else { break }
+                await self?.refreshBroadcasts()
+            }
+        }
+    }
+    
+    private func refreshBroadcasts() async {
+        // Silently refresh without showing loading indicator
+        // The listener will automatically get updates, this is just a safety mechanism
     }
 
     func updateCurrentLocation(_ location: LocationPoint?) {
@@ -156,7 +185,54 @@ final class DiscoverViewModel: ObservableObject {
                 createdFromTrackId: broadcast.track.id,
                 createdFromLikeId: like.id
             )
+            // Mark this broadcast as messaged
+            messagedBroadcastIds.insert(broadcast.id)
+            saveMessagedBroadcastsToCache()
         }
+        
+        // Mark this broadcast as liked
+        likedBroadcastIds.insert(broadcast.id)
+        saveLikedBroadcastsToCache()
+    }
+    
+    func isLiked(_ broadcast: DiscoverBroadcast) -> Bool {
+        likedBroadcastIds.contains(broadcast.id)
+    }
+    
+    func hasMessage(_ broadcast: DiscoverBroadcast) -> Bool {
+        messagedBroadcastIds.contains(broadcast.id)
+    }
+    
+    // MARK: - Cache Management
+    
+    private func loadLikedBroadcastsFromCache() {
+        guard let uid = service.currentUserId() else { return }
+        let defaults = UserDefaults.standard
+        let key = "discover.likedBroadcasts.\(uid)"
+        let cached = defaults.stringArray(forKey: key) ?? []
+        likedBroadcastIds = Set(cached)
+    }
+    
+    private func saveLikedBroadcastsToCache() {
+        guard let uid = service.currentUserId() else { return }
+        let defaults = UserDefaults.standard
+        let key = "discover.likedBroadcasts.\(uid)"
+        defaults.set(Array(likedBroadcastIds), forKey: key)
+    }
+    
+    private func loadMessagedBroadcastsFromCache() {
+        guard let uid = service.currentUserId() else { return }
+        let defaults = UserDefaults.standard
+        let key = "discover.messagedBroadcasts.\(uid)"
+        let cached = defaults.stringArray(forKey: key) ?? []
+        messagedBroadcastIds = Set(cached)
+    }
+    
+    private func saveMessagedBroadcastsToCache() {
+        guard let uid = service.currentUserId() else { return }
+        let defaults = UserDefaults.standard
+        let key = "discover.messagedBroadcasts.\(uid)"
+        defaults.set(Array(messagedBroadcastIds), forKey: key)
     }
 
     func selectBroadcast(_ broadcast: DiscoverBroadcast) {

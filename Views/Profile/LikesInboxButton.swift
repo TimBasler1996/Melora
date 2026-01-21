@@ -34,7 +34,7 @@ struct LikesInboxButton: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
-                        .background(Capsule().fill(Color.red))
+                        .background(Capsule().fill(Color(red: 0.2, green: 0.85, blue: 0.4)))
                         .offset(x: 10, y: -8)
                 }
             }
@@ -46,12 +46,14 @@ struct LikesInboxButton: View {
         .onDisappear {
             badgeVM.stopListening()
         }
-        .navigationDestination(isPresented: $showInbox) {
-            LikesInboxView(user: user)
-                .onDisappear {
-                    // When leaving inbox: mark as seen (and reset badge)
-                    badgeVM.markAllAsSeenNow()
-                }
+        .fullScreenCover(isPresented: $showInbox) {
+            NavigationStack {
+                LikesInboxView(user: user)
+                    .onDisappear {
+                        // When leaving inbox: mark as seen (and reset badge)
+                        badgeVM.markAllAsSeenNow()
+                    }
+            }
         }
         .accessibilityLabel("Likes inbox")
     }

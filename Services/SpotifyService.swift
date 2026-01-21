@@ -72,6 +72,16 @@ private struct SpotifyAlbum: Codable {
     let images: [SpotifyImage]
 }
 
+private struct SpotifyPlayerStateResponse: Codable {
+    let shuffleState: Bool?
+    let repeatState: String?
+
+    enum CodingKeys: String, CodingKey {
+        case shuffleState = "shuffle_state"
+        case repeatState = "repeat_state"
+    }
+}
+
 // MARK: - Errors + State
 
 enum SpotifyAPIError: Error {
@@ -157,6 +167,35 @@ final class SpotifyService {
         return NowPlayingState(track: track, isPlaying: isPlaying, progressMs: progress)
     }
 
+    /// Fetches player state (shuffle and repeat).
+    func fetchPlayerState() async throws -> (shuffle: Bool, repeatMode: String) {
+        let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
+        let url = apiBaseURL.appendingPathComponent("me/player")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw SpotifyAPIError.invalidResponse
+        }
+
+        if http.statusCode == 204 { // No active device
+            return (shuffle: false, repeatMode: "off")
+        }
+
+        guard (200..<300).contains(http.statusCode) else {
+            if http.statusCode == 404 { throw SpotifyAPIError.noActiveDevice }
+            throw SpotifyAPIError.invalidResponse
+        }
+
+        let decoded = try JSONDecoder().decode(SpotifyPlayerStateResponse.self, from: data)
+        let shuffle = decoded.shuffleState ?? false
+        let repeatMode = decoded.repeatState ?? "off"
+        return (shuffle, repeatMode)
+    }
+
     /// Backwards compatible helper.
     func fetchCurrentlyPlaying() async throws -> Track {
         let state = try await fetchNowPlayingState()
@@ -207,6 +246,45 @@ final class SpotifyService {
 
     func previous() async throws {
         try await sendPlayerCommand(path: "me/player/previous", method: "POST")
+    }
+
+    func seek(to positionMs: Int) async throws {
+        let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
+        var components = URLComponents(url: apiBaseURL.appendingPathComponent("me/player/seek"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "position_ms", value: String(positionMs))]
+        guard let url = components.url else { throw SpotifyAPIError.invalidResponse }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw SpotifyAPIError.invalidResponse
+        }
+        if http.statusCode == 404 { throw SpotifyAPIError.noActiveDevice }
+        if http.statusCode == 204 || (200..<300).contains(http.statusCode) { return }
+        throw SpotifyAPIError.invalidResponse
+    }
+
+    /// Sets the repeat mode for the active device. Allowed values: off, context, track
+    func setRepeat(mode: String) async throws {
+        let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
+        var components = URLComponents(url: apiBaseURL.appendingPathComponent("me/player/repeat"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "state", value: mode)]
+        guard let url = components.url else { throw SpotifyAPIError.invalidResponse }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw SpotifyAPIError.invalidResponse
+        }
+        if http.statusCode == 404 { throw SpotifyAPIError.noActiveDevice }
+        if http.statusCode == 204 || (200..<300).contains(http.statusCode) { return }
+        throw SpotifyAPIError.invalidResponse
     }
 
     private func sendPlayerCommand(path: String, method: String) async throws {

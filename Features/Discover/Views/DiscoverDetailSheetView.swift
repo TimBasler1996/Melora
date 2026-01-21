@@ -12,18 +12,35 @@ struct DiscoverDetailSheetView: View {
     @State private var messageText: String = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                trackHeader
-                actionsSection
-                profileSnapshot
+        ZStack {
+            // Dark gradient background
+            LinearGradient(
+                colors: [
+                    Color(red: 0.15, green: 0.15, blue: 0.2),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    trackHeader
+                    actionsSection
+
+                    profileSection // ✅ shared ProfilePreviewView compact
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+                .padding(.top, 8)
             }
-            .padding(.horizontal, AppLayout.screenPadding)
-            .padding(.bottom, 24)
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
+
+    // MARK: - Track header
 
     private var trackHeader: some View {
         HStack(alignment: .center, spacing: 16) {
@@ -32,16 +49,17 @@ struct DiscoverDetailSheetView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(broadcast.track.title)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
+                    .foregroundColor(.white)
 
                 Text(broadcast.track.artist)
                     .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(AppColors.secondaryText)
+                    .foregroundColor(.white.opacity(0.7))
 
-                if let album = broadcast.track.album, !album.isEmpty {
+                if let album = broadcast.track.album?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !album.isEmpty {
                     Text(album)
                         .font(.system(size: 12, weight: .regular, design: .rounded))
-                        .foregroundColor(AppColors.mutedText)
+                        .foregroundColor(.white.opacity(0.5))
                 }
 
                 if let spotifyURL = broadcast.track.spotifyURLValue {
@@ -52,7 +70,7 @@ struct DiscoverDetailSheetView: View {
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(AppColors.primary)
+                    .foregroundColor(Color(red: 0.2, green: 0.85, blue: 0.4))
                 }
             }
 
@@ -60,8 +78,8 @@ struct DiscoverDetailSheetView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                .fill(AppColors.cardBackground)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.08))
         )
     }
 
@@ -73,9 +91,8 @@ struct DiscoverDetailSheetView: View {
                     case .empty:
                         artworkPlaceholder
                     case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
+                        image.resizable().scaledToFill()
+                            .transaction { t in t.animation = nil }
                     case .failure:
                         artworkPlaceholder
                     @unknown default:
@@ -87,31 +104,34 @@ struct DiscoverDetailSheetView: View {
             }
         }
         .frame(width: 72, height: 72)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private var artworkPlaceholder: some View {
         ZStack {
             LinearGradient(
-                colors: [AppColors.primary.opacity(0.7), AppColors.secondary.opacity(0.7)],
+                colors: [Color.white.opacity(0.15), Color.white.opacity(0.1)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             Image(systemName: "music.note")
                 .font(.system(size: 26, weight: .bold))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(.white.opacity(0.4))
         }
     }
+
+    // MARK: - Actions
 
     private var actionsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 Button(action: onLike) {
                     Label("Like track", systemImage: "heart.fill")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(AppColors.primary)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(Color(red: 0.2, green: 0.85, blue: 0.4))
                         .foregroundColor(.white)
                         .clipShape(Capsule())
                 }
@@ -122,12 +142,13 @@ struct DiscoverDetailSheetView: View {
 
             Text("Add message (optional)")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundColor(AppColors.secondaryText)
+                .foregroundColor(.white.opacity(0.6))
 
             TextField("Say something nice…", text: $messageText, axis: .vertical)
                 .font(.system(size: 14, weight: .regular, design: .rounded))
+                .foregroundColor(.white)
                 .padding(12)
-                .background(AppColors.cardBackground)
+                .background(Color.white.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             Button {
@@ -140,11 +161,11 @@ struct DiscoverDetailSheetView: View {
                 HStack {
                     Spacer()
                     Label("Send", systemImage: "paperplane.fill")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
                     Spacer()
                 }
                 .padding(.vertical, 12)
-                .background(AppColors.secondary)
+                .background(Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8))
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
@@ -152,158 +173,53 @@ struct DiscoverDetailSheetView: View {
         }
     }
 
-    private var profileSnapshot: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    // MARK: - Profile (shared component)
+
+    private var profileSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Profile")
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundColor(AppColors.secondaryText)
+                .foregroundColor(.white.opacity(0.6))
 
-            HStack(alignment: .center, spacing: 14) {
-                profileHero
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("\(broadcast.user.displayName), \(broadcast.user.ageText)")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.primaryText)
-
-                    Text(broadcast.user.locationText)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundColor(AppColors.secondaryText)
-
-                    chipRow
-                }
-
-                Spacer(minLength: 0)
-            }
-
-            if !broadcast.user.photoURLs.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(broadcast.user.photoURLs.prefix(6), id: \.self) { urlString in
-                            photoChip(urlString)
-                        }
-                    }
-                }
-            }
+            ProfilePreviewView(
+                model: profilePreviewModelFromDiscoverUser(broadcast.user),
+                density: .compact
+            )
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                .fill(AppColors.cardBackground)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.08))
         )
     }
 
-    private var profileHero: some View {
-        ZStack {
-            if let url = broadcast.user.primaryPhotoURL.flatMap(URL.init(string:)) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        heroPlaceholder
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .failure:
-                        heroPlaceholder
-                    @unknown default:
-                        heroPlaceholder
-                    }
-                }
-            } else {
-                heroPlaceholder
-            }
+    private func profilePreviewModelFromDiscoverUser(_ u: DiscoverUser) -> ProfilePreviewModel {
+        let displayName = u.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // hero
+        let hero = u.primaryPhotoURL
+
+        // ✅ additional photos (under each other, fixed size)
+        let additional = u.photoURLs
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .filter { $0 != (hero ?? "") } // avoid duplicate hero
+
+        func clean(_ value: String?) -> String? {
+            guard let value else { return nil }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
         }
-        .frame(width: 88, height: 88)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
 
-    private var heroPlaceholder: some View {
-        ZStack {
-            LinearGradient(
-                colors: [AppColors.primary.opacity(0.6), AppColors.secondary.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            Image(systemName: "person.fill")
-                .font(.system(size: 30, weight: .semibold))
-                .foregroundColor(.white.opacity(0.9))
-        }
+        return ProfilePreviewModel(
+            firstName: displayName.isEmpty ? "User" : displayName,
+            age: u.age,
+            city: clean(u.city),
+            gender: clean(u.gender),
+            countryCode: clean(u.countryCode),
+            heroPhotoURL: hero,
+            photoURLs: additional,
+            spotifyIdOrURL: nil
+        )
     }
-
-    private var chipRow: some View {
-        HStack(spacing: 8) {
-            if let gender = broadcast.user.gender, !gender.isEmpty {
-                chip(text: gender)
-            }
-            if let countryCode = broadcast.user.countryCode, !countryCode.isEmpty {
-                chip(text: countryCode)
-            }
-        }
-    }
-
-    private func chip(text: String) -> some View {
-        Text(text)
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(AppColors.primary.opacity(0.12))
-            .foregroundColor(AppColors.primary)
-            .clipShape(Capsule())
-    }
-
-    private func photoChip(_ urlString: String) -> some View {
-        ZStack {
-            if let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        Color.black.opacity(0.1)
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .failure:
-                        Color.black.opacity(0.1)
-                    @unknown default:
-                        Color.black.opacity(0.1)
-                    }
-                }
-            } else {
-                Color.black.opacity(0.1)
-            }
-        }
-        .frame(width: 56, height: 56)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
-#Preview {
-    DiscoverDetailSheetView(
-        broadcast: DiscoverBroadcast(
-            id: "preview",
-            user: DiscoverUser(
-                id: "user",
-                firstName: "Lina",
-                lastName: "Klein",
-                age: 24,
-                city: "Hamburg",
-                gender: "Female",
-                countryCode: "DE",
-                heroPhotoURL: nil,
-                profilePhotoURL: nil,
-                photoURLs: ["https://example.com/one", "https://example.com/two"]
-            ),
-            track: DiscoverTrack(
-                id: "track",
-                title: "Solar Nights",
-                artist: "Aurora",
-                album: "Skyline",
-                artworkURL: nil,
-                spotifyTrackURL: nil
-            ),
-            broadcastedAt: Date(),
-            location: nil,
-            distanceMeters: 120
-        ),
-        isSending: false,
-        onLike: {},
-        onSendMessage: { _ in }
-    )
 }
