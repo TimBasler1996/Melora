@@ -44,7 +44,6 @@
 		759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AFD2EC77D9A0012A549 /* ProfileView.swift */; };
 		759F7B002EC782D30012A549 /* NearbyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AFC2EC77D810012A549 /* NearbyView.swift */; };
 		759F7B012EC782D30012A549 /* SessionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AFB2EC77D760012A549 /* SessionRowView.swift */; };
-		759F7B022EC782D30012A549 /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AFA2EC77D6B0012A549 /* NowPlayingView.swift */; };
 		759F7B042EC782D30012A549 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7AF72EC77CD80012A549 /* Session.swift */; };
 		759F7B082EC783C70012A549 /* Track.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7B072EC783C70012A549 /* Track.swift */; };
 		759F7B0A2EC783CF0012A549 /* LocationPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 759F7B092EC783CF0012A549 /* LocationPoint.swift */; };
@@ -65,22 +64,28 @@
 		75A1740E2ECA158400CEB48F /* TrackLike.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A1740D2ECA158400CEB48F /* TrackLike.swift */; };
 		75A174102ECA159900CEB48F /* LikeApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A1740F2ECA159900CEB48F /* LikeApiService.swift */; };
 		75A174122ECBB68900CEB48F /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174112ECBB68900CEB48F /* User.swift */; };
-		75A174162ECE547500CEB48F /* LikesInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174152ECE547500CEB48F /* LikesInboxView.swift */; };
 		75A174182ECE548000CEB48F /* OtherUserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174172ECE548000CEB48F /* OtherUserProfileView.swift */; };
 		75A1741C2ECE59E300CEB48F /* TrackLikesDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A1741B2ECE59E300CEB48F /* TrackLikesDetailView.swift */; };
 		75A1741F2ECFAD0100CEB48F /* SpotifyPlaybackError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A1741E2ECFAD0100CEB48F /* SpotifyPlaybackError.swift */; };
 		75A174212ED0FFFA00CEB48F /* TrackLikesCluster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */; };
 		75A174232ED1007200CEB48F /* LikesInboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174222ED1007200CEB48F /* LikesInboxViewModel.swift */; };
 		75A174252ED107AF00CEB48F /* SpotifyConnectionSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174242ED107AF00CEB48F /* SpotifyConnectionSection.swift */; };
+		75D2A9E52F20F2E500013A33 /* ONBOARDING_DESIGN_UPDATE.md in Resources */ = {isa = PBXBuildFile; fileRef = 75D2A9E42F20F2E500013A33 /* ONBOARDING_DESIGN_UPDATE.md */; };
+		75D2A9E72F20F5CF00013A33 /* DISCOVER_DESIGN_UPDATE.md in Resources */ = {isa = PBXBuildFile; fileRef = 75D2A9E62F20F5CF00013A33 /* DISCOVER_DESIGN_UPDATE.md */; };
 		75DAD86B2F20131200D1219E /* PROFILE_IMPROVEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD86A2F20131200D1219E /* PROFILE_IMPROVEMENTS.md */; };
 		75DAD86D2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD86C2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md */; };
+		75DAD86F2F20DC0400D1219E /* ONBOARDING_IMPROVEMENTS_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD86E2F20DC0400D1219E /* ONBOARDING_IMPROVEMENTS_SUMMARY.md */; };
+		75DAD8712F20DD8E00D1219E /* FIXES_APPLIED.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD8702F20DD8E00D1219E /* FIXES_APPLIED.md */; };
+		75DAD8752F20E1A200D1219E /* ONBOARDING_FINAL_FIXES.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD8742F20E1A200D1219E /* ONBOARDING_FINAL_FIXES.md */; };
+		75DAD8772F20E80500D1219E /* OnboardingStepSpotifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DAD8762F20E80500D1219E /* OnboardingStepSpotifyView.swift */; };
+		75DAD87B2F20EBE900D1219E /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DAD87A2F20EBE900D1219E /* NowPlayingView.swift */; };
+		75DAD87D2F20EFCB00D1219E /* LikesInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DAD87C2F20EFCB00D1219E /* LikesInboxView.swift */; };
 		76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A02F12345600112233 /* OnboardingStateManager.swift */; };
 		76B0C1A42F12345600112233 /* OnboardingFlowPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */; };
 		76B0C1A72F12345600112233 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A62F12345600112233 /* OnboardingViewModel.swift */; };
 		76B0C1AA2F12345600112233 /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A92F12345600112233 /* OnboardingFlowView.swift */; };
 		76B0C1AD2F12345600112233 /* OnboardingStepBasicsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */; };
 		78B0C1B12F20000100112233 /* OnboardingStepPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */; };
-		78B0C1B22F20000100112233 /* OnboardingStepSpotifyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B0C1B42F20000100112233 /* OnboardingStepSpotifyView.swift */; };
 		79A1C0012F30000100112233 /* Date+Age.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0002F30000100112233 /* Date+Age.swift */; };
 		79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */; };
 		79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0082F30000300112233 /* AvatarCropperView.swift */; };
@@ -129,7 +134,6 @@
 		759F7ADE2EC779740012A549 /* SocialSoundApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialSoundApp.swift; sourceTree = "<group>"; };
 		759F7AF72EC77CD80012A549 /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 		759F7AF92EC77D5B0012A549 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
-		759F7AFA2EC77D6B0012A549 /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
 		759F7AFB2EC77D760012A549 /* SessionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRowView.swift; sourceTree = "<group>"; };
 		759F7AFC2EC77D810012A549 /* NearbyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyView.swift; sourceTree = "<group>"; };
 		759F7AFD2EC77D9A0012A549 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
@@ -151,22 +155,28 @@
 		75A1740D2ECA158400CEB48F /* TrackLike.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLike.swift; sourceTree = "<group>"; };
 		75A1740F2ECA159900CEB48F /* LikeApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeApiService.swift; sourceTree = "<group>"; };
 		75A174112ECBB68900CEB48F /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
-		75A174152ECE547500CEB48F /* LikesInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxView.swift; sourceTree = "<group>"; };
 		75A174172ECE548000CEB48F /* OtherUserProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfileView.swift; sourceTree = "<group>"; };
 		75A1741B2ECE59E300CEB48F /* TrackLikesDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesDetailView.swift; sourceTree = "<group>"; };
 		75A1741E2ECFAD0100CEB48F /* SpotifyPlaybackError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyPlaybackError.swift; sourceTree = "<group>"; };
 		75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesCluster.swift; sourceTree = "<group>"; };
 		75A174222ED1007200CEB48F /* LikesInboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxViewModel.swift; sourceTree = "<group>"; };
 		75A174242ED107AF00CEB48F /* SpotifyConnectionSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyConnectionSection.swift; sourceTree = "<group>"; };
+		75D2A9E42F20F2E500013A33 /* ONBOARDING_DESIGN_UPDATE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ONBOARDING_DESIGN_UPDATE.md; sourceTree = "<group>"; };
+		75D2A9E62F20F5CF00013A33 /* DISCOVER_DESIGN_UPDATE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DISCOVER_DESIGN_UPDATE.md; sourceTree = "<group>"; };
 		75DAD86A2F20131200D1219E /* PROFILE_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROFILE_IMPROVEMENTS.md; sourceTree = "<group>"; };
 		75DAD86C2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PHOTO_SYSTEM_IMPROVEMENTS.md; sourceTree = "<group>"; };
+		75DAD86E2F20DC0400D1219E /* ONBOARDING_IMPROVEMENTS_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ONBOARDING_IMPROVEMENTS_SUMMARY.md; sourceTree = "<group>"; };
+		75DAD8702F20DD8E00D1219E /* FIXES_APPLIED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FIXES_APPLIED.md; sourceTree = "<group>"; };
+		75DAD8742F20E1A200D1219E /* ONBOARDING_FINAL_FIXES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ONBOARDING_FINAL_FIXES.md; sourceTree = "<group>"; };
+		75DAD8762F20E80500D1219E /* OnboardingStepSpotifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepSpotifyView.swift; sourceTree = "<group>"; };
+		75DAD87A2F20EBE900D1219E /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingView.swift; sourceTree = "<group>"; };
+		75DAD87C2F20EFCB00D1219E /* LikesInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxView.swift; sourceTree = "<group>"; };
 		76B0C1A02F12345600112233 /* OnboardingStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStateManager.swift; sourceTree = "<group>"; };
 		76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowPlaceholderView.swift; sourceTree = "<group>"; };
 		76B0C1A62F12345600112233 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
 		76B0C1A92F12345600112233 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
 		76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepBasicsView.swift; sourceTree = "<group>"; };
 		78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepPhotosView.swift; sourceTree = "<group>"; };
-		78B0C1B42F20000100112233 /* OnboardingStepSpotifyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepSpotifyView.swift; sourceTree = "<group>"; };
 		79A1C0002F30000100112233 /* Date+Age.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Age.swift"; sourceTree = "<group>"; };
 		79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePreviewHeader.swift; sourceTree = "<group>"; };
 		79A1C0082F30000300112233 /* AvatarCropperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarCropperView.swift; sourceTree = "<group>"; };
@@ -274,6 +284,8 @@
 				759F7AEC2EC77A2C0012A549 /* App */,
 				756E44A82EFE8FA300F49C30 /* Frameworks */,
 				759F7ADC2EC779740012A549 /* Products */,
+				75DAD86E2F20DC0400D1219E /* ONBOARDING_IMPROVEMENTS_SUMMARY.md */,
+				75DAD8702F20DD8E00D1219E /* FIXES_APPLIED.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -328,6 +340,7 @@
 				759F7B162EC78DB70012A549 /* SpotifyAuthManager.swift */,
 				759F7B0F2EC78B5C0012A549 /* SpotifyService.swift */,
 				759F7B0B2EC784920012A549 /* BroadcastManager.swift */,
+				75DAD8742F20E1A200D1219E /* ONBOARDING_FINAL_FIXES.md */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -372,8 +385,11 @@
 			isa = PBXGroup;
 			children = (
 				75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */,
-				759F7AFA2EC77D6B0012A549 /* NowPlayingView.swift */,
 				759F7AF92EC77D5B0012A549 /* MainView.swift */,
+				75DAD87A2F20EBE900D1219E /* NowPlayingView.swift */,
+				75DAD87C2F20EFCB00D1219E /* LikesInboxView.swift */,
+				75D2A9E42F20F2E500013A33 /* ONBOARDING_DESIGN_UPDATE.md */,
+				75D2A9E62F20F5CF00013A33 /* DISCOVER_DESIGN_UPDATE.md */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -406,7 +422,6 @@
 				75A174242ED107AF00CEB48F /* SpotifyConnectionSection.swift */,
 				75A1741B2ECE59E300CEB48F /* TrackLikesDetailView.swift */,
 				75A174172ECE548000CEB48F /* OtherUserProfileView.swift */,
-				75A174152ECE547500CEB48F /* LikesInboxView.swift */,
 				75A1740B2EC8C0FA00CEB48F /* ProfileViewModel.swift */,
 				759F7AFD2EC77D9A0012A549 /* ProfileView.swift */,
 				75DAD86A2F20131200D1219E /* PROFILE_IMPROVEMENTS.md */,
@@ -430,6 +445,7 @@
 				76B0C1AB2F12345600112233 /* Steps */,
 				76B0C1A92F12345600112233 /* OnboardingFlowView.swift */,
 				76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */,
+				75DAD8762F20E80500D1219E /* OnboardingStepSpotifyView.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -438,7 +454,6 @@
 			isa = PBXGroup;
 			children = (
 				78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */,
-				78B0C1B42F20000100112233 /* OnboardingStepSpotifyView.swift */,
 				76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */,
 			);
 			path = Steps;
@@ -545,10 +560,15 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				75D2A9E52F20F2E500013A33 /* ONBOARDING_DESIGN_UPDATE.md in Resources */,
+				75DAD86F2F20DC0400D1219E /* ONBOARDING_IMPROVEMENTS_SUMMARY.md in Resources */,
 				759F7B232EC79EC30012A549 /* GoogleService-Info.plist in Resources */,
+				75DAD8712F20DD8E00D1219E /* FIXES_APPLIED.md in Resources */,
 				75DAD86D2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md in Resources */,
 				7576DF442F18036A0034BF2A /* Readme.txt in Resources */,
+				75D2A9E72F20F5CF00013A33 /* DISCOVER_DESIGN_UPDATE.md in Resources */,
 				75DAD86B2F20131200D1219E /* PROFILE_IMPROVEMENTS.md in Resources */,
+				75DAD8752F20E1A200D1219E /* ONBOARDING_FINAL_FIXES.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -568,7 +588,6 @@
 				759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */,
 				756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */,
 				78B0C1B12F20000100112233 /* OnboardingStepPhotosView.swift in Sources */,
-				78B0C1B22F20000100112233 /* OnboardingStepSpotifyView.swift in Sources */,
 				75834A902F0D8F0C008C51F8 /* ChatApiService.swift in Sources */,
 				756E449E2EFE8C1000F49C30 /* ProfileGateView.swift in Sources */,
 				756E449F2EFE8C1000F49C30 /* PhotoPickerBridge.swift in Sources */,
@@ -577,6 +596,8 @@
 				756E44A22EFE8C1000F49C30 /* ProfileBasicsStepView.swift in Sources */,
 				756E44A32EFE8C1000F49C30 /* UserProfileDetailView.swift in Sources */,
 				756E44A42EFE8C1000F49C30 /* ProfilePhotosStepView.swift in Sources */,
+				75DAD8772F20E80500D1219E /* OnboardingStepSpotifyView.swift in Sources */,
+				75DAD87B2F20EBE900D1219E /* NowPlayingView.swift in Sources */,
 				76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */,
 				76B0C1A42F12345600112233 /* OnboardingFlowPlaceholderView.swift in Sources */,
 				76B0C1A72F12345600112233 /* OnboardingViewModel.swift in Sources */,
@@ -595,6 +616,7 @@
 				759F7B212EC799900012A549 /* LocationService.swift in Sources */,
 				756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */,
 				756E448C2EFE8BE500F49C30 /* PhotoUploader.swift in Sources */,
+				75DAD87D2F20EFCB00D1219E /* LikesInboxView.swift in Sources */,
 				75A1740C2EC8C0FA00CEB48F /* ProfileViewModel.swift in Sources */,
 				759F7B012EC782D30012A549 /* SessionRowView.swift in Sources */,
 				75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */,
@@ -611,7 +633,6 @@
 				7576DF322F168B470034BF2A /* UserProfilePreview.swift in Sources */,
 				7576DF662F1836BE0034BF2A /* ProfileChip.swift in Sources */,
 				75A174212ED0FFFA00CEB48F /* TrackLikesCluster.swift in Sources */,
-				759F7B022EC782D30012A549 /* NowPlayingView.swift in Sources */,
 				22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */,
 				75A174102ECA159900CEB48F /* LikeApiService.swift in Sources */,
 				759F7B102EC78B5C0012A549 /* SpotifyService.swift in Sources */,
@@ -626,7 +647,6 @@
 				759F7B1F2EC7974A0012A549 /* NearbyViewModel.swift in Sources */,
 				75A174252ED107AF00CEB48F /* SpotifyConnectionSection.swift in Sources */,
 				75A174082EC8B0E400CEB48F /* UserApiService.swift in Sources */,
-				75A174162ECE547500CEB48F /* LikesInboxView.swift in Sources */,
 				759F7ADF2EC779740012A549 /* SocialSoundApp.swift in Sources */,
 				75A174122ECBB68900CEB48F /* User.swift in Sources */,
 				75A1741F2ECFAD0100CEB48F /* SpotifyPlaybackError.swift in Sources */,

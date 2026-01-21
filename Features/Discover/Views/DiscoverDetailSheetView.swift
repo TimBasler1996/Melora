@@ -12,16 +12,29 @@ struct DiscoverDetailSheetView: View {
     @State private var messageText: String = ""
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                trackHeader
-                actionsSection
+        ZStack {
+            // Dark gradient background
+            LinearGradient(
+                colors: [
+                    Color(red: 0.15, green: 0.15, blue: 0.2),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    trackHeader
+                    actionsSection
 
-                profileSection // ✅ shared ProfilePreviewView compact
+                    profileSection // ✅ shared ProfilePreviewView compact
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+                .padding(.top, 8)
             }
-            .padding(.horizontal, AppLayout.screenPadding)
-            .padding(.bottom, 24)
-            .padding(.top, 8)
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
@@ -36,17 +49,17 @@ struct DiscoverDetailSheetView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(broadcast.track.title)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
+                    .foregroundColor(.white)
 
                 Text(broadcast.track.artist)
                     .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(AppColors.secondaryText)
+                    .foregroundColor(.white.opacity(0.7))
 
                 if let album = broadcast.track.album?.trimmingCharacters(in: .whitespacesAndNewlines),
                    !album.isEmpty {
                     Text(album)
                         .font(.system(size: 12, weight: .regular, design: .rounded))
-                        .foregroundColor(AppColors.mutedText)
+                        .foregroundColor(.white.opacity(0.5))
                 }
 
                 if let spotifyURL = broadcast.track.spotifyURLValue {
@@ -57,7 +70,7 @@ struct DiscoverDetailSheetView: View {
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(AppColors.primary)
+                    .foregroundColor(Color(red: 0.2, green: 0.85, blue: 0.4))
                 }
             }
 
@@ -65,8 +78,8 @@ struct DiscoverDetailSheetView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                .fill(AppColors.cardBackground)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.08))
         )
     }
 
@@ -98,13 +111,13 @@ struct DiscoverDetailSheetView: View {
     private var artworkPlaceholder: some View {
         ZStack {
             LinearGradient(
-                colors: [AppColors.primary.opacity(0.7), AppColors.secondary.opacity(0.7)],
+                colors: [Color.white.opacity(0.15), Color.white.opacity(0.1)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             Image(systemName: "music.note")
                 .font(.system(size: 26, weight: .bold))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(.white.opacity(0.4))
         }
     }
 
@@ -115,10 +128,10 @@ struct DiscoverDetailSheetView: View {
             HStack(spacing: 12) {
                 Button(action: onLike) {
                     Label("Like track", systemImage: "heart.fill")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(AppColors.primary)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(Color(red: 0.2, green: 0.85, blue: 0.4))
                         .foregroundColor(.white)
                         .clipShape(Capsule())
                 }
@@ -129,12 +142,13 @@ struct DiscoverDetailSheetView: View {
 
             Text("Add message (optional)")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundColor(AppColors.secondaryText)
+                .foregroundColor(.white.opacity(0.6))
 
             TextField("Say something nice…", text: $messageText, axis: .vertical)
                 .font(.system(size: 14, weight: .regular, design: .rounded))
+                .foregroundColor(.white)
                 .padding(12)
-                .background(AppColors.cardBackground)
+                .background(Color.white.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             Button {
@@ -147,11 +161,11 @@ struct DiscoverDetailSheetView: View {
                 HStack {
                     Spacer()
                     Label("Send", systemImage: "paperplane.fill")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
                     Spacer()
                 }
                 .padding(.vertical, 12)
-                .background(AppColors.secondary)
+                .background(Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8))
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
@@ -165,7 +179,7 @@ struct DiscoverDetailSheetView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Profile")
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundColor(AppColors.secondaryText)
+                .foregroundColor(.white.opacity(0.6))
 
             ProfilePreviewView(
                 model: profilePreviewModelFromDiscoverUser(broadcast.user),
@@ -174,8 +188,8 @@ struct DiscoverDetailSheetView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                .fill(AppColors.cardBackground)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.08))
         )
     }
 

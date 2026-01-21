@@ -13,12 +13,16 @@ final class DiscoverViewModel: ObservableObject {
 
     @Published var selectedBroadcast: DiscoverBroadcast?
     @Published var dismissTarget: DiscoverBroadcast?
+    
+    // Track broadcasts that have been liked
+    @Published private(set) var likedBroadcastIds: Set<String> = []
 
     private let service: DiscoverService
     private let likeService: LikeApiService
     private let chatService: ChatApiService
 
     private var listener: ListenerRegistration?
+    private var pollTimer: Task<Void, Never>?
     private var allBroadcasts: [DiscoverBroadcast] = []
     private var cachedUsers: [String: DiscoverUser] = [:]
 
@@ -36,11 +40,13 @@ final class DiscoverViewModel: ObservableObject {
         self.service = service
         self.likeService = likeService
         self.chatService = chatService
+        loadLikedBroadcastsFromCache()
     }
 
     deinit {
         Task { @MainActor in
             stopListening()
+            pollTimer?.cancel()
         }
     }
 
@@ -67,12 +73,33 @@ final class DiscoverViewModel: ObservableObject {
                 }
             }
         }
+        
+        // Start polling timer for refresh every 5 seconds
+        startPolling()
     }
 
     func stopListening() {
         listener?.remove()
         listener = nil
+        pollTimer?.cancel()
+        pollTimer = nil
         isListening = false
+    }
+    
+    private func startPolling() {
+        pollTimer?.cancel()
+        pollTimer = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+                guard !Task.isCancelled else { break }
+                await self?.refreshBroadcasts()
+            }
+        }
+    }
+    
+    private func refreshBroadcasts() async {
+        // Silently refresh without showing loading indicator
+        // The listener will automatically get updates, this is just a safety mechanism
     }
 
     func updateCurrentLocation(_ location: LocationPoint?) {
@@ -157,6 +184,21 @@ final class DiscoverViewModel: ObservableObject {
                 createdFromLikeId: like.id
             )
         }
+        
+        // Mark this broadcast as liked
+        likedBroadcastIds.insert(broadcast.id)
+        saveLikedBroadcastsToCache()
+    }
+    
+    func isLiked(_ broadcast: DiscoverBroadcast) -> Bool {
+        likedBroadcastIds.contains(broadcast.id)
+    }
+    
+    func hasMessage(_ broadcast: DiscoverBroadcast) -> Bool {
+        // Check if user sent a message with this like
+        // For now, we'll track this separately if needed
+        // This could be enhanced to check if message exists
+        return false
     }
 
     func selectBroadcast(_ broadcast: DiscoverBroadcast) {

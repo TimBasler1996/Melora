@@ -10,10 +10,14 @@ struct DiscoverView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                // Dark gradient background matching other views
                 LinearGradient(
-                    colors: [AppColors.primary, AppColors.secondary],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    colors: [
+                        Color(red: 0.15, green: 0.15, blue: 0.2),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
                 .ignoresSafeArea()
 
@@ -21,6 +25,7 @@ struct DiscoverView: View {
             }
             .navigationTitle("Discover")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(item: $viewModel.selectedBroadcast) { broadcast in
                 DiscoverDetailSheetView(
                     broadcast: broadcast,
@@ -86,10 +91,14 @@ struct DiscoverView: View {
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading && viewModel.visibleBroadcasts.isEmpty {
-            VStack {
+            VStack(spacing: 16) {
                 Spacer()
-                ProgressView("Loading broadcasts…")
+                ProgressView()
                     .tint(.white)
+                    .scaleEffect(1.2)
+                Text("Loading broadcasts…")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.7))
                 Spacer()
             }
         } else if let error = viewModel.errorMessage {

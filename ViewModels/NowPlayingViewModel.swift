@@ -9,6 +9,7 @@ final class NowPlayingViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var progressMs: Int = 0
+    @Published var isScrubbing: Bool = false
     
     @Published var isShuffling: Bool = false
     @Published var repeatMode: RepeatMode = .off

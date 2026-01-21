@@ -101,7 +101,7 @@ final class OnboardingStateManager: ObservableObject {
         let hasBirthday = birthdayTimestamp != nil || birthdayDate != nil
 
         let photoURLs = data["photoURLs"] as? [String]
-        let hasPhotos = (photoURLs?.count == 3) && (photoURLs?.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } == true)
+        let hasPhotos = (photoURLs?.count ?? 0 >= 2) && (photoURLs?.count ?? 0 <= 5) && (photoURLs?.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } == true)
 
         let hasBasics = (firstName?.isEmpty == false)
             && (lastName?.isEmpty == false)

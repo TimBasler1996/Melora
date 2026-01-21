@@ -17,9 +17,9 @@ struct DiscoverCardView: View {
                     profileModule
                 }
                 .frame(height: cardHeight)
-                .background(AppColors.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
-                .shadow(color: Color.black.opacity(0.18), radius: 16, x: 0, y: 10)
+                .background(Color.white.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
 
                 dismissButton
             }
@@ -37,18 +37,18 @@ struct DiscoverCardView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(trackTitle)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
+                    .foregroundColor(.white)
                     .lineLimit(1)
 
                 Text(trackArtist)
                     .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(AppColors.secondaryText)
+                    .foregroundColor(.white.opacity(0.7))
                     .lineLimit(1)
 
                 if let album = trackAlbum {
                     Text(album)
                         .font(.system(size: 12, weight: .regular, design: .rounded))
-                        .foregroundColor(AppColors.mutedText)
+                        .foregroundColor(.white.opacity(0.5))
                         .lineLimit(1)
                 }
             }
@@ -71,13 +71,13 @@ struct DiscoverCardView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("\(broadcast.user.displayName), \(broadcast.user.ageText)")
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
+                    .foregroundColor(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.9)
 
                 Text("\(broadcast.user.locationText) · \(distanceText)")
                     .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundColor(AppColors.secondaryText)
+                    .foregroundColor(.white.opacity(0.7))
                     .lineLimit(1)
 
                 if let badgeText = badgeText {
@@ -90,7 +90,7 @@ struct DiscoverCardView: View {
             // Subtle “tap hint” like dating apps
             Image(systemName: "chevron.right")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(AppColors.mutedText.opacity(0.8))
+                .foregroundColor(.white.opacity(0.3))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -100,7 +100,7 @@ struct DiscoverCardView: View {
 
     private var moduleDivider: some View {
         Rectangle()
-            .fill(Color.black.opacity(0.06))
+            .fill(Color.white.opacity(0.1))
             .frame(height: 1)
             .padding(.horizontal, 16)
     }
@@ -133,20 +133,20 @@ struct DiscoverCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
         )
     }
 
     private var artworkPlaceholder: some View {
         ZStack {
             LinearGradient(
-                colors: [AppColors.primary.opacity(0.6), AppColors.secondary.opacity(0.6)],
+                colors: [Color.white.opacity(0.15), Color.white.opacity(0.1)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             Image(systemName: "music.note")
                 .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(.white.opacity(0.4))
         }
     }
 
@@ -157,10 +157,10 @@ struct DiscoverCardView: View {
             Text("Spotify")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
         }
-        .foregroundColor(AppColors.secondaryText)
+        .foregroundColor(.white.opacity(0.7))
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(Color.black.opacity(0.05))
+        .background(Color.white.opacity(0.1))
         .clipShape(Capsule())
     }
 
@@ -172,7 +172,7 @@ struct DiscoverCardView: View {
     private var heroThumbnailNoCrop: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.black.opacity(0.06))
+                .fill(Color.white.opacity(0.08))
 
             if let url = broadcast.user.primaryPhotoURL.flatMap(URL.init(string:)) {
                 AsyncImage(url: url) { phase in
@@ -199,20 +199,20 @@ struct DiscoverCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
         )
     }
 
     private var heroPlaceholder: some View {
         ZStack {
             LinearGradient(
-                colors: [AppColors.primary.opacity(0.6), AppColors.secondary.opacity(0.6)],
+                colors: [Color.white.opacity(0.15), Color.white.opacity(0.1)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             Image(systemName: "person.fill")
                 .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(.white.opacity(0.4))
         }
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .padding(8)
@@ -223,8 +223,8 @@ struct DiscoverCardView: View {
             .font(.system(size: 11, weight: .semibold, design: .rounded))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(AppColors.primary.opacity(0.12))
-            .foregroundColor(AppColors.primary)
+            .background(Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.2))
+            .foregroundColor(Color(red: 0.2, green: 0.85, blue: 0.4))
             .clipShape(Capsule())
     }
 

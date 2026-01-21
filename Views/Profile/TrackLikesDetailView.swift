@@ -19,38 +19,46 @@ struct TrackLikesDetailView: View {
 
     var body: some View {
         ZStack {
+            // Dark gradient background similar to NowPlayingView
             LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [
+                    Color(red: 0.15, green: 0.15, blue: 0.2),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             )
             .ignoresSafeArea()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    trackHeader
+                VStack(alignment: .leading, spacing: 20) {
                     trackCard
                     likesSection
 
                     if let toast {
                         Text(toast)
-                            .font(AppFonts.footnote())
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
                             .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white.opacity(0.14))
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .background(
+                                Capsule()
+                                    .fill(Color.white.opacity(0.12))
+                            )
                             .transition(.opacity)
                     }
                 }
-                .padding(.horizontal, AppLayout.screenPadding)
-                .padding(.top, 12)
-                .padding(.bottom, 20)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 32)
             }
+            .scrollIndicators(.hidden)
         }
         .navigationTitle("Track Likes")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 
     private var trackHeader: some View {
@@ -68,37 +76,36 @@ struct TrackLikesDetailView: View {
     }
 
     private var trackCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Track")
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.7))
-
-            HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 14) {
                 artwork
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(track.title)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: 18, weight: .bold, design: .default))
                         .foregroundColor(.white)
+                        .lineLimit(2)
 
                     Text(track.artist)
-                        .font(AppFonts.footnote())
-                        .foregroundColor(.white.opacity(0.85))
+                        .font(.system(size: 15, weight: .semibold, design: .default))
+                        .foregroundColor(.white.opacity(0.6))
+                        .lineLimit(1)
 
                     if let album = track.album, !album.isEmpty {
                         Text(album)
-                            .font(AppFonts.footnote())
-                            .foregroundColor(.white.opacity(0.65))
+                            .font(.system(size: 13, weight: .medium, design: .default))
+                            .foregroundColor(.white.opacity(0.4))
+                            .lineLimit(1)
                     }
                 }
 
                 Spacer()
             }
         }
-        .padding(12)
+        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.18))
+                .fill(Color.white.opacity(0.08))
         )
     }
 
@@ -108,11 +115,16 @@ struct TrackLikesDetailView: View {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white.opacity(0.2))
-                            .overlay(ProgressView().tint(.white))
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.white.opacity(0.08))
+                            .overlay(
+                                ProgressView()
+                                    .tint(.white)
+                            )
                     case .success(let image):
-                        image.resizable().scaledToFill()
+                        image
+                            .resizable()
+                            .scaledToFill()
                     default:
                         placeholderArtwork
                     }
@@ -121,46 +133,51 @@ struct TrackLikesDetailView: View {
                 placeholderArtwork
             }
         }
-        .frame(width: 64, height: 64)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .frame(width: 80, height: 80)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var placeholderArtwork: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .fill(Color.white.opacity(0.25))
-            .overlay(Image(systemName: "music.note").foregroundColor(.white.opacity(0.85)))
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Color.white.opacity(0.08))
+            .overlay(
+                Image(systemName: "music.note")
+                    .font(.system(size: 32, weight: .thin))
+                    .foregroundColor(.white.opacity(0.3))
+            )
     }
 
     private var likesSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Likes")
-                .font(.caption)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("People who liked this")
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .foregroundColor(.white.opacity(0.7))
+                .padding(.horizontal, 4)
 
             if localLikes.isEmpty {
-                Text("No likes yet.")
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.85))
+                Text("No likes yet")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.5))
+                    .padding(.horizontal, 4)
             } else {
-                ForEach(localLikes) { like in
-                    LikeRow(
-                        receiverUserId: user.uid,
-                        like: like,
-                        isUpdating: isUpdatingIds.contains(like.id),
-                        onAccept: { Task { await accept(like: like) } },
-                        onReject: { Task { await update(like: like, status: .rejected) } }
-                    )
-                    .padding(.vertical, 6)
-
-                    Divider().background(Color.white.opacity(0.18))
+                VStack(spacing: 16) {
+                    ForEach(localLikes) { like in
+                        ModernLikeRow(
+                            receiverUserId: user.uid,
+                            like: like,
+                            isUpdating: isUpdatingIds.contains(like.id),
+                            onAccept: { Task { await accept(like: like) } },
+                            onReject: { Task { await update(like: like, status: .rejected) } }
+                        )
+                        
+                        if like.id != localLikes.last?.id {
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                        }
+                    }
                 }
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.18))
-        )
     }
 
     private func accept(like: TrackLike) async {
@@ -213,7 +230,7 @@ struct TrackLikesDetailView: View {
 
 // MARK: - Like Row
 
-private struct LikeRow: View {
+private struct ModernLikeRow: View {
 
     let receiverUserId: String
     let like: TrackLike
@@ -326,21 +343,38 @@ private struct LikeRow: View {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
-                        Circle().fill(Color.white.opacity(0.18))
-                            .overlay(ProgressView().tint(.white))
+                        Circle()
+                            .fill(Color.white.opacity(0.12))
+                            .overlay(
+                                ProgressView()
+                                    .tint(.white)
+                                    .scaleEffect(0.7)
+                            )
                     case .success(let img):
-                        img.resizable().scaledToFill()
+                        img
+                            .resizable()
+                            .scaledToFill()
                     default:
-                        Circle().fill(Color.white.opacity(0.18))
-                            .overlay(Image(systemName: "person.fill").foregroundColor(.white.opacity(0.85)))
+                        Circle()
+                            .fill(Color.white.opacity(0.12))
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.4))
+                            )
                     }
                 }
             } else {
-                Circle().fill(Color.white.opacity(0.18))
-                    .overlay(Image(systemName: "person.fill").foregroundColor(.white.opacity(0.85)))
+                Circle()
+                    .fill(Color.white.opacity(0.12))
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white.opacity(0.4))
+                    )
             }
         }
-        .frame(width: 38, height: 38)
+        .frame(width: 44, height: 44)
         .clipShape(Circle())
     }
 
@@ -353,14 +387,24 @@ private struct LikeRow: View {
             case .rejected: return "IGNORED"
             }
         }()
+        
+        let color: Color = {
+            switch s {
+            case .pending: return Color.white.opacity(0.12)
+            case .accepted: return Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.2)
+            case .rejected: return Color.white.opacity(0.08)
+            }
+        }()
 
         return Text(text)
-            .font(.system(size: 11, weight: .bold, design: .rounded))
-            .foregroundColor(.white.opacity(0.95))
+            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .foregroundColor(.white.opacity(0.7))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color.white.opacity(0.14))
-            .clipShape(Capsule())
+            .background(
+                Capsule()
+                    .fill(color)
+            )
     }
 }
 

@@ -26,3 +26,5 @@ Bottom tab bar:
 - Avoid heavy rebuild/run loops (Xcode Previews are important)
 - All ViewModels are annotated with `@MainActor`
 - UX quality is more important than speed
+
+
