@@ -30,6 +30,49 @@ actor LikeApiService {
             throw NSError(domain: "LikeApiService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Cannot like yourself"])
         }
 
+        // ✅ IMPROVED: Always fetch complete user data from Firestore to ensure displayName + avatar are set
+        var likerUser = fromUser
+        
+        // Always fetch from Firestore if:
+        // - We don't have a user object
+        // - The displayName is empty or "Unknown"
+        // - The avatarURL is missing
+        let needsFetch = likerUser == nil || 
+                        likerUser?.displayName.isEmpty == true || 
+                        likerUser?.displayName == "Unknown" ||
+                        likerUser?.avatarURL == nil
+        
+        if needsFetch {
+            print("🔄 [Like] Fetching complete user data from Firestore for uid=\(fromUserId)...")
+            do {
+                likerUser = try await fetchUserAsync(uid: fromUserId)
+                
+                // Check if fetched user still has "Unknown" as display name
+                if likerUser?.displayName == "Unknown" || likerUser?.displayName.isEmpty == true {
+                    print("⚠️ [Like] WARNING: User \(fromUserId) has incomplete profile (displayName=\(likerUser?.displayName ?? "nil"))")
+                    print("   This user should complete their profile to appear correctly in likes.")
+                } else {
+                    print("✅ [Like] Fetched user: displayName=\(likerUser?.displayName ?? "nil"), avatarURL=\(likerUser?.avatarURL ?? "nil")")
+                }
+            } catch {
+                print("❌ [Like] Failed to fetch user from Firestore: \(error.localizedDescription)")
+                // Continue with whatever data we have
+            }
+        }
+
+        // ✅ Smart avatar URL with fallback to first photo
+        let avatarURL: String? = {
+            if let avatar = likerUser?.avatarURL, !avatar.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return avatar
+            }
+            // Fallback to first photo
+            if let photos = likerUser?.photoURLs, !photos.isEmpty {
+                let firstPhoto = photos[0].trimmingCharacters(in: .whitespacesAndNewlines)
+                return firstPhoto.isEmpty ? nil : firstPhoto
+            }
+            return nil
+        }()
+
         let receivedCollection = db.collection(usersCollection)
             .document(toUser.uid)
             .collection("likesReceived")
@@ -57,8 +100,8 @@ actor LikeApiService {
                 placeLabel: placeLabel,
                 latitude: sessionLocation?.latitude,
                 longitude: sessionLocation?.longitude,
-                fromUserDisplayName: fromUser?.displayName,
-                fromUserAvatarURL: fromUser?.avatarURL,
+                fromUserDisplayName: likerUser?.displayName,
+                fromUserAvatarURL: avatarURL, // ✅ Use smart fallback
                 message: message,
                 status: .pending
             )
@@ -88,8 +131,8 @@ actor LikeApiService {
             "longitude": sessionLocation?.longitude as Any,
 
             // ✅ Important: store display name + avatar directly in like doc
-            "fromUserDisplayName": fromUser?.displayName as Any,
-            "fromUserAvatarURL": fromUser?.avatarURL as Any,
+            "fromUserDisplayName": likerUser?.displayName as Any,
+            "fromUserAvatarURL": avatarURL as Any,
 
             "trackArtworkURL": trackArtworkURLString as Any,
             "sessionId": NSNull(),
@@ -123,8 +166,8 @@ actor LikeApiService {
             placeLabel: placeLabel,
             latitude: sessionLocation?.latitude,
             longitude: sessionLocation?.longitude,
-            fromUserDisplayName: fromUser?.displayName,
-            fromUserAvatarURL: fromUser?.avatarURL,
+            fromUserDisplayName: likerUser?.displayName,
+            fromUserAvatarURL: avatarURL, // ✅ Use smart fallback
             message: trimmedMessage,
             status: .pending
         )
@@ -174,6 +217,95 @@ actor LikeApiService {
         return snapshot.documents.compactMap { doc in
             TrackLike.fromFirestore(id: doc.documentID, data: doc.data())
         }
+    }
+
+    // MARK: - Helper: Fetch User
+
+    private func fetchUserAsync(uid: String) async throws -> AppUser {
+        let snapshot = try await db.collection(usersCollection).document(uid).getDocument()
+        guard let data = snapshot.data() else {
+            throw NSError(domain: "LikeApiService", code: 404, userInfo: [NSLocalizedDescriptionKey: "User \(uid) not found"])
+        }
+        return AppUser.fromFirestore(uid: uid, data: data)
+    }
+    
+    // MARK: - Enrich Likes with User Data
+    
+    /// Enriches likes with complete user data (displayName, avatarURL) if missing
+    /// This is useful for existing likes that might have incomplete user info
+    func enrichLikesWithUserData(_ likes: [TrackLike]) async -> [TrackLike] {
+        var enriched = likes
+        
+        // Find all likes that need user data
+        let userIdsNeedingFetch = Set(
+            likes.filter { like in
+                let hasNoDisplayName = like.fromUserDisplayName == nil || like.fromUserDisplayName?.isEmpty == true
+                let hasNoAvatar = like.fromUserAvatarURL == nil || like.fromUserAvatarURL?.isEmpty == true
+                return hasNoDisplayName || hasNoAvatar
+            }.map { $0.fromUserId }
+        )
+        
+        guard !userIdsNeedingFetch.isEmpty else {
+            print("✅ [Like] All \(likes.count) likes already have complete user data")
+            return enriched
+        }
+        
+        print("🔄 [Like] Fetching user data for \(userIdsNeedingFetch.count) users...")
+        
+        // Fetch all needed users in parallel
+        var fetchedUsers: [String: AppUser] = [:]
+        await withTaskGroup(of: (String, AppUser?).self) { group in
+            for userId in userIdsNeedingFetch {
+                group.addTask { [self] in
+                    do {
+                        let user = try await self.fetchUserAsync(uid: userId)
+                        print("  ✅ Fetched user: \(user.displayName) (uid: \(userId))")
+                        return (userId, user)
+                    } catch {
+                        print("  ❌ Failed to fetch user \(userId): \(error.localizedDescription)")
+                        return (userId, nil)
+                    }
+                }
+            }
+            
+            for await (userId, user) in group {
+                if let user {
+                    fetchedUsers[userId] = user
+                }
+            }
+        }
+        
+        print("📊 [Like] Fetched \(fetchedUsers.count) users successfully")
+        
+        // Update likes with fetched user data
+        for i in enriched.indices {
+            let like = enriched[i]
+            if let user = fetchedUsers[like.fromUserId] {
+                enriched[i].fromUserDisplayName = user.displayName
+                
+                // ✅ Smart avatar fallback: avatarURL -> first photoURL -> nil
+                let avatarURL: String? = {
+                    if let avatar = user.avatarURL, !avatar.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        return avatar
+                    }
+                    // Fallback to first photo
+                    if let photos = user.photoURLs, !photos.isEmpty {
+                        let firstPhoto = photos[0].trimmingCharacters(in: .whitespacesAndNewlines)
+                        return firstPhoto.isEmpty ? nil : firstPhoto
+                    }
+                    return nil
+                }()
+                
+                enriched[i].fromUserAvatarURL = avatarURL
+                print("  ✨ Enriched like \(like.id): \(user.displayName) -> avatar: \(avatarURL != nil ? "✅" : "❌") (source: \(user.avatarURL != nil ? "avatarURL" : "photoURLs[0]"))")
+            } else {
+                print("  ⚠️ Could not enrich like \(like.id): user \(like.fromUserId) not found")
+            }
+        }
+        
+        print("✅ [Like] Enrichment complete: \(enriched.filter { $0.fromUserDisplayName != nil }.count)/\(enriched.count) likes have display names")
+        
+        return enriched
     }
 }
 

@@ -33,7 +33,9 @@ struct AppUser: Identifiable, Codable, Equatable {
 
     var countryCode: String?
     var age: Int?
+    var birthday: Date? // ✅ Added for birthday display
     var gender: String?
+    var city: String? // ✅ Added city field (alias for hometown in some contexts)
     var hometown: String?
     var musicTaste: String?
 
@@ -65,6 +67,8 @@ struct AppUser: Identifiable, Codable, Equatable {
         avatarURL: String? = nil,
         avatarSource: AvatarSource? = nil,
         age: Int? = nil,
+        birthday: Date? = nil,
+        city: String? = nil,
         hometown: String? = nil,
         musicTaste: String? = nil,
         countryCode: String? = nil,
@@ -88,6 +92,8 @@ struct AppUser: Identifiable, Codable, Equatable {
         self.avatarSource = avatarSource
 
         self.age = age
+        self.birthday = birthday
+        self.city = city
         self.hometown = hometown
         self.musicTaste = musicTaste
         self.countryCode = countryCode
@@ -197,19 +203,51 @@ struct AppUser: Identifiable, Codable, Equatable {
         let avatarSourceRaw = stringValue("avatarSource")
         let avatarSource = avatarSourceRaw.flatMap(AvatarSource.init(rawValue:)) ?? .unknown
 
+        // ✅ Smart displayName resolution:
+        // 1. Use displayName if available
+        // 2. Otherwise, construct from firstName + lastName
+        // 3. Fall back to "Unknown" only if nothing else is available
+        let firstName = stringValue("firstName")
+        let lastName = stringValue("lastName")
+        let explicitDisplayName = stringValue("displayName")
+        
+        let resolvedDisplayName: String = {
+            // First try explicit displayName
+            if let name = explicitDisplayName, !name.isEmpty, name != "Unknown" {
+                return name
+            }
+            
+            // Then try to construct from first/last name
+            let first = firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let last = lastName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            
+            if !first.isEmpty && !last.isEmpty {
+                return "\(first) \(last)"
+            } else if !first.isEmpty {
+                return first
+            } else if !last.isEmpty {
+                return last
+            }
+            
+            // Final fallback
+            return "Unknown"
+        }()
+        
         return AppUser(
             uid: uid,
             spotifyId: stringValue("spotifyId"),
-            displayName: stringValue("displayName") ?? "Unknown",
+            displayName: resolvedDisplayName,
             avatarURL: stringValue("avatarURL"),
             avatarSource: avatarSource,
             age: intFromAny(data["age"]),
+            birthday: ts("birthday"), // ✅ Parse birthday from Firestore
+            city: stringValue("city"), // ✅ Parse city from Firestore
             hometown: stringValue("hometown"),
             musicTaste: stringValue("musicTaste"),
             countryCode: stringValue("countryCode"),
             gender: stringValue("gender"),
-            firstName: stringValue("firstName"),
-            lastName: stringValue("lastName"),
+            firstName: firstName,
+            lastName: lastName,
             photoURLs: photoURLs,
             isBroadcasting: boolValue("isBroadcasting"),
             currentTrack: currentTrack,

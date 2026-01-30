@@ -242,19 +242,29 @@ private struct ModernLikeRow: View {
     private var convoId: String {
         ChatApiService.shared.conversationId(for: receiverUserId, and: like.fromUserId)
     }
+    
+    // Helper to get display name with fallback
+    private func displayName(for like: TrackLike) -> String {
+        if let name = like.fromUserDisplayName, !name.isEmpty {
+            return name
+        }
+        // Create a short fallback from userId (e.g., "User abc123" -> "User abc")
+        let shortId = String(like.fromUserId.prefix(6))
+        return "User \(shortId)"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
 
             HStack(spacing: 10) {
                 NavigationLink {
-                    UserProfileDetailView(userId: like.fromUserId)
+                    UserProfilePreviewView(userId: like.fromUserId)
                 } label: {
                     HStack(spacing: 10) {
                         avatar
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(like.fromUserDisplayName ?? "Unknown user")
+                            Text(displayName(for: like))
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
 
@@ -356,27 +366,39 @@ private struct ModernLikeRow: View {
                             .resizable()
                             .scaledToFill()
                     default:
-                        Circle()
-                            .fill(Color.white.opacity(0.12))
-                            .overlay(
-                                Image(systemName: "person.fill")
-                                    .font(.system(size: 20, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.4))
-                            )
+                        avatarPlaceholder
                     }
                 }
             } else {
-                Circle()
-                    .fill(Color.white.opacity(0.12))
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.white.opacity(0.4))
-                    )
+                avatarPlaceholder
             }
         }
         .frame(width: 44, height: 44)
         .clipShape(Circle())
+        .overlay(
+            Circle()
+                .stroke(Color.white.opacity(0.2), lineWidth: 2)
+        )
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+    }
+    
+    private var avatarPlaceholder: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.3, green: 0.3, blue: 0.4),
+                        Color(red: 0.2, green: 0.2, blue: 0.3)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                Image(systemName: "person.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+            )
     }
 
     private var statusPill: some View {

@@ -179,5 +179,28 @@ final class UserApiService {
 
         db.collection("users").document(uid).setData(payload, merge: true, completion: completion)
     }
+    
+    // MARK: - Profile Updates
+    
+    /// Updates the user's display name in Firestore
+    func updateDisplayName(uid: String, displayName: String, completion: ((Error?) -> Void)? = nil) {
+        guard !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            completion?(NSError(domain: "UserApiService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Display name cannot be empty"]))
+            return
+        }
+        
+        db.collection("users").document(uid).setData([
+            "displayName": displayName,
+            "updatedAt": Timestamp(date: Date())
+        ], merge: true, completion: completion)
+    }
+    
+    /// Updates multiple profile fields at once
+    func updateProfile(uid: String, updates: [String: Any], completion: ((Error?) -> Void)? = nil) {
+        var payload = updates
+        payload["updatedAt"] = Timestamp(date: Date())
+        
+        db.collection("users").document(uid).setData(payload, merge: true, completion: completion)
+    }
 }
 
