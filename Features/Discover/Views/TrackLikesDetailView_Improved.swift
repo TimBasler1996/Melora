@@ -283,6 +283,16 @@ private struct ModernLikeRow: View {
     private var convoId: String {
         ChatApiService.shared.conversationId(for: receiverUserId, and: like.fromUserId)
     }
+    
+    // Helper to get display name with fallback
+    private func displayName(for like: TrackLike) -> String {
+        if let name = like.fromUserDisplayName, !name.isEmpty {
+            return name
+        }
+        // Create a short fallback from userId (e.g., "User abc123" -> "User abc")
+        let shortId = String(like.fromUserId.prefix(6))
+        return "User \(shortId)"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -290,13 +300,13 @@ private struct ModernLikeRow: View {
             // User info header
             HStack(spacing: 12) {
                 NavigationLink {
-                    UserProfileDetailView(userId: like.fromUserId)
+                    UserProfilePreviewView(userId: like.fromUserId)
                 } label: {
                     HStack(spacing: 12) {
                         avatar
                         
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(like.fromUserDisplayName ?? "Unknown")
+                            Text(displayName(for: like))
                                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
                             
@@ -455,31 +465,39 @@ private struct ModernLikeRow: View {
                             .resizable()
                             .scaledToFill()
                     default:
-                        Circle()
-                            .fill(Color.white.opacity(0.15))
-                            .overlay(
-                                Image(systemName: "person.fill")
-                                    .font(.system(size: 24, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.5))
-                            )
+                        avatarPlaceholder
                     }
                 }
             } else {
-                Circle()
-                    .fill(Color.white.opacity(0.15))
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
-                    )
+                avatarPlaceholder
             }
         }
         .frame(width: 52, height: 52)
         .clipShape(Circle())
         .overlay(
             Circle()
-                .stroke(Color.white.opacity(0.2), lineWidth: 2)
+                .stroke(Color.white.opacity(0.25), lineWidth: 2.5)
         )
+        .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 3)
+    }
+    
+    private var avatarPlaceholder: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.3, green: 0.3, blue: 0.4),
+                        Color(red: 0.2, green: 0.2, blue: 0.3)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                Image(systemName: "person.fill")
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+            )
     }
     
     private var statusPill: some View {

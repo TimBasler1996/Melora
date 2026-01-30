@@ -10,6 +10,7 @@ struct ProfilePreviewModel: Equatable {
 
     var firstName: String
     var age: Int?
+    var birthday: Date? // ✅ Added for displaying formatted birthday
     var city: String?
     var gender: String?
     var countryCode: String?
@@ -55,6 +56,7 @@ struct ProfilePreviewModel: Equatable {
             return ProfilePreviewModel(
                 firstName: "Your Name",
                 age: nil,
+                birthday: nil,
                 city: nil,
                 gender: nil,
                 countryCode: nil,
@@ -79,6 +81,7 @@ struct ProfilePreviewModel: Equatable {
         return ProfilePreviewModel(
             firstName: profile.firstName,
             age: profile.age,
+            birthday: profile.birthday, // ✅ Pass birthday
             city: clean(profile.city),
             gender: clean(profile.gender),
             countryCode: clean(profile.spotifyCountry ?? profile.countryCode),
@@ -260,7 +263,7 @@ struct ProfilePreviewView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Additional photos (vertical, fixed size)
+    // MARK: - Additional photos (vertical fullscreen)
 
     private var additionalPhotosList: some View {
         let urls = model.photoURLs
@@ -270,29 +273,43 @@ struct ProfilePreviewView: View {
         guard !urls.isEmpty else { return AnyView(EmptyView()) }
 
         return AnyView(
-            LazyVStack(spacing: 12) {
-                ForEach(Array(urls.prefix(10).enumerated()), id: \.offset) { _, url in
-                    photoCard(urlString: url)
+            LazyVStack(spacing: 16) {
+                ForEach(Array(urls.prefix(10).enumerated()), id: \.offset) { index, url in
+                    photoCard(urlString: url, index: index)
                 }
             }
         )
     }
 
-    private func photoCard(urlString: String) -> some View {
-        ZStack {
+    private func photoCard(urlString: String, index: Int) -> some View {
+        ZStack(alignment: .topTrailing) {
             if let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
-                        photoPlaceholder
+                        ZStack {
+                            photoPlaceholder
+                            ProgressView()
+                                .tint(AppColors.primary)
+                        }
                     case .success(let image):
-                        // ✅ same size always, no overlap, clean crop inside the tile
+                        // ✅ Vertical fullscreen - scaledToFill for full coverage
                         image
                             .resizable()
                             .scaledToFill()
                             .transaction { t in t.animation = nil }
                     case .failure:
-                        photoPlaceholder
+                        ZStack {
+                            photoPlaceholder
+                            VStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(AppColors.secondaryText.opacity(0.6))
+                                Text("Failed to load")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(AppColors.secondaryText.opacity(0.6))
+                            }
+                        }
                     @unknown default:
                         photoPlaceholder
                     }
@@ -300,21 +317,43 @@ struct ProfilePreviewView: View {
             } else {
                 photoPlaceholder
             }
+            
+            // Photo number badge
+            Text("\(index + 2)")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(Color.black.opacity(0.5))
+                )
+                .padding(10)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: density.photoHeight) // ✅ fixed height for all
+        .frame(height: 480) // ✅ Tall vertical photos (like Instagram/Tinder)
         .clipped()
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
-        .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 8)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 8)
     }
 
     private var photoPlaceholder: some View {
         ZStack {
             RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                .fill(AppColors.tintedBackground.opacity(0.35))
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.tintedBackground.opacity(0.5), AppColors.tintedBackground.opacity(0.3)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
             Image(systemName: "photo.fill")
-                .font(.system(size: 26, weight: .semibold))
-                .foregroundColor(AppColors.secondaryText)
+                .font(.system(size: 32, weight: .semibold))
+                .foregroundColor(AppColors.secondaryText.opacity(0.5))
         }
     }
 }
