@@ -55,7 +55,7 @@ struct NearbyView: View {
                                     .padding(.horizontal, 40)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        } else if viewModel.sessions.isEmpty {
+                        } else if viewModel.broadcasts.isEmpty {
                             VStack(spacing: 10) {
                                 Text("No live broadcasts nearby")
                                     .font(AppFonts.body())
@@ -70,9 +70,9 @@ struct NearbyView: View {
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 14) {
-                                    ForEach(viewModel.sessions.indices, id: \.self) { index in
+                                    ForEach(viewModel.broadcasts) { broadcast in
                                         SessionRowView(
-                                            session: $viewModel.sessions[index],
+                                            broadcast: broadcast,
                                             userLocation: locationService.currentLocationPoint
                                         )
                                         .padding(.horizontal, AppLayout.screenPadding)
@@ -95,10 +95,10 @@ struct NearbyView: View {
         }
         .onAppear {
             locationService.requestAuthorizationIfNeeded()
-            viewModel.loadNearbySessions(location: locationService.currentLocationPoint)
+            viewModel.loadNearbyBroadcasts(location: locationService.currentLocationPoint)
         }
         .onChange(of: locationService.currentLocationPoint) { newLocation in
-            viewModel.loadNearbySessions(location: newLocation)
+            viewModel.loadNearbyBroadcasts(location: newLocation)
         }
     }
 }

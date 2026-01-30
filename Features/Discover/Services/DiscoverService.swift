@@ -152,4 +152,56 @@ final class DiscoverService {
     func currentUserId() -> String? {
         Auth.auth().currentUser?.uid
     }
+
+    func fetchNearbyBroadcasts(around location: LocationPoint, radiusMeters: Double) async throws -> [DiscoverBroadcast] {
+        // Fetch all broadcasts
+        let snapshot = try await db.collection(broadcastsCollection).getDocuments()
+        
+        // Parse to BroadcastRecords
+        let records = snapshot.documents.compactMap { doc in
+            Self.broadcastRecord(from: doc)
+        }
+        
+        // Filter by distance and convert to DiscoverBroadcast
+        var broadcasts: [DiscoverBroadcast] = []
+        
+        for record in records {
+            // Skip broadcasts without location
+            guard let broadcastLocation = record.location else { continue }
+            
+            // Calculate distance
+            let distance = location.distance(to: broadcastLocation)
+            
+            // Skip if outside radius
+            guard distance <= radiusMeters else { continue }
+            
+            // Fetch user data
+            guard let user = try await fetchDiscoverUser(userId: record.userId) else { continue }
+            
+            // Create track
+            let track = DiscoverTrack(
+                id: record.trackId,
+                title: record.trackTitle,
+                artist: record.trackArtist,
+                album: record.trackAlbum,
+                artworkURL: record.trackArtworkURL,
+                spotifyTrackURL: record.spotifyTrackURL
+            )
+            
+            // Create broadcast
+            let broadcast = DiscoverBroadcast(
+                id: record.id,
+                user: user,
+                track: track,
+                broadcastedAt: record.broadcastedAt,
+                location: broadcastLocation,
+                distanceMeters: Int(distance)
+            )
+            
+            broadcasts.append(broadcast)
+        }
+        
+        // Sort by distance (closest first)
+        return broadcasts.sorted { ($0.distanceMeters ?? Int.max) < ($1.distanceMeters ?? Int.max) }
+    }
 }

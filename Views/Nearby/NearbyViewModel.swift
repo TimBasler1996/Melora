@@ -1,18 +1,18 @@
 import Foundation
 
 /// View model for the "Nearby" screen.
-/// Loads active sessions from SessionApiService.
+/// Loads active broadcasts from DiscoverService.
 @MainActor
 final class NearbyViewModel: ObservableObject {
     
-    @Published var sessions: [Session] = []
+    @Published var broadcasts: [DiscoverBroadcast] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     
-    private let sessionService = SessionApiService.shared
+    private let discoverService = DiscoverService.shared
     
-    /// Triggers loading nearby sessions with an optional location.
-    func loadNearbySessions(location: LocationPoint?) {
+    /// Triggers loading nearby broadcasts with an optional location.
+    func loadNearbyBroadcasts(location: LocationPoint?) {
         Task {
             await load(location: location)
         }
@@ -25,11 +25,14 @@ final class NearbyViewModel: ObservableObject {
         let loc = location ?? LocationPoint(latitude: 47.0, longitude: 8.0)
         
         do {
-            let result = try await sessionService.fetchNearbySessions(around: loc)
-            self.sessions = result
+            let result = try await discoverService.fetchNearbyBroadcasts(
+                around: loc,
+                radiusMeters: 5000
+            )
+            self.broadcasts = result
         } catch {
-            print("❌ Failed to load nearby sessions: \(error)")
-            self.errorMessage = "Failed to load nearby sessions."
+            print("❌ Failed to load nearby broadcasts: \(error)")
+            self.errorMessage = "Failed to load nearby broadcasts."
         }
         
         isLoading = false

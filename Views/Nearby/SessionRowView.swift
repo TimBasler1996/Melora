@@ -1,16 +1,15 @@
 import SwiftUI
 import CoreLocation
 
-/// One card representing a single broadcast session in the Nearby screen.
+/// One card representing a single broadcast in the Nearby screen.
 struct SessionRowView: View {
     
-    @Binding var session: Session
+    let broadcast: DiscoverBroadcast
     let userLocation: LocationPoint?
     
     var body: some View {
         NavigationLink {
-            // ✅ FIX 3: use uid (your current Firestore document id)
-            OtherUserProfileLoaderView(uid: session.user.id)
+            OtherUserProfileLoaderView(uid: broadcast.user.id)
         } label: {
             HStack(spacing: 12) {
                 
@@ -18,7 +17,7 @@ struct SessionRowView: View {
                 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
-                        Text(session.user.displayName)
+                        Text(broadcast.user.displayName)
                             .font(.system(size: 16, weight: .semibold, design: .rounded))
                             .foregroundColor(AppColors.primaryText)
                             .lineLimit(1)
@@ -36,12 +35,12 @@ struct SessionRowView: View {
                         }
                     }
                     
-                    Text(session.track.title)
+                    Text(broadcast.track.title)
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .foregroundColor(AppColors.primaryText)
                         .lineLimit(1)
                     
-                    Text(session.track.artist)
+                    Text(broadcast.track.artist)
                         .font(.system(size: 13, weight: .regular, design: .rounded))
                         .foregroundColor(AppColors.secondaryText)
                         .lineLimit(1)
@@ -67,8 +66,8 @@ struct SessionRowView: View {
     
     private var artwork: some View {
         Group {
-            // ✅ FIX 1: artworkURL is URL?
-            if let url = session.track.artworkURL {
+            if let urlString = broadcast.track.artworkURL,
+               let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
@@ -103,13 +102,11 @@ struct SessionRowView: View {
     // MARK: - Distance
     
     private var distanceText: String? {
-        guard let userLoc = userLocation else { return nil }
-        
-        // ✅ FIX 2: session.location is NOT optional
-        let sessionLoc = session.location
+        guard let userLoc = userLocation,
+              let broadcastLoc = broadcast.location else { return nil }
         
         let a = CLLocation(latitude: userLoc.latitude, longitude: userLoc.longitude)
-        let b = CLLocation(latitude: sessionLoc.latitude, longitude: sessionLoc.longitude)
+        let b = CLLocation(latitude: broadcastLoc.latitude, longitude: broadcastLoc.longitude)
         let meters = a.distance(from: b)
         
         if meters < 1000 {
