@@ -71,14 +71,6 @@ final class ProfileViewModel: ObservableObject {
         self.profileService = ProfileService()
     }
 
-    /// Preview / Testing init (kein Firebase Call)
-    init(preview: Bool) {
-        self.profileService = ProfileService()
-        guard preview else { return }
-
-        let mock = UserProfile.mockPreview
-        applyProfile(mock)
-    }
 
     // MARK: - Loading
 

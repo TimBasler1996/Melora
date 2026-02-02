@@ -15,6 +15,7 @@
 		753AD7902F2CC3DF00521CF9 /* PROFILE_UI_IMPROVEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 753AD78F2F2CC3DF00521CF9 /* PROFILE_UI_IMPROVEMENTS.md */; };
 		7556B7FC2F2CAA3E00DA2EE8 /* FixLikesUserDataScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7556B7FB2F2CAA3E00DA2EE8 /* FixLikesUserDataScript.swift */; };
 		7556B7FE2F2CADF400DA2EE8 /* UserProfilePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7556B7FD2F2CADF400DA2EE8 /* UserProfilePreviewView.swift */; };
+		755D06AE2F2D077D00BD1112 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 755D06AD2F2D077D00BD1112 /* Assets.xcassets */; };
 		756E44882EFE8BD400F49C30 /* BroadcastPresenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */; };
 		756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */; };
 		756E448C2EFE8BE500F49C30 /* PhotoUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */; };
@@ -114,6 +115,7 @@
 		753AD78F2F2CC3DF00521CF9 /* PROFILE_UI_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROFILE_UI_IMPROVEMENTS.md; sourceTree = "<group>"; };
 		7556B7FB2F2CAA3E00DA2EE8 /* FixLikesUserDataScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixLikesUserDataScript.swift; sourceTree = "<group>"; };
 		7556B7FD2F2CADF400DA2EE8 /* UserProfilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfilePreviewView.swift; sourceTree = "<group>"; };
+		755D06AD2F2D077D00BD1112 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastPresenceManager.swift; sourceTree = "<group>"; };
 		756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseAuthBootstrap.swift; sourceTree = "<group>"; };
 		756E448A2EFE8BE500F49C30 /* PhotoUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoUploader.swift; sourceTree = "<group>"; };
@@ -301,6 +303,7 @@
 		759F7AD22EC779740012A549 = {
 			isa = PBXGroup;
 			children = (
+				755D06AD2F2D077D00BD1112 /* Assets.xcassets */,
 				7576DF432F18036A0034BF2A /* Readme.txt */,
 				759F7B222EC79EC30012A549 /* GoogleService-Info.plist */,
 				759F7B0E2EC7890E0012A549 /* SocialSound-Info.plist */,
@@ -604,6 +607,7 @@
 				759F7B232EC79EC30012A549 /* GoogleService-Info.plist in Resources */,
 				75DAD8712F20DD8E00D1219E /* FIXES_APPLIED.md in Resources */,
 				75DAD86D2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md in Resources */,
+				755D06AE2F2D077D00BD1112 /* Assets.xcassets in Resources */,
 				7576DF442F18036A0034BF2A /* Readme.txt in Resources */,
 				75D2A9E72F20F5CF00013A33 /* DISCOVER_DESIGN_UPDATE.md in Resources */,
 				75DAD86B2F20131200D1219E /* PROFILE_IMPROVEMENTS.md in Resources */,
@@ -832,6 +836,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -864,6 +869,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
