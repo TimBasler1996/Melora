@@ -3,6 +3,12 @@ import FirebaseAuth
 import FirebaseFirestore
 import CoreLocation
 
+enum DiscoverMode: String, CaseIterable, Identifiable {
+    case nearby = "Nearby"
+    case friends = "Friends"
+    var id: String { rawValue }
+}
+
 @MainActor
 final class DiscoverViewModel: ObservableObject {
 
@@ -13,7 +19,15 @@ final class DiscoverViewModel: ObservableObject {
 
     @Published var selectedBroadcast: DiscoverBroadcast?
     @Published var dismissTarget: DiscoverBroadcast?
-    
+
+    // Discover mode toggle
+    @Published var discoverMode: DiscoverMode = .nearby {
+        didSet { updateVisibleBroadcasts() }
+    }
+
+    // Following state
+    @Published private(set) var followingIds: Set<String> = []
+
     // Track broadcasts that have been liked and messaged
     @Published private(set) var likedBroadcastIds: Set<String> = []
     @Published private(set) var messagedBroadcastIds: Set<String> = []
@@ -21,8 +35,10 @@ final class DiscoverViewModel: ObservableObject {
     private let service: DiscoverService
     private let likeService: LikeApiService
     private let chatService: ChatApiService
+    private let followService: FollowApiService
 
     private var listener: ListenerRegistration?
+    private var followListener: ListenerRegistration?
     private var pollTimer: Task<Void, Never>?
     private var allBroadcasts: [DiscoverBroadcast] = []
     private var cachedUsers: [String: DiscoverUser] = [:]
@@ -36,11 +52,13 @@ final class DiscoverViewModel: ObservableObject {
     init(
         service: DiscoverService = .shared,
         likeService: LikeApiService = .shared,
-        chatService: ChatApiService = .shared
+        chatService: ChatApiService = .shared,
+        followService: FollowApiService = .shared
     ) {
         self.service = service
         self.likeService = likeService
         self.chatService = chatService
+        self.followService = followService
         loadLikedBroadcastsFromCache()
         loadMessagedBroadcastsFromCache()
     }
@@ -60,6 +78,14 @@ final class DiscoverViewModel: ObservableObject {
         errorMessage = nil
 
         loadMutedPreferencesIfNeeded()
+
+        // Listen to following list for friends mode
+        followListener = followService.listenToFollowing { [weak self] ids in
+            Task { @MainActor in
+                self?.followingIds = ids
+                self?.updateVisibleBroadcasts()
+            }
+        }
 
         listener = service.listenToBroadcasts { [weak self] result in
             guard let self else { return }
@@ -83,6 +109,8 @@ final class DiscoverViewModel: ObservableObject {
     func stopListening() {
         listener?.remove()
         listener = nil
+        followListener?.remove()
+        followListener = nil
         pollTimer?.cancel()
         pollTimer = nil
         isListening = false
@@ -301,6 +329,11 @@ final class DiscoverViewModel: ObservableObject {
 
         var updated = allBroadcasts.filter { broadcast in
             !mutedUserIds.contains(broadcast.user.id) && !mutedTrackIds.contains(broadcast.track.id)
+        }
+
+        // In friends mode, only show broadcasts from followed users
+        if discoverMode == .friends {
+            updated = updated.filter { followingIds.contains($0.user.id) }
         }
 
         if let currentLocation {
