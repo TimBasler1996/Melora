@@ -70,7 +70,7 @@ final class FollowApiService {
     }
 
     /// Real-time listener for the current user's following list.
-    func listenToFollowing(onChange: @escaping (Set<String>) -> Void) -> ListenerRegistration? {
+    func listenToFollowing(onChange: @escaping @Sendable (Set<String>) -> Void) -> ListenerRegistration? {
         guard let currentUid = Auth.auth().currentUser?.uid else { return nil }
 
         return db.collection(collection)
