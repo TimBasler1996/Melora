@@ -26,8 +26,8 @@ final class UserSearchViewModel: ObservableObject {
     // MARK: - Lifecycle
 
     func startListening() {
-        followListener = followService.listenToFollowing { [weak self] ids in
-            Task { @MainActor in
+        followListener = followService.listenToFollowing { [weak self] (ids: Set<String>) in
+            Task { @MainActor [weak self] in
                 self?.followingIds = ids
             }
         }
