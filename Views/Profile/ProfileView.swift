@@ -716,12 +716,6 @@ struct ProfileView: View {
     }
 }
 
-#if DEBUG
-#Preview {
-    ProfileView(viewModel: ProfileViewModel(preview: true))
-}
-#endif
-
 struct ProfileAvatarView: View {
     let image: UIImage?
     let urlString: String?
