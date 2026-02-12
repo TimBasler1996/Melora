@@ -64,10 +64,9 @@ final class DiscoverViewModel: ObservableObject {
     }
 
     deinit {
-        Task { @MainActor in
-            stopListening()
-            pollTimer?.cancel()
-        }
+        listener?.remove()
+        followListener?.remove()
+        pollTimer?.cancel()
     }
 
     func startListening() {
@@ -80,16 +79,16 @@ final class DiscoverViewModel: ObservableObject {
         loadMutedPreferencesIfNeeded()
 
         // Listen to following list for friends mode
-        followListener = followService.listenToFollowing { [weak self] ids in
-            Task { @MainActor in
+        followListener = followService.listenToFollowing { [weak self] (ids: Set<String>) in
+            Task { @MainActor [weak self] in
                 self?.followingIds = ids
                 self?.updateVisibleBroadcasts()
             }
         }
 
         listener = service.listenToBroadcasts { [weak self] result in
-            guard let self else { return }
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 self.isLoading = false
                 switch result {
                 case .failure(let error):
