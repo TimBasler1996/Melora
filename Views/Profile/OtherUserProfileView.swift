@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct OtherUserProfileView: View {
-    
+
     let user: AppUser
-    
+    @State private var isFollowing: Bool = false
+    @State private var isLoadingFollow: Bool = true
+
     var body: some View {
         ZStack {
             LinearGradient(
@@ -26,6 +28,10 @@ struct OtherUserProfileView: View {
         }
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            isFollowing = (try? await FollowApiService.shared.isFollowing(userId: user.uid)) ?? false
+            isLoadingFollow = false
+        }
     }
     
     // MARK: - Cards
@@ -33,17 +39,17 @@ struct OtherUserProfileView: View {
     private var headerCard: some View {
         HStack(spacing: 12) {
             avatar
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(user.displayName)
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundColor(AppColors.primaryText)
-                
+
                 Text(subtitle)
                     .font(AppFonts.footnote())
                     .foregroundColor(AppColors.secondaryText)
                     .lineLimit(1)
-                
+
                 if (user.profileCompleted ?? false) {
                     HStack(spacing: 6) {
                         Circle().fill(.green).frame(width: 8, height: 8)
@@ -53,8 +59,30 @@ struct OtherUserProfileView: View {
                     }
                 }
             }
-            
+
             Spacer()
+
+            if !isLoadingFollow {
+                Button {
+                    Task {
+                        if isFollowing {
+                            try? await FollowApiService.shared.unfollow(userId: user.uid)
+                            isFollowing = false
+                        } else {
+                            try? await FollowApiService.shared.follow(userId: user.uid)
+                            isFollowing = true
+                        }
+                    }
+                } label: {
+                    Text(isFollowing ? "Following" : "Follow")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundColor(isFollowing ? AppColors.primaryText : .white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 7)
+                        .background(isFollowing ? Color.gray.opacity(0.2) : AppColors.primary)
+                        .clipShape(Capsule())
+                }
+            }
         }
         .padding(12)
         .background(

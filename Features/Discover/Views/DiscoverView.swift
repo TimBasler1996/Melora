@@ -7,6 +7,8 @@ struct DiscoverView: View {
     @EnvironmentObject private var currentUserStore: CurrentUserStore
     @EnvironmentObject private var locationService: LocationService
 
+    @State private var showUserSearch = false
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -21,11 +23,28 @@ struct DiscoverView: View {
                 )
                 .ignoresSafeArea()
 
-                content
+                VStack(spacing: 0) {
+                    modePickerBar
+                    content
+                }
             }
             .navigationTitle("Discover")
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showUserSearch = true
+                    } label: {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .sheet(isPresented: $showUserSearch) {
+                UserSearchView()
+            }
             .sheet(item: $viewModel.selectedBroadcast) { broadcast in
                 BroadcastProfileView(
                     broadcast: broadcast,
@@ -90,6 +109,18 @@ struct DiscoverView: View {
         }
     }
 
+    private var modePickerBar: some View {
+        Picker("Mode", selection: $viewModel.discoverMode) {
+            ForEach(DiscoverMode.allCases) { mode in
+                Text(mode.rawValue).tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, AppLayout.screenPadding)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+    }
+
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading && viewModel.visibleBroadcasts.isEmpty {
@@ -126,18 +157,22 @@ struct DiscoverView: View {
             }
             .padding(.horizontal, AppLayout.screenPadding)
         } else if viewModel.visibleBroadcasts.isEmpty {
-            VStack(spacing: 10) {
-                Text("No one is live right now")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
+            if viewModel.discoverMode == .friends {
+                friendsEmptyState
+            } else {
+                VStack(spacing: 10) {
+                    Text("No one is live right now")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
 
-                Text("When someone nearby starts broadcasting, they’ll show up here.")
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.85))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 28)
+                    Text("When someone nearby starts broadcasting, they'll show up here.")
+                        .font(AppFonts.footnote())
+                        .foregroundColor(.white.opacity(0.85))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 28)
+                }
+                .padding(.top, 40)
             }
-            .padding(.top, 40)
         } else {
             ScrollView {
                 VStack(spacing: 20) {
@@ -187,6 +222,52 @@ struct DiscoverView: View {
                 .frame(maxWidth: .infinity)
             }
             .scrollIndicators(.hidden)
+        }
+    }
+
+    private var friendsEmptyState: some View {
+        VStack(spacing: 16) {
+            Spacer()
+
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 44))
+                .foregroundColor(.white.opacity(0.3))
+
+            if viewModel.followingIds.isEmpty {
+                Text("You're not following anyone yet")
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+
+                Text("Follow people to see their broadcasts here.")
+                    .font(AppFonts.footnote())
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+            } else {
+                Text("None of your friends are live")
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+
+                Text("When someone you follow starts broadcasting, they'll show up here.")
+                    .font(AppFonts.footnote())
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+            }
+
+            Button {
+                showUserSearch = true
+            } label: {
+                Label("Find People", systemImage: "magnifyingglass")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(AppColors.primary)
+                    .clipShape(Capsule())
+            }
+
+            Spacer()
         }
     }
 
