@@ -49,7 +49,25 @@ final class CurrentUserStore: ObservableObject {
 
             self.user = AppUser.fromFirestore(uid: uid, data: data)
             self.isLoading = false
+
+            // Auto-migrate: backfill lowercase search fields if missing
+            self.backfillLowercaseFieldsIfNeeded(uid: uid, data: data)
         }
+    }
+
+    /// Writes `firstNameLower` / `lastNameLower` once when they are missing.
+    private func backfillLowercaseFieldsIfNeeded(uid: String, data: [String: Any]) {
+        guard data["firstNameLower"] == nil,
+              let firstName = data["firstName"] as? String else { return }
+
+        var updates: [String: Any] = [
+            "firstNameLower": firstName.lowercased()
+        ]
+        if let lastName = data["lastName"] as? String {
+            updates["lastNameLower"] = lastName.lowercased()
+        }
+
+        db.collection("users").document(uid).setData(updates, merge: true)
     }
 
     func stopListening() {
