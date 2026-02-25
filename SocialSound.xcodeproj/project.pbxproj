@@ -68,6 +68,7 @@
 		75A1740A2EC8BBFA00CEB48F /* AppUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174092EC8BBFA00CEB48F /* AppUser.swift */; };
 		75A1740C2EC8C0FA00CEB48F /* ProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A1740B2EC8C0FA00CEB48F /* ProfileViewModel.swift */; };
 		75A1740E2ECA158400CEB48F /* TrackLike.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A1740D2ECA158400CEB48F /* TrackLike.swift */; };
+		AAAA00012F5EAAAA00000001 /* FollowNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA00022F5EAAAA00000001 /* FollowNotification.swift */; };
 		75A174102ECA159900CEB48F /* LikeApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A1740F2ECA159900CEB48F /* LikeApiService.swift */; };
 		75A174122ECBB68900CEB48F /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174112ECBB68900CEB48F /* User.swift */; };
 
@@ -170,6 +171,7 @@
 		75A174092EC8BBFA00CEB48F /* AppUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUser.swift; sourceTree = "<group>"; };
 		75A1740B2EC8C0FA00CEB48F /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
 		75A1740D2ECA158400CEB48F /* TrackLike.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLike.swift; sourceTree = "<group>"; };
+		AAAA00022F5EAAAA00000001 /* FollowNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowNotification.swift; sourceTree = "<group>"; };
 		75A1740F2ECA159900CEB48F /* LikeApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeApiService.swift; sourceTree = "<group>"; };
 		75A174112ECBB68900CEB48F /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 
@@ -350,6 +352,7 @@
 				75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */,
 				75A174112ECBB68900CEB48F /* User.swift */,
 				75A1740D2ECA158400CEB48F /* TrackLike.swift */,
+				AAAA00022F5EAAAA00000001 /* FollowNotification.swift */,
 				75A174092EC8BBFA00CEB48F /* AppUser.swift */,
 				7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */,
 				759F7B092EC783CF0012A549 /* LocationPoint.swift */,
@@ -658,6 +661,7 @@
 				759F7B0C2EC784920012A549 /* BroadcastManager.swift in Sources */,
 				759F7B1D2EC797210012A549 /* SessionApiService.swift in Sources */,
 				75A1740E2ECA158400CEB48F /* TrackLike.swift in Sources */,
+				AAAA00012F5EAAAA00000001 /* FollowNotification.swift in Sources */,
 				759F7B0A2EC783CF0012A549 /* LocationPoint.swift in Sources */,
 				75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */,
 				7556B7FC2F2CAA3E00DA2EE8 /* FixLikesUserDataScript.swift in Sources */,

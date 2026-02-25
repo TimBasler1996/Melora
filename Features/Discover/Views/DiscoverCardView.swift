@@ -9,7 +9,11 @@ struct DiscoverCardView: View {
     var hasLiked: Bool = false
     var hasMessaged: Bool = false
 
-    @State private var isExpanded = false
+    /// Binding to the parent's single expanded card ID (only one card open at a time)
+    @Binding var expandedId: String?
+
+    private var isExpanded: Bool { expandedId == broadcast.id }
+
     @State private var isLiked: Bool = false
     @State private var showHeartAnimation: Bool = false
     @State private var showMessageField: Bool = false
@@ -23,8 +27,11 @@ struct DiscoverCardView: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        isExpanded.toggle()
-                        if !isExpanded {
+                        if isExpanded {
+                            expandedId = nil
+                            showMessageField = false
+                        } else {
+                            expandedId = broadcast.id
                             showMessageField = false
                         }
                     }
@@ -118,9 +125,7 @@ struct DiscoverCardView: View {
                 .buttonStyle(.plain)
                 .disabled(isLiked)
 
-                Rectangle()
-                    .fill(Color.white.opacity(0.08))
-                    .frame(width: 1, height: 28)
+                actionDivider
 
                 // Message button
                 Button(action: handleMessageAction) {
@@ -138,9 +143,25 @@ struct DiscoverCardView: View {
                 .buttonStyle(.plain)
                 .disabled(hasMessaged)
 
-                Rectangle()
-                    .fill(Color.white.opacity(0.08))
-                    .frame(width: 1, height: 28)
+                actionDivider
+
+                // Spotify button
+                if let spotifyURL = broadcast.track.spotifyURLValue {
+                    Link(destination: spotifyURL) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "music.note")
+                                .font(.system(size: 16, weight: .medium))
+                            Text("Spotify")
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        }
+                        .foregroundColor(Color(red: 0.12, green: 0.84, blue: 0.38))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.plain)
+
+                    actionDivider
+                }
 
                 // View Profile button
                 NavigationLink {
@@ -158,11 +179,9 @@ struct DiscoverCardView: View {
                 }
                 .buttonStyle(.plain)
 
-                // Dismiss button
-                Rectangle()
-                    .fill(Color.white.opacity(0.08))
-                    .frame(width: 1, height: 28)
+                actionDivider
 
+                // Dismiss button
                 Button(action: onDismiss) {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .semibold))
@@ -174,6 +193,12 @@ struct DiscoverCardView: View {
             }
         }
         .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+
+    private var actionDivider: some View {
+        Rectangle()
+            .fill(Color.white.opacity(0.08))
+            .frame(width: 1, height: 28)
     }
 
     // MARK: - Message Input Field

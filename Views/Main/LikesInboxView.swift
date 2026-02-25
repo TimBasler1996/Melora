@@ -24,7 +24,7 @@ struct LikesInboxView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("Likes")
+                Text("Activity")
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
             }
@@ -105,38 +105,74 @@ struct LikesInboxView: View {
                 Spacer()
             }
             .padding(.horizontal, 20)
-        } else if vm.clusters.isEmpty {
+        } else if vm.clusters.isEmpty && vm.followNotifications.isEmpty {
             VStack(spacing: 20) {
                 Spacer()
-                
-                Image(systemName: "heart")
+
+                Image(systemName: "bell")
                     .font(.system(size: 64, weight: .thin))
                     .foregroundColor(.white.opacity(0.4))
-                
+
                 VStack(spacing: 8) {
-                    Text("No Likes Yet")
+                    Text("No Activity Yet")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
-                    
-                    Text("When someone likes a track you\nbroadcast, it will show up here")
+
+                    Text("When someone likes your track\nor follows you, it will show up here")
                         .font(.system(size: 15, weight: .medium, design: .rounded))
                         .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
                 }
-                
+
                 Spacer()
             }
             .padding(.horizontal, 32)
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(vm.clusters) { cluster in
-                        NavigationLink {
-                            TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
-                        } label: {
-                            ModernTrackLikesClusterRow(cluster: cluster)
+                    // New followers section
+                    if !vm.followNotifications.isEmpty {
+                        Text("New Followers")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
+                            .textCase(.uppercase)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.bottom, 4)
+
+                        ForEach(vm.followNotifications) { notif in
+                            NavigationLink {
+                                UserProfilePreviewView(userId: notif.fromUserId)
+                            } label: {
+                                FollowNotificationRow(notification: notif)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+
+                        if !vm.clusters.isEmpty {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.08))
+                                .frame(height: 1)
+                                .padding(.vertical, 8)
+                        }
+                    }
+
+                    // Track likes section
+                    if !vm.clusters.isEmpty {
+                        Text("Track Likes")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.5))
+                            .textCase(.uppercase)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.bottom, 4)
+
+                        ForEach(vm.clusters) { cluster in
+                            NavigationLink {
+                                TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
+                            } label: {
+                                ModernTrackLikesClusterRow(cluster: cluster)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
                 .padding(.horizontal, 20)
@@ -144,6 +180,71 @@ struct LikesInboxView: View {
                 .padding(.bottom, 32)
             }
             .scrollIndicators(.hidden)
+        }
+    }
+}
+
+// MARK: - Follow Notification Row
+
+private struct FollowNotificationRow: View {
+    let notification: FollowNotification
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Avatar
+            Group {
+                if let urlString = notification.fromUserAvatarURL,
+                   let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFill()
+                        default:
+                            avatarPlaceholder
+                        }
+                    }
+                } else {
+                    avatarPlaceholder
+                }
+            }
+            .frame(width: 48, height: 48)
+            .clipShape(Circle())
+            .overlay(Circle().stroke(Color.white.opacity(0.15), lineWidth: 1))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(notification.fromUserDisplayName ?? "Someone")
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+
+                Text("started following you")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.6))
+
+                Text(notification.createdAt, style: .relative)
+                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                    .foregroundColor(.white.opacity(0.4))
+            }
+
+            Spacer()
+
+            Image(systemName: "person.badge.plus")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(AppColors.primary)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+        )
+    }
+
+    private var avatarPlaceholder: some View {
+        ZStack {
+            Circle().fill(Color.white.opacity(0.08))
+            Image(systemName: "person.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white.opacity(0.3))
         }
     }
 }

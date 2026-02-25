@@ -1,4 +1,6 @@
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 // MARK: - Shared Profile Preview Data Model
 
@@ -83,24 +85,84 @@ struct ProfilePreviewData: Equatable {
 /// ✅ Single shared component for profile preview display
 /// Used in both ProfileView (your own) and UserProfilePreviewView (others)
 struct SharedProfilePreviewView: View {
-    
+
     let data: ProfilePreviewData
+    var userId: String? = nil
+
     @Environment(\.openURL) private var openURL
-    
+    @State private var followingCount: Int = 0
+    @State private var followerCount: Int = 0
+    @State private var followStatsLoaded = false
+
     var body: some View {
         VStack(spacing: 16) {
             heroSection
+
+            if userId != nil, followStatsLoaded {
+                followStatsSection
+            }
+
             detailsSection
-            
-            // ✅ Spotify button
+
             if let spotifyURL = data.spotifyProfileURL {
                 spotifyButton(url: spotifyURL)
             }
-            
+
             if !data.additionalPhotoURLs.isEmpty {
                 photosSection
             }
         }
+        .task(id: userId) {
+            guard let uid = userId else { return }
+            do {
+                let db = Firestore.firestore()
+
+                async let followingSnap = db.collection("follows")
+                    .whereField("followerId", isEqualTo: uid)
+                    .getDocuments()
+                async let followerSnap = db.collection("follows")
+                    .whereField("followingId", isEqualTo: uid)
+                    .getDocuments()
+
+                followingCount = try await followingSnap.documents.count
+                followerCount = try await followerSnap.documents.count
+                followStatsLoaded = true
+            } catch {
+                print("Failed to load follow stats: \(error)")
+            }
+        }
+    }
+
+    // MARK: - Follow Stats Section
+
+    private var followStatsSection: some View {
+        HStack(spacing: 0) {
+            VStack(spacing: 4) {
+                Text("\(followerCount)")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.primaryText)
+                Text("Followers")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.secondaryText)
+            }
+            .frame(maxWidth: .infinity)
+
+            Rectangle()
+                .fill(AppColors.secondaryText.opacity(0.2))
+                .frame(width: 1, height: 36)
+
+            VStack(spacing: 4) {
+                Text("\(followingCount)")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.primaryText)
+                Text("Following")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.secondaryText)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.vertical, 14)
+        .background(cardBackground)
     }
     
     // MARK: - Spotify Button

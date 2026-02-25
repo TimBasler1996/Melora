@@ -50,7 +50,7 @@ struct UserProfilePreviewView: View {
                                 appUser: user,
                                 distanceMeters: distanceToUser(user)
                             )
-                            SharedProfilePreviewView(data: previewData)
+                            SharedProfilePreviewView(data: previewData, userId: user.uid)
                         }
                         .frame(width: contentWidth, alignment: .center)
                         .padding(.bottom, 28)

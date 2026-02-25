@@ -132,7 +132,7 @@ struct ProfileView: View {
         Group {
             if let profile = viewModel.profile {
                 let previewData = ProfilePreviewData.from(userProfile: profile)
-                SharedProfilePreviewView(data: previewData)
+                SharedProfilePreviewView(data: previewData, userId: profile.uid)
             } else {
                 Text("No profile data available")
                     .font(AppFonts.body())

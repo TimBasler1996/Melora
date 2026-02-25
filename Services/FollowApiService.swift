@@ -19,13 +19,24 @@ final class FollowApiService {
         guard currentUid != userId else { return }
 
         let docId = "\(currentUid)_\(userId)"
+        let now = Date()
         let payload: [String: Any] = [
             "followerId": currentUid,
             "followingId": userId,
-            "createdAt": Timestamp(date: Date())
+            "createdAt": Timestamp(date: now)
         ]
 
         try await db.collection(collection).document(docId).setData(payload)
+
+        // Create follow notification for the target user
+        let notifPayload: [String: Any] = [
+            "type": "follow",
+            "fromUserId": currentUid,
+            "toUserId": userId,
+            "createdAt": Timestamp(date: now)
+        ]
+        try? await db.collection("users").document(userId)
+            .collection("notifications").addDocument(data: notifPayload)
     }
 
     func unfollow(userId: String) async throws {
@@ -67,6 +78,46 @@ final class FollowApiService {
         let docId = "\(currentUid)_\(userId)"
         let doc = try await db.collection(collection).document(docId).getDocument()
         return doc.exists
+    }
+
+    // MARK: - Notifications
+
+    /// Fetch follow notifications for a user (people who followed them).
+    func fetchFollowNotifications(for userId: String) async throws -> [FollowNotification] {
+        let snapshot = try await db.collection("users").document(userId)
+            .collection("notifications")
+            .whereField("type", isEqualTo: "follow")
+            .order(by: "createdAt", descending: true)
+            .limit(to: 50)
+            .getDocuments()
+
+        return snapshot.documents.compactMap { doc -> FollowNotification? in
+            let data = doc.data()
+            guard let fromUserId = data["fromUserId"] as? String,
+                  let timestamp = data["createdAt"] as? Timestamp else { return nil }
+            return FollowNotification(
+                id: doc.documentID,
+                fromUserId: fromUserId,
+                createdAt: timestamp.dateValue(),
+                fromUserDisplayName: nil,
+                fromUserAvatarURL: nil
+            )
+        }
+    }
+
+    /// Enrich follow notifications with user display data.
+    func enrichFollowNotifications(_ notifications: [FollowNotification]) async -> [FollowNotification] {
+        var enriched = notifications
+        for i in enriched.indices {
+            let uid = enriched[i].fromUserId
+            if let doc = try? await db.collection("users").document(uid).getDocument(),
+               let data = doc.data() {
+                enriched[i].fromUserDisplayName = data["firstName"] as? String ?? data["displayName"] as? String
+                let photos = data["photoURLs"] as? [String]
+                enriched[i].fromUserAvatarURL = data["avatarURL"] as? String ?? photos?.first
+            }
+        }
+        return enriched
     }
 
     /// Real-time listener for the current user's following list.

@@ -8,6 +8,7 @@ struct DiscoverView: View {
     @EnvironmentObject private var locationService: LocationService
 
     @State private var showUserSearch = false
+    @State private var expandedCardId: String?
 
     var body: some View {
         NavigationStack {
@@ -175,7 +176,8 @@ struct DiscoverView: View {
                                 }
                             },
                             hasLiked: viewModel.isLiked(broadcast),
-                            hasMessaged: viewModel.hasMessage(broadcast)
+                            hasMessaged: viewModel.hasMessage(broadcast),
+                            expandedId: $expandedCardId
                         )
                         .padding(.horizontal, AppLayout.screenPadding)
                     }
@@ -206,7 +208,7 @@ struct DiscoverView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 28)
             } else {
-                Text("None of your friends are live")
+                Text("No one you follow is live")
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
 

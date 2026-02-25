@@ -12,13 +12,15 @@ import Foundation
 final class LikesInboxViewModel: ObservableObject {
     
     @Published var clusters: [TrackLikesCluster] = []
+    @Published var followNotifications: [FollowNotification] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    
+
     /// Wann der User die Inbox das letzte Mal gesehen hat.
     @Published var lastSeenDate: Date?
-    
+
     private let likeService = LikeApiService.shared
+    private let followService = FollowApiService.shared
     private let lastSeenKey = "LikesInboxView_lastSeenDate"
     
     init() {
@@ -33,31 +35,22 @@ final class LikesInboxViewModel: ObservableObject {
         
         Task {
             do {
-                var likes = try await likeService.fetchLikesReceived(for: userId)
-                
-                // ✅ IMPORTANT: Enrich likes with missing user data
-                print("🔄 [Inbox] Fetched \(likes.count) likes, enriching with user data...")
-                
-                // Debug: Check what data we have before enrichment
-                for (index, like) in likes.enumerated().prefix(3) {
-                    print("  📋 Like \(index): fromUserId=\(like.fromUserId), displayName=\(like.fromUserDisplayName ?? "nil"), avatar=\(like.fromUserAvatarURL ?? "nil")")
-                }
-                
+                async let likesTask = likeService.fetchLikesReceived(for: userId)
+                async let followTask = followService.fetchFollowNotifications(for: userId)
+
+                var likes = try await likesTask
                 likes = await likeService.enrichLikesWithUserData(likes)
-                
-                // Debug: Check what data we have after enrichment
-                print("✅ [Inbox] Likes enriched, checking results...")
-                for (index, like) in likes.enumerated().prefix(3) {
-                    print("  ✨ Like \(index): fromUserId=\(like.fromUserId), displayName=\(like.fromUserDisplayName ?? "nil"), avatar=\(like.fromUserAvatarURL ?? "nil")")
-                }
-                
                 let newClusters = buildClusters(from: likes)
-                
+
+                var notifications = try await followTask
+                notifications = await followService.enrichFollowNotifications(notifications)
+
                 self.clusters = newClusters
+                self.followNotifications = notifications
                 self.isLoading = false
             } catch {
-                print("❌ Failed to load likes: \(error)")
-                self.errorMessage = "Could not load your likes. Please try again later."
+                print("Failed to load inbox: \(error)")
+                self.errorMessage = "Could not load your notifications. Please try again later."
                 self.isLoading = false
             }
         }

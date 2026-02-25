@@ -5,7 +5,7 @@ import CoreLocation
 
 enum DiscoverMode: String, CaseIterable, Identifiable {
     case nearby = "Nearby"
-    case friends = "Friends"
+    case friends = "Following"
     var id: String { rawValue }
 }
 
