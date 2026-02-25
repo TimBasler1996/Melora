@@ -141,7 +141,8 @@ struct FollowListView: View {
             var loaded: [AppUser] = []
             for uid in userIds {
                 let userSnap = try await db.collection("users").document(uid).getDocument()
-                if let data = userSnap.data(), let user = AppUser.fromFirestore(uid: uid, data: data) {
+                if let data = userSnap.data() {
+                    let user = AppUser.fromFirestore(uid: uid, data: data)
                     loaded.append(user)
                 }
             }
