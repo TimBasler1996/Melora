@@ -8,18 +8,22 @@ struct UserSearchRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            avatar
+            NavigationLink(destination: OtherUserProfileView(user: user)) {
+                HStack(spacing: 12) {
+                    avatar
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(user.displayName)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(user.displayName)
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
 
-                Text(subtitle)
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.6))
-                    .lineLimit(1)
+                        Text(subtitle)
+                            .font(AppFonts.footnote())
+                            .foregroundColor(.white.opacity(0.6))
+                            .lineLimit(1)
+                    }
+                }
             }
 
             Spacer()
