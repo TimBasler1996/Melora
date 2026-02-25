@@ -180,6 +180,19 @@ final class UserApiService {
         db.collection("users").document(uid).setData(payload, merge: true, completion: completion)
     }
     
+    // MARK: - Broadcast Stats
+
+    func addBroadcastMinutes(uid: String, minutes: Int, completion: ((Error?) -> Void)? = nil) {
+        guard minutes > 0 else {
+            completion?(nil)
+            return
+        }
+        db.collection("users").document(uid).setData([
+            "broadcastMinutesTotal": FieldValue.increment(Int64(minutes)),
+            "updatedAt": Timestamp(date: Date())
+        ], merge: true, completion: completion)
+    }
+
     // MARK: - Profile Updates
     
     /// Updates the user's display name in Firestore

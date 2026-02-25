@@ -111,6 +111,9 @@
 		CCCEEE84C08D478CBD670188 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF916ADE61D344A28E4A3266 /* DiscoverView.swift */; };
 		E6D61480FDDD4862A5606347 /* DiscoverDetailSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */; };
 		FF0A5E9459D24E7A8705F315 /* DiscoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */; };
+		75F1A0022F5B000100ABC001 /* ChatBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F1A0012F5B000100ABC001 /* ChatBadgeViewModel.swift */; };
+		75F1A0042F5B000100ABC002 /* FollowersInboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F1A0032F5B000100ABC002 /* FollowersInboxViewModel.swift */; };
+		75F1A0062F5B000100ABC003 /* SettingsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F1A0052F5B000100ABC003 /* SettingsContentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -224,6 +227,9 @@
 		CF916ADE61D344A28E4A3266 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
 		E7E051118A634A34AB907992 /* DiscoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverViewModel.swift; sourceTree = "<group>"; };
 		F5E7962926804ED6997F6667 /* DiscoverModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverModels.swift; sourceTree = "<group>"; };
+		75F1A0012F5B000100ABC001 /* ChatBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBadgeViewModel.swift; sourceTree = "<group>"; };
+		75F1A0032F5B000100ABC002 /* FollowersInboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowersInboxViewModel.swift; sourceTree = "<group>"; };
+		75F1A0052F5B000100ABC003 /* SettingsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsContentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -397,6 +403,8 @@
 			isa = PBXGroup;
 			children = (
 				76B0C1A22F12345600112233 /* Onboarding */,
+				75F1A0012F5B000100ABC001 /* ChatBadgeViewModel.swift */,
+				75F1A0032F5B000100ABC002 /* FollowersInboxViewModel.swift */,
 				756E448E2EFE8BF600F49C30 /* ProfileGateViewModel.swift */,
 				756E448F2EFE8BF600F49C30 /* ProfileSetupWizardViewModel.swift */,
 				756E44902EFE8BF600F49C30 /* ProfileTabViewModel.swift */,
@@ -457,6 +465,7 @@
 			children = (
 				7576DF652F1836BE0034BF2A /* ProfileChip.swift */,
 				7576DF632F1835050034BF2A /* ProfilePreviewView.swift */,
+				75F1A0052F5B000100ABC003 /* SettingsContentView.swift */,
 				7576DF312F168B400034BF2A /* UserProfilePreview.swift */,
 				75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */,
 				757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */,
@@ -747,6 +756,9 @@
 				759F7B172EC78DB70012A549 /* SpotifyAuthManager.swift in Sources */,
 				759F7AFE2EC781A70012A549 /* MainView.swift in Sources */,
 				75A174232ED1007200CEB48F /* LikesInboxViewModel.swift in Sources */,
+				75F1A0022F5B000100ABC001 /* ChatBadgeViewModel.swift in Sources */,
+				75F1A0042F5B000100ABC002 /* FollowersInboxViewModel.swift in Sources */,
+				75F1A0062F5B000100ABC003 /* SettingsContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

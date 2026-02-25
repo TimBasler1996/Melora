@@ -22,6 +22,7 @@ struct Conversation: Identifiable, Codable, Equatable {
     var lastMessageText: String?
     var lastMessageAt: Date?
     var lastMessageSenderId: String?
+    var lastReadAt: [String: Date]?
 
     static func fromFirestore(id: String, data: [String: Any]) -> Conversation? {
         guard let participantIds = data["participantIds"] as? [String] else { return nil }
@@ -32,6 +33,20 @@ struct Conversation: Identifiable, Codable, Equatable {
             return nil
         }
 
+        // Parse lastReadAt dict
+        let lastReadAtDict: [String: Date]? = {
+            guard let raw = data["lastReadAt"] as? [String: Any] else { return nil }
+            var result: [String: Date] = [:]
+            for (key, val) in raw {
+                if let ts = val as? Timestamp {
+                    result[key] = ts.dateValue()
+                } else if let d = val as? Date {
+                    result[key] = d
+                }
+            }
+            return result.isEmpty ? nil : result
+        }()
+
         return Conversation(
             id: id,
             participantIds: participantIds,
@@ -41,7 +56,8 @@ struct Conversation: Identifiable, Codable, Equatable {
             createdFromTrackId: data["createdFromTrackId"] as? String,
             lastMessageText: data["lastMessageText"] as? String,
             lastMessageAt: date("lastMessageAt"),
-            lastMessageSenderId: data["lastMessageSenderId"] as? String
+            lastMessageSenderId: data["lastMessageSenderId"] as? String,
+            lastReadAt: lastReadAtDict
         )
     }
 }

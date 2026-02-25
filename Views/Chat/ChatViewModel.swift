@@ -54,6 +54,9 @@ final class ChatViewModel: ObservableObject {
                     self.isLoading = false
                 }
 
+                // Mark conversation as read when opened
+                await markAsRead(conversationId: conversationId)
+
             } catch {
                 self.isLoading = false
                 self.errorMessage = error.localizedDescription
@@ -65,6 +68,17 @@ final class ChatViewModel: ObservableObject {
     func stop() {
         listener?.remove()
         listener = nil
+    }
+
+    func markAsRead(conversationId: String) async {
+        guard let myId = Auth.auth().currentUser?.uid else { return }
+        do {
+            try await db.collection("conversations").document(conversationId).setData([
+                "lastReadAt.\(myId)": Timestamp(date: Date())
+            ], merge: true)
+        } catch {
+            print("❌ [Chat] markAsRead failed:", error.localizedDescription)
+        }
     }
 
     func send(conversationId: String) async {

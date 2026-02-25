@@ -51,6 +51,7 @@ struct AppUser: Identifiable, Codable, Equatable {
     var currentTrack: Track?
     var lastLocation: LocationPoint?
     var lastActiveAt: Date?
+    var broadcastMinutesTotal: Int?
 
     // MARK: - Meta
 
@@ -78,6 +79,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         photoURLs: [String]? = nil,
         isBroadcasting: Bool? = nil,
         currentTrack: Track? = nil,
+        broadcastMinutesTotal: Int? = nil,
         profileCompleted: Bool? = nil,
         createdAt: Date? = nil,
         updatedAt: Date? = nil,
@@ -105,6 +107,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         self.photoURLs = photoURLs
         self.isBroadcasting = isBroadcasting
         self.currentTrack = currentTrack
+        self.broadcastMinutesTotal = broadcastMinutesTotal
         self.profileCompleted = profileCompleted
 
         self.createdAt = createdAt
@@ -251,6 +254,7 @@ struct AppUser: Identifiable, Codable, Equatable {
             photoURLs: photoURLs,
             isBroadcasting: boolValue("isBroadcasting"),
             currentTrack: currentTrack,
+            broadcastMinutesTotal: intFromAny(data["broadcastMinutesTotal"]),
             profileCompleted: boolValue("profileCompleted"),
             createdAt: ts("createdAt"),
             updatedAt: ts("updatedAt"),

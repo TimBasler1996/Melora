@@ -14,17 +14,27 @@ struct ChatInboxRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            avatar
+            ZStack(alignment: .topTrailing) {
+                avatar
+
+                if row.isUnread {
+                    Circle()
+                        .fill(AppColors.primary)
+                        .frame(width: 12, height: 12)
+                        .overlay(Circle().stroke(AppColors.cardBackground, lineWidth: 2))
+                        .offset(x: 2, y: -2)
+                }
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(row.displayName ?? "Unknown user")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: row.isUnread ? .bold : .semibold, design: .rounded))
                     .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
 
                 Text(row.lastMessageText ?? "Say hi 👋")
-                    .font(AppFonts.footnote())
-                    .foregroundColor(AppColors.secondaryText)
+                    .font(.system(size: 13, weight: row.isUnread ? .semibold : .regular, design: .rounded))
+                    .foregroundColor(row.isUnread ? AppColors.primaryText : AppColors.secondaryText)
                     .lineLimit(1)
             }
 
@@ -34,7 +44,7 @@ struct ChatInboxRowView: View {
                 if let date = row.lastMessageAt ?? row.updatedAt {
                     Text(date.formatted(date: .abbreviated, time: .shortened))
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.mutedText)
+                        .foregroundColor(row.isUnread ? AppColors.primary : AppColors.mutedText)
                 }
 
                 Image(systemName: "chevron.right")

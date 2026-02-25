@@ -20,6 +20,7 @@ struct ChatInboxRow: Identifiable {
     var lastMessageText: String?
     var lastMessageAt: Date?
     var updatedAt: Date?
+    var isUnread: Bool = false
 }
 
 @MainActor
@@ -67,10 +68,27 @@ final class ChatInboxViewModel: ObservableObject {
 
                 let lastText = data["lastMessageText"] as? String
                 let lastAt = (data["lastMessageAt"] as? Timestamp)?.dateValue()
+                let lastSender = data["lastMessageSenderId"] as? String
 
                 let updatedAt =
                     (data["updatedAt"] as? Timestamp)?.dateValue()
                     ?? (data["createdAt"] as? Timestamp)?.dateValue()
+
+                // Compute unread status
+                let lastReadAtDict = data["lastReadAt"] as? [String: Any]
+                let myLastRead: Date? = {
+                    guard let raw = lastReadAtDict?[myUid] else { return nil }
+                    if let ts = raw as? Timestamp { return ts.dateValue() }
+                    if let d = raw as? Date { return d }
+                    return nil
+                }()
+
+                let isUnread: Bool = {
+                    guard lastSender != myUid else { return false }
+                    guard let msgAt = lastAt else { return false }
+                    guard let readAt = myLastRead else { return true }
+                    return msgAt > readAt
+                }()
 
                 return ChatInboxRow(
                     id: doc.documentID,
@@ -80,7 +98,8 @@ final class ChatInboxViewModel: ObservableObject {
                     avatarURL: nil,
                     lastMessageText: lastText,
                     lastMessageAt: lastAt,
-                    updatedAt: updatedAt
+                    updatedAt: updatedAt,
+                    isUnread: isUnread
                 )
             }
 
