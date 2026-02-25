@@ -10,7 +10,7 @@ struct SessionRowView: View {
     var body: some View {
         NavigationLink {
             // ✅ FIX 3: use uid (your current Firestore document id)
-            OtherUserProfileLoaderView(uid: session.user.id)
+            UserProfilePreviewView(userId: session.user.id)
         } label: {
             HStack(spacing: 12) {
                 
@@ -120,93 +120,4 @@ struct SessionRowView: View {
     }
 }
 
-//
-// MARK: - Loader: fetch AppUser then show profile
-//
-
-private struct OtherUserProfileLoaderView: View {
-    
-    let uid: String
-    
-    @State private var isLoading = true
-    @State private var errorMessage: String?
-    @State private var user: AppUser?
-    
-    var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-            
-            content
-        }
-        .navigationTitle("Profile")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear { load() }
-    }
-    
-    @ViewBuilder
-    private var content: some View {
-        if isLoading {
-            VStack {
-                Spacer()
-                ProgressView("Loading profile…")
-                    .tint(.white)
-                Spacer()
-            }
-        } else if let errorMessage {
-            VStack(spacing: 10) {
-                Text("Couldn’t load profile")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-                
-                Text(errorMessage)
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.85))
-                    .multilineTextAlignment(.center)
-                
-                Button("Retry") { load() }
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.18))
-                    .foregroundColor(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            .padding(.horizontal, AppLayout.screenPadding)
-            
-        } else if let user {
-            OtherUserProfileView(user: user)
-        } else {
-            VStack {
-                Spacer()
-                Text("No profile found.")
-                    .foregroundColor(.white)
-                Spacer()
-            }
-        }
-    }
-    
-    private func load() {
-        isLoading = true
-        errorMessage = nil
-        user = nil
-        
-        // ✅ label matches your compiler error: expected uid:completion:
-        UserApiService.shared.getUser(uid: uid) { result in
-            DispatchQueue.main.async {
-                self.isLoading = false
-                switch result {
-                case .failure(let error):
-                    self.errorMessage = error.localizedDescription
-                case .success(let user):
-                    self.user = user
-                }
-            }
-        }
-    }
-}
 

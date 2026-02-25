@@ -1,21 +1,40 @@
 import SwiftUI
 
-/// Profile view for viewing other users' profiles
-/// ✅ Uses shared component for consistent UI with your own profile
+/// Unified profile view for viewing other users' profiles.
+/// Accepts either a userId (loads from Firestore) or an AppUser directly.
+/// Uses SharedProfilePreviewView for consistent UI with your own profile.
 struct UserProfilePreviewView: View {
-    
-    let userId: String
-    
+
+    private let initialUser: AppUser?
+    private let userId: String
+
     @StateObject private var vm = UserProfilePreviewViewModel()
-    @Environment(\.dismiss) private var dismiss
-    
+    @State private var isFollowing = false
+    @State private var isLoadingFollow = true
+
+    // MARK: - Init
+
+    /// Init with userId – loads user from Firestore
+    init(userId: String) {
+        self.userId = userId
+        self.initialUser = nil
+    }
+
+    /// Init with AppUser – skips Firestore fetch
+    init(user: AppUser) {
+        self.userId = user.uid
+        self.initialUser = user
+    }
+
+    // MARK: - Body
+
     var body: some View {
         GeometryReader { geo in
             let contentWidth = geo.size.width - (AppLayout.screenPadding * 2)
-            
+
             ZStack {
                 AppColors.background.ignoresSafeArea()
-                
+
                 if vm.isLoading {
                     loadingState
                 } else if let error = vm.errorMessage {
@@ -23,6 +42,8 @@ struct UserProfilePreviewView: View {
                 } else if let user = vm.user {
                     ScrollView(.vertical) {
                         VStack(spacing: 16) {
+                            followSection(for: user)
+
                             let previewData = ProfilePreviewData.from(appUser: user)
                             SharedProfilePreviewView(data: previewData)
                         }
@@ -36,12 +57,49 @@ struct UserProfilePreviewView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            await vm.loadUser(userId: userId)
+            if let initialUser {
+                vm.user = initialUser
+            } else {
+                await vm.loadUser(userId: userId)
+            }
+            // Load follow state
+            isFollowing = (try? await FollowApiService.shared.isFollowing(userId: userId)) ?? false
+            isLoadingFollow = false
         }
     }
-    
+
+    // MARK: - Follow Section
+
+    private func followSection(for user: AppUser) -> some View {
+        HStack {
+            Spacer()
+
+            if !isLoadingFollow {
+                Button {
+                    Task {
+                        if isFollowing {
+                            try? await FollowApiService.shared.unfollow(userId: user.uid)
+                            isFollowing = false
+                        } else {
+                            try? await FollowApiService.shared.follow(userId: user.uid)
+                            isFollowing = true
+                        }
+                    }
+                } label: {
+                    Text(isFollowing ? "Following" : "Follow")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundColor(isFollowing ? AppColors.primaryText : .white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 9)
+                        .background(isFollowing ? Color.gray.opacity(0.2) : AppColors.primary)
+                        .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
     // MARK: - Loading State
-    
+
     private var loadingState: some View {
         VStack(spacing: 16) {
             ProgressView().tint(AppColors.primary)
@@ -52,9 +110,9 @@ struct UserProfilePreviewView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 48)
     }
-    
+
     // MARK: - Error State
-    
+
     private func errorState(_ error: String) -> some View {
         Text(error)
             .font(AppFonts.body())
@@ -69,32 +127,28 @@ struct UserProfilePreviewView: View {
 
 @MainActor
 final class UserProfilePreviewViewModel: ObservableObject {
-    
+
     @Published var user: AppUser?
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
+
     func loadUser(userId: String) async {
         isLoading = true
         errorMessage = nil
         user = nil
-        
+
         do {
-            // Fetch user from Firestore
             let fetchedUser = try await fetchUser(uid: userId)
-            
             user = fetchedUser
             isLoading = false
-            
             print("✅ [ProfilePreview] Loaded profile for \(fetchedUser.displayName)")
-            
         } catch {
             errorMessage = error.localizedDescription
             isLoading = false
             print("❌ [ProfilePreview] Failed to load user: \(error)")
         }
     }
-    
+
     private func fetchUser(uid: String) async throws -> AppUser {
         return try await withCheckedThrowingContinuation { continuation in
             UserApiService.shared.fetchUser(uid: uid) { result in

@@ -8,7 +8,7 @@ struct UserSearchRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            NavigationLink(destination: OtherUserProfileView(user: user)) {
+            NavigationLink(destination: UserProfilePreviewView(user: user)) {
                 HStack(spacing: 12) {
                     avatar
 
