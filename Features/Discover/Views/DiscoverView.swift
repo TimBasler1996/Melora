@@ -179,9 +179,6 @@ struct DiscoverView: View {
                     ForEach(viewModel.visibleBroadcasts) { broadcast in
                         DiscoverCardView(
                             broadcast: broadcast,
-                            onTap: {
-                                viewModel.selectBroadcast(broadcast)
-                            },
                             onDismiss: {
                                 viewModel.requestDismiss(for: broadcast)
                             },
@@ -202,6 +199,9 @@ struct DiscoverView: View {
                                         message: message
                                     )
                                 }
+                            },
+                            onViewProfile: {
+                                viewModel.selectBroadcast(broadcast)
                             },
                             hasLiked: viewModel.isLiked(broadcast),
                             hasMessaged: viewModel.hasMessage(broadcast)

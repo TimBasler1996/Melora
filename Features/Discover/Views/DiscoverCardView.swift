@@ -1,15 +1,21 @@
 import SwiftUI
 
+/// Compact, expandable Discover Card
+/// - Collapsed: album artwork + track info + user info (compact row)
+/// - Expanded: reveals 4 action buttons (Like, Message, Spotify, Profile)
 struct DiscoverCardView: View {
     let broadcast: DiscoverBroadcast
-    let onTap: () -> Void
     let onDismiss: () -> Void
     let onLikeTrack: () -> Void
     let onMessage: (String) -> Void
-    
+    let onViewProfile: () -> Void
+
     var hasLiked: Bool = false
     var hasMessaged: Bool = false
-    
+
+    @Environment(\.openURL) private var openURL
+
+    @State private var isExpanded: Bool = false
     @State private var isLiked: Bool = false
     @State private var showHeartAnimation: Bool = false
     @State private var showMessageField: Bool = false
@@ -17,230 +23,275 @@ struct DiscoverCardView: View {
     @FocusState private var isMessageFieldFocused: Bool
 
     var body: some View {
-        Button(action: onTap) {
-            ZStack(alignment: .topTrailing) {
-                // Main card content
-                VStack(spacing: 0) {
-                    HStack(spacing: 18) {
-                        // Large album artwork on the left
-                        albumArtwork
-                        
-                        // Content on the right
-                        VStack(alignment: .leading, spacing: 12) {
-                            // Track info
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(trackTitle)
-                                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                                    .lineLimit(2)
-                                
-                                Text(trackArtist)
-                                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                                    .foregroundColor(.white.opacity(0.75))
-                                    .lineLimit(1)
-                            }
-                            
-                            Spacer(minLength: 8)
-                            
-                            // User info with LARGER photo
-                            HStack(spacing: 12) {
-                                userThumbnail
-                                
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text("\(broadcast.user.displayName), \(broadcast.user.ageText)")
-                                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                        .foregroundColor(.white)
-                                        .lineLimit(1)
-                                    
-                                    HStack(spacing: 6) {
-                                        Image(systemName: "location.fill")
-                                            .font(.system(size: 11))
-                                        Text("\(broadcast.user.locationText)")
-                                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                                        
-                                        if let distance = broadcast.distanceMeters {
-                                            Text("· \(Self.formatDistance(distance))")
-                                                .font(.system(size: 13, weight: .medium, design: .rounded))
-                                        }
-                                    }
-                                    .foregroundColor(.white.opacity(0.65))
-                                }
-                                
-                                Spacer(minLength: 0)
-                            }
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 0) {
+                // Compact card header (always visible) — tap to expand/collapse
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        isExpanded.toggle()
+                        if !isExpanded {
+                            showMessageField = false
                         }
-                        .padding(.vertical, 20)
-                        .padding(.trailing, 16)
                     }
-                    .padding(.leading, 20)
-                    
-                    // Modern action buttons (Instagram style)
-                    modernActionButtons
-                    
-                    // Inline message field (only shown when message icon is tapped)
+                } label: {
+                    cardHeader
+                }
+                .buttonStyle(.plain)
+
+                // Expanded section: 4 action buttons
+                if isExpanded {
+                    actionButtonsRow
+                        .transition(.move(edge: .top).combined(with: .opacity))
+
+                    // Message input (shown after tapping Message)
                     if showMessageField {
                         messageInputField
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(Color.white.opacity(0.09))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.25), radius: 16, x: 0, y: 8)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.white.opacity(0.09))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.2), radius: 12, x: 0, y: 6)
 
-                dismissButton
-                
-                // Heart animation overlay
-                if showHeartAnimation {
-                    heartAnimationOverlay
-                }
+            // Dismiss (X) button
+            dismissButton
+
+            // Heart animation overlay
+            if showHeartAnimation {
+                heartAnimationOverlay
             }
         }
-        .buttonStyle(.plain)
         .onAppear {
             isLiked = hasLiked
         }
     }
-    
-    // MARK: - Modern Action Buttons (Instagram Style)
-    
-    private var modernActionButtons: some View {
-        HStack(spacing: 20) {
-            // Like button (heart icon)
-            Button(action: handleLikeAction) {
-                VStack(spacing: 4) {
-                    Image(systemName: isLiked ? "heart.fill" : "heart")
-                        .font(.system(size: 28, weight: .medium))
-                        .foregroundColor(isLiked ? .red : .white)
-                        .scaleEffect(showHeartAnimation ? 1.3 : 1.0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: showHeartAnimation)
+
+    // MARK: - Card Header (compact row)
+
+    private var cardHeader: some View {
+        HStack(spacing: 14) {
+            // Album artwork
+            albumArtwork
+
+            // Track + user info
+            VStack(alignment: .leading, spacing: 6) {
+                // Track
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(trackTitle)
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+
+                    Text(trackArtist)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.7))
+                        .lineLimit(1)
+                }
+
+                // User
+                HStack(spacing: 8) {
+                    userThumbnail
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("\(broadcast.user.displayName), \(broadcast.user.ageText)")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+
+                        HStack(spacing: 4) {
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 10))
+                            Text(broadcast.user.locationText)
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                            if let distance = broadcast.distanceMeters {
+                                Text("· \(Self.formatDistance(distance))")
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                            }
+                        }
+                        .foregroundColor(.white.opacity(0.55))
+                    }
                 }
             }
-            .buttonStyle(.plain)
-            .disabled(isLiked)
-            
-            // Message button
-            Button(action: handleMessageAction) {
-                VStack(spacing: 4) {
-                    Image(systemName: hasMessaged ? "paperplane.fill" : "paperplane")
-                        .font(.system(size: 26, weight: .medium))
-                        .foregroundColor(hasMessaged ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white)
-                }
-            }
-            .buttonStyle(.plain)
-            .disabled(hasMessaged)
-            
-            Spacer()
+
+            Spacer(minLength: 0)
+
+            // Expand chevron
+            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.4))
+                .padding(.trailing, 4)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, showMessageField ? 8 : 20)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
-    
-    // MARK: - Message Input Field
-    
+
+    // MARK: - 4 Action Buttons
+
+    private var actionButtonsRow: some View {
+        HStack(spacing: 0) {
+            // 1. Like
+            actionButton(
+                icon: isLiked ? "heart.fill" : "heart",
+                label: "Like",
+                color: isLiked ? .red : .white,
+                disabled: isLiked
+            ) {
+                handleLikeAction()
+            }
+
+            // 2. Message
+            actionButton(
+                icon: hasMessaged ? "paperplane.fill" : "paperplane",
+                label: "Message",
+                color: hasMessaged ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white,
+                disabled: hasMessaged
+            ) {
+                handleMessageAction()
+            }
+
+            // 3. Spotify
+            actionButton(
+                icon: "music.note",
+                label: "Spotify",
+                color: Color(red: 0.12, green: 0.84, blue: 0.38),
+                disabled: broadcast.track.spotifyURLValue == nil
+            ) {
+                if let url = broadcast.track.spotifyURLValue {
+                    openURL(url)
+                }
+            }
+
+            // 4. Profile
+            actionButton(
+                icon: "person.crop.circle",
+                label: "Profil",
+                color: .white,
+                disabled: false
+            ) {
+                onViewProfile()
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.bottom, showMessageField ? 4 : 14)
+    }
+
+    private func actionButton(
+        icon: String,
+        label: String,
+        color: Color,
+        disabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundColor(disabled && label != "Spotify" ? color.opacity(0.5) : color)
+
+                Text(label)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundColor(disabled && label != "Spotify" ? color.opacity(0.5) : color.opacity(0.85))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled && label != "Spotify" ? true : false)
+    }
+
+    // MARK: - Message Input
+
     private var messageInputField: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             TextField("Send a message...", text: $messageText, axis: .vertical)
                 .focused($isMessageFieldFocused)
-                .font(.system(size: 15, weight: .regular, design: .rounded))
+                .font(.system(size: 14, weight: .regular, design: .rounded))
                 .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
                 .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(Color.white.opacity(0.08))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
                 )
-                .lineLimit(1...4)
-            
-            // Send button
+                .lineLimit(1...3)
+
             Button(action: handleSendMessage) {
                 Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundColor(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty 
-                                     ? .white.opacity(0.3) 
-                                     : Color(red: 0.2, green: 0.85, blue: 0.4))
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundColor(
+                        messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? .white.opacity(0.25)
+                            : Color(red: 0.2, green: 0.85, blue: 0.4)
+                    )
             }
             .buttonStyle(.plain)
             .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 20)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .padding(.horizontal, 16)
+        .padding(.bottom, 14)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isMessageFieldFocused = true
             }
         }
     }
-    
-    // MARK: - Heart Animation Overlay
-    
-    private var heartAnimationOverlay: some View {
-        Image(systemName: "heart.fill")
-            .font(.system(size: 100, weight: .bold))
-            .foregroundColor(.red.opacity(0.9))
-            .scaleEffect(showHeartAnimation ? 1.2 : 0.5)
-            .opacity(showHeartAnimation ? 0.0 : 1.0)
-            .animation(.easeOut(duration: 0.6), value: showHeartAnimation)
-    }
-    
+
     // MARK: - Actions
-    
+
     private func handleLikeAction() {
         guard !isLiked else { return }
-        
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             isLiked = true
             showHeartAnimation = true
         }
-        
-        // Trigger heart pop animation
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
                 showHeartAnimation = false
             }
         }
-        
-        // Reset animation state
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             showHeartAnimation = false
         }
-        
+
         onLikeTrack()
     }
-    
+
     private func handleMessageAction() {
         guard !hasMessaged else { return }
-        
         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
             showMessageField.toggle()
         }
     }
-    
+
     private func handleSendMessage() {
         let trimmed = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        
+
         onMessage(trimmed)
-        
+
         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
             showMessageField = false
         }
-        
         messageText = ""
     }
 
-    // MARK: - Album Artwork (Large, prominent)
-    
+    // MARK: - Album Artwork (compact)
+
     private var albumArtwork: some View {
         ZStack {
             if let url = broadcast.track.artworkURLValue {
@@ -263,15 +314,15 @@ struct DiscoverCardView: View {
                 artworkPlaceholder
             }
         }
-        .frame(width: 140, height: 140)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1.5)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.18), lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
     }
-    
+
     private var artworkPlaceholder: some View {
         ZStack {
             LinearGradient(
@@ -283,13 +334,13 @@ struct DiscoverCardView: View {
                 endPoint: .bottomTrailing
             )
             Image(systemName: "music.note")
-                .font(.system(size: 40, weight: .bold))
+                .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.white.opacity(0.4))
         }
     }
-    
-    // MARK: - User Thumbnail (Larger, more prominent)
-    
+
+    // MARK: - User Thumbnail (small circle)
+
     private var userThumbnail: some View {
         ZStack {
             if let urlString = broadcast.user.primaryPhotoURL,
@@ -313,15 +364,14 @@ struct DiscoverCardView: View {
                 userPlaceholder
             }
         }
-        .frame(width: 56, height: 56)
+        .frame(width: 32, height: 32)
         .clipShape(Circle())
         .overlay(
             Circle()
-                .stroke(Color.white.opacity(0.3), lineWidth: 2.5)
+                .stroke(Color.white.opacity(0.2), lineWidth: 1.5)
         )
-        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
     }
-    
+
     private var userPlaceholder: some View {
         ZStack {
             LinearGradient(
@@ -333,210 +383,33 @@ struct DiscoverCardView: View {
                 endPoint: .bottomTrailing
             )
             Image(systemName: "person.fill")
-                .font(.system(size: 24, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.white.opacity(0.5))
         }
     }
 
-    // MARK: - OLD (TO BE REMOVED)
+    // MARK: - Heart Animation Overlay
 
-    /// Top: Spotify-style row (like your screenshot)
-    private var trackModule: some View {
-        HStack(spacing: 14) {
-            trackArtworkThumbnail
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(trackTitle)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-
-                Text(trackArtist)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.7))
-                    .lineLimit(1)
-
-                if let album = trackAlbum {
-                    Text(album)
-                        .font(.system(size: 12, weight: .regular, design: .rounded))
-                        .foregroundColor(.white.opacity(0.5))
-                        .lineLimit(1)
-                }
-            }
-
-            Spacer(minLength: 0)
-
-            spotifyPill
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
+    private var heartAnimationOverlay: some View {
+        Image(systemName: "heart.fill")
+            .font(.system(size: 80, weight: .bold))
+            .foregroundColor(.red.opacity(0.9))
+            .scaleEffect(showHeartAnimation ? 1.2 : 0.5)
+            .opacity(showHeartAnimation ? 0.0 : 1.0)
+            .animation(.easeOut(duration: 0.6), value: showHeartAnimation)
     }
 
-    /// Bottom: Profile row in same style (no hero crop)
-    private var profileModule: some View {
-        HStack(spacing: 14) {
-            heroThumbnailNoCrop
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("\(broadcast.user.displayName), \(broadcast.user.ageText)")
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.9)
-
-                Text("\(broadcast.user.locationText) · \(distanceText)")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.7))
-                    .lineLimit(1)
-
-                if let badgeText = badgeText {
-                    profileChip(text: badgeText)
-                }
-            }
-
-            Spacer(minLength: 0)
-
-            // Subtle “tap hint” like dating apps
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white.opacity(0.3))
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-    }
-
-    private var moduleDivider: some View {
-        Rectangle()
-            .fill(Color.white.opacity(0.1))
-            .frame(height: 1)
-            .padding(.horizontal, 16)
-    }
-
-    // MARK: - Track UI
-
-    private var trackArtworkThumbnail: some View {
-        ZStack {
-            if let url = broadcast.track.artworkURLValue {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        artworkPlaceholder
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .transaction { $0.animation = nil }
-                    case .failure:
-                        artworkPlaceholder
-                    @unknown default:
-                        artworkPlaceholder
-                    }
-                }
-            } else {
-                artworkPlaceholder
-            }
-        }
-        .frame(width: 58, height: 58)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
-        )
-    }
-
-    private var spotifyPill: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "music.note")
-                .font(.system(size: 12, weight: .semibold))
-            Text("Spotify")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-        }
-        .foregroundColor(.white.opacity(0.7))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(Color.white.opacity(0.1))
-        .clipShape(Capsule())
-    }
-
-    // MARK: - Profile UI (NO CROP HERO)
-
-    /// Hero thumbnail where the image is NOT cropped:
-    /// - Use scaledToFit inside a fixed frame
-    /// - Provide a subtle background so letterboxing looks intentional
-    private var heroThumbnailNoCrop: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.08))
-
-            if let url = broadcast.user.primaryPhotoURL.flatMap(URL.init(string:)) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        heroPlaceholder
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFit() // IMPORTANT: no crop
-                            .padding(6)     // keeps it clean inside frame
-                            .transaction { $0.animation = nil }
-                    case .failure:
-                        heroPlaceholder
-                    @unknown default:
-                        heroPlaceholder
-                    }
-                }
-            } else {
-                heroPlaceholder
-            }
-        }
-        .frame(width: 58, height: 58)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
-        )
-    }
-
-    private var heroPlaceholder: some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color.white.opacity(0.15), Color.white.opacity(0.1)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            Image(systemName: "person.fill")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white.opacity(0.4))
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .padding(8)
-    }
-
-    private func profileChip(text: String) -> some View {
-        Text(text)
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.2))
-            .foregroundColor(Color(red: 0.2, green: 0.85, blue: 0.4))
-            .clipShape(Capsule())
-    }
-
-    // MARK: - Dismiss
+    // MARK: - Dismiss Button
 
     private var dismissButton: some View {
         Button(action: onDismiss) {
             Image(systemName: "xmark")
-                .font(.system(size: 12, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .foregroundColor(.white)
-                .frame(width: 34, height: 34)
-                .background(Color.black.opacity(0.60), in: Circle())
+                .frame(width: 28, height: 28)
+                .background(Color.black.opacity(0.55), in: Circle())
         }
-        .padding(14)
+        .padding(10)
         .buttonStyle(.plain)
         .accessibilityLabel("Dismiss")
     }
@@ -553,22 +426,6 @@ struct DiscoverCardView: View {
         return a.isEmpty ? "Unknown artist" : a
     }
 
-    private var trackAlbum: String? {
-        guard let album = broadcast.track.album else { return nil }
-        let trimmed = album.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
-    }
-
-    private var badgeText: String? {
-        // Implement badge text logic if needed
-        return nil
-    }
-
-    private var distanceText: String {
-        guard let distance = broadcast.distanceMeters else { return "Unknown" }
-        return Self.formatDistance(distance)
-    }
-
     static func formatDistance(_ meters: Int) -> String {
         if meters < 10 { return "nearby" }
         if meters < 1000 { return "\(meters)m" }
@@ -576,4 +433,3 @@ struct DiscoverCardView: View {
         return String(format: "%.1fkm", km)
     }
 }
-
