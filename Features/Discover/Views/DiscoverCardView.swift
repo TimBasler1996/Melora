@@ -111,16 +111,11 @@ struct DiscoverCardView: View {
             HStack(spacing: 0) {
                 // Like button
                 Button(action: handleLikeAction) {
-                    HStack(spacing: 6) {
-                        Image(systemName: isLiked ? "heart.fill" : "heart")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(isLiked ? .red : .white)
-                        Text(isLiked ? "Liked" : "Like")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundColor(isLiked ? .red.opacity(0.8) : .white.opacity(0.85))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    Image(systemName: isLiked ? "heart.fill" : "heart")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(isLiked ? .red : .white.opacity(0.85))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
                 }
                 .buttonStyle(.plain)
                 .disabled(isLiked)
@@ -129,16 +124,11 @@ struct DiscoverCardView: View {
 
                 // Message button
                 Button(action: handleMessageAction) {
-                    HStack(spacing: 6) {
-                        Image(systemName: hasMessaged ? "paperplane.fill" : "paperplane")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(hasMessaged ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white)
-                        Text(hasMessaged ? "Sent" : "Message")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundColor(hasMessaged ? Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8) : .white.opacity(0.85))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    Image(systemName: hasMessaged ? "paperplane.fill" : "paperplane")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(hasMessaged ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.85))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
                 }
                 .buttonStyle(.plain)
                 .disabled(hasMessaged)
@@ -148,15 +138,11 @@ struct DiscoverCardView: View {
                 // Spotify button
                 if let spotifyURL = broadcast.track.spotifyURLValue {
                     Link(destination: spotifyURL) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "music.note")
-                                .font(.system(size: 16, weight: .medium))
-                            Text("Spotify")
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundColor(Color(red: 0.12, green: 0.84, blue: 0.38))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        Image(systemName: "music.note")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(Color(red: 0.12, green: 0.84, blue: 0.38))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
                     }
                     .buttonStyle(.plain)
 
@@ -167,15 +153,11 @@ struct DiscoverCardView: View {
                 NavigationLink {
                     UserProfilePreviewView(userId: broadcast.user.id)
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "person.circle")
-                            .font(.system(size: 16, weight: .medium))
-                        Text("Profile")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    }
-                    .foregroundColor(.white.opacity(0.85))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    Image(systemName: "person.circle")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(.white.opacity(0.85))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
                 }
                 .buttonStyle(.plain)
 
