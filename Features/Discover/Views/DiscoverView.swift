@@ -8,6 +8,7 @@ struct DiscoverView: View {
     @EnvironmentObject private var locationService: LocationService
 
     @State private var showUserSearch = false
+    @State private var expandedCardId: String?
 
     var body: some View {
         NavigationStack {
@@ -179,6 +180,14 @@ struct DiscoverView: View {
                     ForEach(viewModel.visibleBroadcasts) { broadcast in
                         DiscoverCardView(
                             broadcast: broadcast,
+                            isExpanded: Binding(
+                                get: { expandedCardId == broadcast.id },
+                                set: { newValue in
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        expandedCardId = newValue ? broadcast.id : nil
+                                    }
+                                }
+                            ),
                             onDismiss: {
                                 viewModel.requestDismiss(for: broadcast)
                             },
@@ -206,16 +215,7 @@ struct DiscoverView: View {
                             hasLiked: viewModel.isLiked(broadcast),
                             hasMessaged: viewModel.hasMessage(broadcast)
                         )
-                        // Keep the card big, but NEVER touch screen edges:
-                        .frame(maxWidth: 420)
-                        .padding(.horizontal, max(AppLayout.screenPadding, 28))
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                viewModel.requestDismiss(for: broadcast)
-                            } label: {
-                                Label("Dismiss", systemImage: "xmark")
-                            }
-                        }
+                        .padding(.horizontal, max(AppLayout.screenPadding, 20))
                     }
                 }
                 .padding(.vertical, 18)
