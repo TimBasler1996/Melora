@@ -13,6 +13,10 @@ struct ProfilePreviewData: Equatable {
     let gender: String?
     let birthday: Date?
     let spotifyId: String?
+
+    // Distance & broadcasting (only relevant for other users)
+    let distanceMeters: Double?
+    let isBroadcasting: Bool
     
     var spotifyProfileURL: URL? {
         guard let id = spotifyId?.trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty else {
@@ -34,7 +38,7 @@ struct ProfilePreviewData: Equatable {
         let additionalPhotos = Array(userProfile.photoURLs.dropFirst())
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        
+
         return ProfilePreviewData(
             heroPhotoURL: userProfile.displayHeroPhotoURL,
             additionalPhotoURLs: additionalPhotos,
@@ -43,17 +47,22 @@ struct ProfilePreviewData: Equatable {
             city: userProfile.city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : userProfile.city,
             gender: userProfile.gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : userProfile.gender,
             birthday: userProfile.birthday,
-            spotifyId: userProfile.spotifyId
+            spotifyId: userProfile.spotifyId,
+            distanceMeters: nil,
+            isBroadcasting: false
         )
     }
-    
+
     /// Create from AppUser (someone else's profile)
-    static func from(appUser: AppUser) -> ProfilePreviewData {
+    static func from(
+        appUser: AppUser,
+        distanceMeters: Double? = nil
+    ) -> ProfilePreviewData {
         // Get all photos except the first one (hero)
         let additionalPhotos = Array((appUser.photoURLs ?? []).dropFirst())
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        
+
         return ProfilePreviewData(
             heroPhotoURL: appUser.photoURLs?.first,
             additionalPhotoURLs: additionalPhotos,
@@ -62,7 +71,9 @@ struct ProfilePreviewData: Equatable {
             city: appUser.hometown?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.hometown : nil,
             gender: appUser.gender?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.gender : nil,
             birthday: appUser.birthday,
-            spotifyId: appUser.spotifyId
+            spotifyId: appUser.spotifyId,
+            distanceMeters: (appUser.isBroadcasting == true) ? distanceMeters : nil,
+            isBroadcasting: appUser.isBroadcasting == true
         )
     }
 }
@@ -297,22 +308,34 @@ struct SharedProfilePreviewView: View {
     
     private func buildDetailRows() -> [DetailRow] {
         var rows: [DetailRow] = []
-        
-        // ✅ City always included (already in hero overlay, but also here for consistency)
+
         if let city = data.city, !city.isEmpty {
             rows.append(DetailRow(title: "City", value: city))
         }
-        
+
         if let gender = data.gender, !gender.isEmpty {
             rows.append(DetailRow(title: "Gender", value: gender))
         }
-        
-        // ✅ Show age instead of exact birthday
+
         if let age = data.age {
             rows.append(DetailRow(title: "Age", value: "\(age) years old"))
         }
-        
+
+        // Distance: only shown when user is actively broadcasting
+        if data.isBroadcasting, let meters = data.distanceMeters {
+            rows.append(DetailRow(title: "Distance", value: formattedDistance(meters)))
+        }
+
         return rows
+    }
+
+    /// Formats distance: > 100 m → km, otherwise m
+    private func formattedDistance(_ meters: Double) -> String {
+        if meters > 100 {
+            return String(format: "%.1f km", meters / 1000.0)
+        } else {
+            return "\(Int(meters)) m"
+        }
     }
     
     // MARK: - Photos Section

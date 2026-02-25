@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 /// Unified profile view for viewing other users' profiles.
 /// Accepts either a userId (loads from Firestore) or an AppUser directly.
@@ -9,6 +10,7 @@ struct UserProfilePreviewView: View {
     private let userId: String
 
     @StateObject private var vm = UserProfilePreviewViewModel()
+    @EnvironmentObject private var locationService: LocationService
     @State private var isFollowing = false
     @State private var isLoadingFollow = true
 
@@ -44,7 +46,10 @@ struct UserProfilePreviewView: View {
                         VStack(spacing: 16) {
                             followSection(for: user)
 
-                            let previewData = ProfilePreviewData.from(appUser: user)
+                            let previewData = ProfilePreviewData.from(
+                                appUser: user,
+                                distanceMeters: distanceToUser(user)
+                            )
                             SharedProfilePreviewView(data: previewData)
                         }
                         .frame(width: contentWidth, alignment: .center)
@@ -66,6 +71,16 @@ struct UserProfilePreviewView: View {
             isFollowing = (try? await FollowApiService.shared.isFollowing(userId: userId)) ?? false
             isLoadingFollow = false
         }
+    }
+
+    // MARK: - Distance Calculation
+
+    private func distanceToUser(_ user: AppUser) -> Double? {
+        guard let myLoc = locationService.currentLocationPoint,
+              let otherLoc = user.lastLocation else { return nil }
+        let a = CLLocation(latitude: myLoc.latitude, longitude: myLoc.longitude)
+        let b = CLLocation(latitude: otherLoc.latitude, longitude: otherLoc.longitude)
+        return a.distance(from: b)
     }
 
     // MARK: - Follow Section
