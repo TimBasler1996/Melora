@@ -39,6 +39,8 @@
 		757B182E2EFEF8D500801991 /* TrackLikesClusterRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */; };
 		75834A802F091CC0008C51F8 /* BroadcastToggleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */; };
 		75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */; };
+		BBBB00012F5FBBBB00000001 /* ChatBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00022F5FBBBB00000001 /* ChatBadgeViewModel.swift */; };
+		BBBB00032F5FBBBB00000001 /* FollowListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB00042F5FBBBB00000001 /* FollowListView.swift */; };
 		75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */; };
 		75834A862F0C2E3D008C51F8 /* CurrentUserStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */; };
 		75834A8C2F0D8EED008C51F8 /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A8B2F0D8EED008C51F8 /* Conversation.swift */; };
@@ -142,6 +144,8 @@
 		757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesClusterRowView.swift; sourceTree = "<group>"; };
 		75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastToggleCard.swift; sourceTree = "<group>"; };
 		75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesBadgeViewModel.swift; sourceTree = "<group>"; };
+		BBBB00022F5FBBBB00000001 /* ChatBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBadgeViewModel.swift; sourceTree = "<group>"; };
+		BBBB00042F5FBBBB00000001 /* FollowListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowListView.swift; sourceTree = "<group>"; };
 		75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxButton.swift; sourceTree = "<group>"; };
 		75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentUserStore.swift; sourceTree = "<group>"; };
 		75834A8B2F0D8EED008C51F8 /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
@@ -348,6 +352,7 @@
 				75834A8B2F0D8EED008C51F8 /* Conversation.swift */,
 				75834A852F0C2E3D008C51F8 /* CurrentUserStore.swift */,
 				75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */,
+				BBBB00022F5FBBBB00000001 /* ChatBadgeViewModel.swift */,
 				756E44852EFE8BD400F49C30 /* BroadcastPresenceManager.swift */,
 				75A174202ED0FFFA00CEB48F /* TrackLikesCluster.swift */,
 				75A174112ECBB68900CEB48F /* User.swift */,
@@ -468,6 +473,7 @@
 				75DAD86A2F20131200D1219E /* PROFILE_IMPROVEMENTS.md */,
 				75DAD86C2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md */,
 				7556B7FD2F2CADF400DA2EE8 /* UserProfilePreviewView.swift */,
+				BBBB00042F5FBBBB00000001 /* FollowListView.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -664,6 +670,8 @@
 				AAAA00012F5EAAAA00000001 /* FollowNotification.swift in Sources */,
 				759F7B0A2EC783CF0012A549 /* LocationPoint.swift in Sources */,
 				75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */,
+				BBBB00012F5FBBBB00000001 /* ChatBadgeViewModel.swift in Sources */,
+				BBBB00032F5FBBBB00000001 /* FollowListView.swift in Sources */,
 				7556B7FC2F2CAA3E00DA2EE8 /* FixLikesUserDataScript.swift in Sources */,
 				759F7B212EC799900012A549 /* LocationService.swift in Sources */,
 				756E448B2EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift in Sources */,
