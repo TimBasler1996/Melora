@@ -112,10 +112,10 @@ struct SessionRowView: View {
         let b = CLLocation(latitude: sessionLoc.latitude, longitude: sessionLoc.longitude)
         let meters = a.distance(from: b)
         
-        if meters < 1000 {
-            return "\(Int(meters)) m away"
-        } else {
+        if meters > 100 {
             return String(format: "%.1f km away", meters / 1000.0)
+        } else {
+            return "\(Int(meters)) m away"
         }
     }
 }

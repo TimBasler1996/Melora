@@ -45,32 +45,6 @@ struct DiscoverView: View {
             .sheet(isPresented: $showUserSearch) {
                 UserSearchView()
             }
-            .sheet(item: $viewModel.selectedBroadcast) { broadcast in
-                BroadcastProfileView(
-                    broadcast: broadcast,
-                    hasAlreadyLiked: viewModel.isLiked(broadcast),
-                    hasAlreadyMessaged: viewModel.hasMessage(broadcast),
-                    onLike: {
-                        Task {
-                            try? await viewModel.sendLike(
-                                for: broadcast,
-                                from: currentUserStore.user,
-                                message: nil
-                            )
-                        }
-                    },
-                    onMessage: { message in
-                        Task {
-                            try? await viewModel.sendLike(
-                                for: broadcast,
-                                from: currentUserStore.user,
-                                message: message
-                            )
-                        }
-                    }
-                )
-                .presentationDetents([.large])
-            }
             .confirmationDialog(
                 "Not interested?",
                 isPresented: Binding(
@@ -175,13 +149,10 @@ struct DiscoverView: View {
             }
         } else {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 10) {
                     ForEach(viewModel.visibleBroadcasts) { broadcast in
                         DiscoverCardView(
                             broadcast: broadcast,
-                            onTap: {
-                                viewModel.selectBroadcast(broadcast)
-                            },
                             onDismiss: {
                                 viewModel.requestDismiss(for: broadcast)
                             },
@@ -206,19 +177,10 @@ struct DiscoverView: View {
                             hasLiked: viewModel.isLiked(broadcast),
                             hasMessaged: viewModel.hasMessage(broadcast)
                         )
-                        // Keep the card big, but NEVER touch screen edges:
-                        .frame(maxWidth: 420)
-                        .padding(.horizontal, max(AppLayout.screenPadding, 28))
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                viewModel.requestDismiss(for: broadcast)
-                            } label: {
-                                Label("Dismiss", systemImage: "xmark")
-                            }
-                        }
+                        .padding(.horizontal, AppLayout.screenPadding)
                     }
                 }
-                .padding(.vertical, 18)
+                .padding(.vertical, 14)
                 .frame(maxWidth: .infinity)
             }
             .scrollIndicators(.hidden)
