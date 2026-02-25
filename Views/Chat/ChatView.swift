@@ -18,9 +18,12 @@ struct ChatView: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [
+                    Color(red: 0.15, green: 0.15, blue: 0.2),
+                    Color.black.opacity(0.95)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
             )
             .ignoresSafeArea()
 
@@ -78,6 +81,8 @@ struct ChatView: View {
         }
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear { vm.start(conversationId: conversationId) }
         .onDisappear { vm.stop() }
     }
@@ -89,7 +94,7 @@ struct ChatView: View {
                 .autocorrectionDisabled(false)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(Color.white.opacity(0.16))
+                .background(Color.white.opacity(0.10))
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
@@ -99,7 +104,7 @@ struct ChatView: View {
                 Image(systemName: "paperplane.fill")
                     .foregroundColor(.white)
                     .frame(width: 44, height: 44)
-                    .background(Color.white.opacity(0.18))
+                    .background(AppColors.primary.opacity(0.6))
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -133,7 +138,7 @@ private struct ChatBubble: View {
                     .foregroundColor(.white.opacity(0.75))
             }
             .padding(12)
-            .background(Color.white.opacity(isMine ? 0.24 : 0.14))
+            .background(isMine ? AppColors.primary.opacity(0.55) : Color.white.opacity(0.10))
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
             if !isMine { Spacer(minLength: 40) }

@@ -19,12 +19,12 @@ struct ChatInboxRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(row.displayName ?? "Unknown user")
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
+                    .foregroundColor(.white)
                     .lineLimit(1)
 
                 Text(row.lastMessageText ?? "Say hi 👋")
                     .font(AppFonts.footnote())
-                    .foregroundColor(AppColors.secondaryText)
+                    .foregroundColor(.white.opacity(0.7))
                     .lineLimit(1)
             }
 
@@ -34,18 +34,17 @@ struct ChatInboxRowView: View {
                 if let date = row.lastMessageAt ?? row.updatedAt {
                     Text(date.formatted(date: .abbreviated, time: .shortened))
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.mutedText)
+                        .foregroundColor(.white.opacity(0.5))
                 }
 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(AppColors.mutedText)
+                    .foregroundColor(.white.opacity(0.5))
             }
         }
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppColors.cardBackground.opacity(0.98))
-                .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 8)
+                .fill(Color.white.opacity(0.08))
         )
     }
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseFirestore
 
 struct TrackLikesDetailView: View {
 
@@ -10,6 +11,7 @@ struct TrackLikesDetailView: View {
     @State private var isUpdatingIds: Set<String> = []
     @State private var toast: String?
     @State private var navigateToConvoId: String?
+    @State private var existingConvoUserIds: Set<String> = []
 
     init(user: AppUser, track: Track, likes: [TrackLike]) {
         self.user = user
@@ -66,6 +68,23 @@ struct TrackLikesDetailView: View {
         )) {
             if let convoId = navigateToConvoId {
                 ChatView(conversationId: convoId)
+            }
+        }
+        .task { await loadExistingConversations() }
+    }
+
+    private func loadExistingConversations() async {
+        let likerIds = Set(localLikes.map(\.fromUserId))
+        for likerId in likerIds {
+            let convoId = ChatApiService.shared.conversationId(for: user.uid, and: likerId)
+            do {
+                let snap = try await Firestore.firestore()
+                    .collection("conversations").document(convoId).getDocument()
+                if snap.exists {
+                    existingConvoUserIds.insert(likerId)
+                }
+            } catch {
+                // Ignore — we'll just show accept/ignore as fallback
             }
         }
     }
@@ -180,6 +199,7 @@ struct TrackLikesDetailView: View {
                         ModernLikeRow(
                             receiverUserId: user.uid,
                             like: like,
+                            hasExistingConversation: existingConvoUserIds.contains(like.fromUserId),
                             isUpdating: isUpdatingIds.contains(like.id),
                             onAccept: { Task { await accept(like: like) } },
                             onReject: { Task { await update(like: like, status: .rejected) } }
@@ -219,6 +239,7 @@ struct TrackLikesDetailView: View {
                     receiverUserId: user.uid
                 )
                 print("✅ [Chat] stub ready convoId=\(convo.id)")
+                existingConvoUserIds.insert(like.fromUserId)
                 navigateToConvoId = convo.id
             } else {
                 showToast(status == .accepted ? "Accepted" : "Ignored")
@@ -244,6 +265,7 @@ private struct ModernLikeRow: View {
 
     let receiverUserId: String
     let like: TrackLike
+    let hasExistingConversation: Bool
     let isUpdating: Bool
     let onAccept: () -> Void
     let onReject: () -> Void
@@ -297,6 +319,26 @@ private struct ModernLikeRow: View {
             }
 
             switch (like.status ?? .pending) {
+            case .pending where hasExistingConversation:
+                // Already have a conversation with this user — show Open Chat directly
+                NavigationLink {
+                    ChatView(conversationId: convoId)
+                } label: {
+                    HStack {
+                        Image(systemName: "message.fill")
+                        Text("Open Chat")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color.white.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
             case .pending:
                 HStack(spacing: 10) {
                     Button(action: onReject) {
