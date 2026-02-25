@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /broadcasts/{broadcastId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+    // ─────────────────────────────────────────
+    // USERS (Profile + Likes + Notifications)
+    // ─────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if true;
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if false;
+      match /likesReceived/{likeId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isSignedIn() && request.auth.uid == userId;
+        allow delete: if false;
+      }
+      match /likesGiven/{likeId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.auth.uid == userId;
+        allow update, delete: if false;
+      }
+      match /notifications/{notifId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow create: if isSignedIn();
+        allow update, delete: if false;
+      }
+    }
+    // ─────────────────────────────────────────
+    // FOLLOWS
+    // ─────────────────────────────────────────
+    match /follows/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && request.resource.data.followerId == request.auth.uid;
+      allow delete: if isSignedIn()
+                    && resource.data.followerId == request.auth.uid;
+      allow update: if false;
+    }
+    // ─────────────────────────────────────────
+    // SESSIONS (Broadcasts)
+    // ─────────────────────────────────────────
+    match /sessions/{sessionId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn();
+      match /tracks/{trackId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update, delete: if false;
+      }
+    }
+    // ─────────────────────────────────────────
+    // CONVERSATIONS (MVP OPEN)
+    // ─────────────────────────────────────────
+    match /conversations/{conversationId} {
+      allow read, create, update: if isSignedIn();
+      allow delete: if false;
+      match /messages/{messageId} {
+        allow read, create: if isSignedIn();
+        allow update, delete: if false;
+      }
+    }
+    // ─────────────────────────────────────────
+    // DEFAULT: deny everything else
+    // ─────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

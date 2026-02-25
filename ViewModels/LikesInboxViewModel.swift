@@ -32,27 +32,28 @@ final class LikesInboxViewModel: ObservableObject {
     func loadLikes(for userId: String) {
         isLoading = true
         errorMessage = nil
-        
+
         Task {
+            // Likes laden (Hauptzweck)
             do {
-                async let likesTask = likeService.fetchLikesReceived(for: userId)
-                async let followTask = followService.fetchFollowNotifications(for: userId)
-
-                var likes = try await likesTask
+                var likes = try await likeService.fetchLikesReceived(for: userId)
                 likes = await likeService.enrichLikesWithUserData(likes)
-                let newClusters = buildClusters(from: likes)
-
-                var notifications = try await followTask
-                notifications = await followService.enrichFollowNotifications(notifications)
-
-                self.clusters = newClusters
-                self.followNotifications = notifications
-                self.isLoading = false
+                self.clusters = buildClusters(from: likes)
             } catch {
-                print("Failed to load inbox: \(error)")
-                self.errorMessage = "Could not load your notifications. Please try again later."
-                self.isLoading = false
+                print("Failed to load likes: \(error)")
+                self.errorMessage = "Could not load your likes. Please try again later."
             }
+
+            // Follow-Notifications separat laden (darf Likes nicht blockieren)
+            do {
+                var notifications = try await followService.fetchFollowNotifications(for: userId)
+                notifications = await followService.enrichFollowNotifications(notifications)
+                self.followNotifications = notifications
+            } catch {
+                print("Failed to load follow notifications: \(error)")
+            }
+
+            self.isLoading = false
         }
     }
     
