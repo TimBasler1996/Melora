@@ -9,6 +9,7 @@ struct TrackLikesDetailView: View {
     @State private var localLikes: [TrackLike]
     @State private var isUpdatingIds: Set<String> = []
     @State private var toast: String?
+    @State private var navigateToConvoId: String?
 
     init(user: AppUser, track: Track, likes: [TrackLike]) {
         self.user = user
@@ -59,6 +60,14 @@ struct TrackLikesDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationDestination(isPresented: Binding(
+            get: { navigateToConvoId != nil },
+            set: { if !$0 { navigateToConvoId = nil } }
+        )) {
+            if let convoId = navigateToConvoId {
+                ChatView(conversationId: convoId)
+            }
+        }
     }
 
     private var trackHeader: some View {
@@ -210,9 +219,9 @@ struct TrackLikesDetailView: View {
                     receiverUserId: user.uid
                 )
                 print("✅ [Chat] stub ready convoId=\(convo.id)")
-                showToast("Accepted ✅ Chat created ✅")
+                navigateToConvoId = convo.id
             } else {
-                showToast(status == .accepted ? "Accepted ✅" : "Ignored ✅")
+                showToast(status == .accepted ? "Accepted" : "Ignored")
             }
 
         } catch {

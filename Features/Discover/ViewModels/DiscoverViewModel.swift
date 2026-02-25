@@ -203,20 +203,14 @@ final class DiscoverViewModel: ObservableObject {
             broadcastId: broadcast.id
         )
 
+        // Track message state for UI (message is stored in the like document;
+        // conversation will be created when the receiver accepts the like)
         let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedMessage.isEmpty {
-            try await chatService.sendMessage(
-                from: senderId,
-                to: broadcast.user.id,
-                text: trimmedMessage,
-                createdFromTrackId: broadcast.track.id,
-                createdFromLikeId: like.id
-            )
-            // Mark this broadcast as messaged
             messagedBroadcastIds.insert(broadcast.id)
             saveMessagedBroadcastsToCache()
         }
-        
+
         // Mark this broadcast as liked
         likedBroadcastIds.insert(broadcast.id)
         saveLikedBroadcastsToCache()

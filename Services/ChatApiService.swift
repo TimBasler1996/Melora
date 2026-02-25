@@ -20,7 +20,7 @@ actor ChatApiService {
 
     /// Deterministic conversation id for two users (order independent).
     /// Example: "uidA_uidB" with lowercased ordering.
-    func conversationId(for uidA: String, and uidB: String) -> String {
+    nonisolated func conversationId(for uidA: String, and uidB: String) -> String {
         let a = uidA.lowercased()
         let b = uidB.lowercased()
         return (a < b) ? "\(a)_\(b)" : "\(b)_\(a)"
