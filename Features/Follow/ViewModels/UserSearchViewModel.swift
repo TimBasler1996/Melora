@@ -58,6 +58,8 @@ final class UserSearchViewModel: ObservableObject {
                 self.results = users
             } catch {
                 guard !Task.isCancelled else { return }
+                print("❌ [UserSearch] Error: \(error)")
+                print("❌ [UserSearch] \(error.localizedDescription)")
                 self.results = []
             }
             self.isSearching = false
@@ -65,10 +67,14 @@ final class UserSearchViewModel: ObservableObject {
     }
 
     private func searchUsers(query: String) async throws -> [AppUser] {
-        guard let currentUid = Auth.auth().currentUser?.uid else { return [] }
+        guard let currentUid = Auth.auth().currentUser?.uid else {
+            print("⚠️ [UserSearch] No authenticated user – search aborted")
+            return []
+        }
 
         let lowered = query.lowercased()
         let end = lowered + "\u{f8ff}"
+        print("🔍 [UserSearch] Searching for '\(lowered)' (uid: \(currentUid))")
 
         // Search by firstName (prefix match)
         let firstNameSnap = try await db.collection("users")
@@ -77,12 +83,16 @@ final class UserSearchViewModel: ObservableObject {
             .limit(to: 20)
             .getDocuments()
 
+        print("🔍 [UserSearch] firstNameLower hits: \(firstNameSnap.documents.count)")
+
         // Search by lastName (prefix match)
         let lastNameSnap = try await db.collection("users")
             .whereField("lastNameLower", isGreaterThanOrEqualTo: lowered)
             .whereField("lastNameLower", isLessThan: end)
             .limit(to: 20)
             .getDocuments()
+
+        print("🔍 [UserSearch] lastNameLower hits: \(lastNameSnap.documents.count)")
 
         // Merge results, deduplicate, exclude self
         var seen = Set<String>()
@@ -95,6 +105,7 @@ final class UserSearchViewModel: ObservableObject {
             users.append(AppUser.fromFirestore(uid: uid, data: doc.data()))
         }
 
+        print("🔍 [UserSearch] Total unique results: \(users.count)")
         return users
     }
 
