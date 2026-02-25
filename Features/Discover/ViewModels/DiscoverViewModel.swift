@@ -262,10 +262,15 @@ final class DiscoverViewModel: ObservableObject {
 
     private func handleBroadcastRecords(_ records: [DiscoverService.BroadcastRecord]) async {
         let currentUserId = service.currentUserId()
+        let now = Date()
+        let expiry = DiscoverService.broadcastExpiry
+
         let filtered = records.filter { record in
             if let currentUserId, record.userId == currentUserId { return false }
             if mutedUserIds.contains(record.userId) { return false }
             if mutedTrackIds.contains(record.trackId) { return false }
+            // Filter out stale broadcasts that haven't received a heartbeat
+            if now.timeIntervalSince(record.updatedAt) > expiry { return false }
             return true
         }
 

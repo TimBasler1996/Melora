@@ -30,6 +30,11 @@ final class BroadcastManager: ObservableObject {
     private let broadcastsCollection = "broadcasts"
     private var locationService: LocationService?
 
+    // MARK: - Session tracking (for broadcast hours)
+
+    private let sessionService = SessionApiService.shared
+    private var activeSessionId: String?
+
     // MARK: - Timers (throttle sync)
 
     private var locationSyncTask: Task<Void, Never>?
@@ -105,6 +110,17 @@ final class BroadcastManager: ObservableObject {
 
         // 4) Create or update broadcast doc for Discover
         await upsertBroadcast(uid: uid, track: currentTrack, location: locationService?.currentLocation, isNew: true)
+
+        // 5) Create a session record for broadcast-hours tracking
+        if let track = currentTrack {
+            let loc = locationService?.currentLocation ?? LocationPoint(latitude: 0, longitude: 0)
+            do {
+                let session = try await sessionService.createSession(user: currentUser, track: track, location: loc)
+                activeSessionId = session.id
+            } catch {
+                print("[BroadcastManager] session create failed: \(error.localizedDescription)")
+            }
+        }
     }
 
     func stopBroadcasting() async {
@@ -142,6 +158,16 @@ final class BroadcastManager: ObservableObject {
 
         // Remove Discover broadcast doc
         await removeBroadcast(uid: uid)
+
+        // End session record so broadcast hours are accurate
+        if let sessionId = activeSessionId {
+            do {
+                try await sessionService.endSession(id: sessionId)
+            } catch {
+                print("[BroadcastManager] session end failed: \(error.localizedDescription)")
+            }
+            activeSessionId = nil
+        }
     }
 
     // MARK: - Sync scheduling
@@ -209,6 +235,7 @@ final class BroadcastManager: ObservableObject {
         }
 
         await upsertBroadcast(uid: uid, track: currentTrack, location: loc, isNew: false)
+        await touchSession()
     }
 
     private func syncTrack(uid: String) async {
@@ -224,6 +251,20 @@ final class BroadcastManager: ObservableObject {
         }
 
         await upsertBroadcast(uid: uid, track: currentTrack, location: locationService?.currentLocation, isNew: false)
+        await touchSession()
+    }
+
+    /// Updates the session's updatedAt timestamp so broadcast hours are tracked accurately.
+    private func touchSession() async {
+        guard let sessionId = activeSessionId else { return }
+        do {
+            let db = Firestore.firestore()
+            try await db.collection("sessions").document(sessionId).updateData([
+                "updatedAt": Timestamp(date: Date())
+            ])
+        } catch {
+            print("[BroadcastManager] session heartbeat failed: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Discover broadcast documents
@@ -236,6 +277,8 @@ final class BroadcastManager: ObservableObject {
     ) async {
         guard let track else { return }
 
+        let now = Timestamp(date: Date())
+
         var payload: [String: Any] = [
             "userId": uid,
             "trackId": track.id,
@@ -243,7 +286,8 @@ final class BroadcastManager: ObservableObject {
             "trackArtist": track.artist,
             "trackAlbum": track.album as Any,
             "trackArtworkURL": track.artworkURL?.absoluteString as Any,
-            "spotifyTrackURL": spotifyTrackURL(for: track.id) as Any
+            "spotifyTrackURL": spotifyTrackURL(for: track.id) as Any,
+            "updatedAt": now
         ]
 
         if let location {
@@ -252,7 +296,7 @@ final class BroadcastManager: ObservableObject {
         }
 
         if isNew {
-            payload["broadcastedAt"] = Timestamp(date: Date())
+            payload["broadcastedAt"] = now
         }
 
         do {

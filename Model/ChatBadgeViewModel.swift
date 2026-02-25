@@ -28,6 +28,12 @@ final class ChatBadgeViewModel: ObservableObject {
 
         guard let myUid = Auth.auth().currentUser?.uid else { return }
 
+        // If user has never opened the chats tab, initialize lastSeenDate
+        // to now so existing conversations don't show as falsely unread.
+        if lastSeenDate == nil {
+            UserDefaults.standard.set(Date(), forKey: lastSeenKey)
+        }
+
         let ref = db.collection("conversations")
             .whereField("participantIds", arrayContains: myUid)
             .order(by: "updatedAt", descending: true)
@@ -37,7 +43,7 @@ final class ChatBadgeViewModel: ObservableObject {
             guard let self else { return }
 
             if let error {
-                print("❌ [ChatBadge] listener error:", error.localizedDescription)
+                print("[ChatBadge] listener error: \(error.localizedDescription)")
                 self.unreadCount = 0
                 return
             }
@@ -56,12 +62,17 @@ final class ChatBadgeViewModel: ObservableObject {
 
             // Unread = conversations with a lastMessageAt newer than lastSeenDate
             // AND where the last message was NOT sent by the current user
+            // AND where there is actually a message (lastMessageText is not empty)
             let unread = docs.filter { doc in
                 let data = doc.data()
 
                 // Skip conversations where I sent the last message
                 let lastSenderId = data["lastMessageSenderId"] as? String
                 if lastSenderId == myUid { return false }
+
+                // Skip conversations with no actual message text
+                let lastText = data["lastMessageText"] as? String ?? ""
+                if lastText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
 
                 // Get the lastMessageAt timestamp
                 let lastAt: Date?
@@ -72,9 +83,7 @@ final class ChatBadgeViewModel: ObservableObject {
                 }
 
                 guard let messageDate = lastAt else { return false }
-
-                // If never opened chats tab -> all are unread
-                guard let seen else { return true }
+                guard let seen else { return false }
                 return messageDate > seen
             }
             .count

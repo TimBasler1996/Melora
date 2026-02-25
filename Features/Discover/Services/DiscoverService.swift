@@ -10,6 +10,9 @@ final class DiscoverService {
     private let usersCollection = "users"
     private let likesCollection = "likes"
 
+    /// How long a broadcast can go without a heartbeat before it's considered stale.
+    static let broadcastExpiry: TimeInterval = 120 // 2 minutes
+
     struct BroadcastRecord: Identifiable, Equatable {
         let id: String
         let userId: String
@@ -20,6 +23,7 @@ final class DiscoverService {
         let trackArtworkURL: String?
         let spotifyTrackURL: String?
         let broadcastedAt: Date
+        let updatedAt: Date
         let location: LocationPoint?
     }
 
@@ -124,6 +128,12 @@ final class DiscoverService {
             return Date()
         }()
 
+        let updatedAt: Date = {
+            if let ts = data["updatedAt"] as? Timestamp { return ts.dateValue() }
+            if let date = data["updatedAt"] as? Date { return date }
+            return broadcastedAt
+        }()
+
         let location: LocationPoint? = {
             if let geopoint = data["location"] as? GeoPoint {
                 return LocationPoint(latitude: geopoint.latitude, longitude: geopoint.longitude)
@@ -145,6 +155,7 @@ final class DiscoverService {
             trackArtworkURL: trackArtworkURL,
             spotifyTrackURL: spotifyTrackURL,
             broadcastedAt: broadcastedAt,
+            updatedAt: updatedAt,
             location: location
         )
     }
