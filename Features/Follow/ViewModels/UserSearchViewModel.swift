@@ -72,27 +72,28 @@ final class UserSearchViewModel: ObservableObject {
             return []
         }
 
-        let lowered = query.lowercased()
-        let end = lowered + "\u{f8ff}"
-        print("🔍 [UserSearch] Searching for '\(lowered)' (uid: \(currentUid))")
+        // Capitalize first letter to match stored name format ("Jona", "Schmidhalter")
+        let capitalized = query.prefix(1).uppercased() + query.dropFirst().lowercased()
+        let end = capitalized + "\u{f8ff}"
+        print("🔍 [UserSearch] Searching for '\(capitalized)' (uid: \(currentUid))")
 
         // Search by firstName (prefix match)
         let firstNameSnap = try await db.collection("users")
-            .whereField("firstNameLower", isGreaterThanOrEqualTo: lowered)
-            .whereField("firstNameLower", isLessThan: end)
+            .whereField("firstName", isGreaterThanOrEqualTo: capitalized)
+            .whereField("firstName", isLessThan: end)
             .limit(to: 20)
             .getDocuments()
 
-        print("🔍 [UserSearch] firstNameLower hits: \(firstNameSnap.documents.count)")
+        print("🔍 [UserSearch] firstName hits: \(firstNameSnap.documents.count)")
 
         // Search by lastName (prefix match)
         let lastNameSnap = try await db.collection("users")
-            .whereField("lastNameLower", isGreaterThanOrEqualTo: lowered)
-            .whereField("lastNameLower", isLessThan: end)
+            .whereField("lastName", isGreaterThanOrEqualTo: capitalized)
+            .whereField("lastName", isLessThan: end)
             .limit(to: 20)
             .getDocuments()
 
-        print("🔍 [UserSearch] lastNameLower hits: \(lastNameSnap.documents.count)")
+        print("🔍 [UserSearch] lastName hits: \(lastNameSnap.documents.count)")
 
         // Merge results, deduplicate, exclude self
         var seen = Set<String>()
