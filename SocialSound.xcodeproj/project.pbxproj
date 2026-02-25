@@ -78,6 +78,9 @@
 		75A174252ED107AF00CEB48F /* SpotifyConnectionSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A174242ED107AF00CEB48F /* SpotifyConnectionSection.swift */; };
 		75D2A9E52F20F2E500013A33 /* ONBOARDING_DESIGN_UPDATE.md in Resources */ = {isa = PBXBuildFile; fileRef = 75D2A9E42F20F2E500013A33 /* ONBOARDING_DESIGN_UPDATE.md */; };
 		75D2A9E72F20F5CF00013A33 /* DISCOVER_DESIGN_UPDATE.md in Resources */ = {isa = PBXBuildFile; fileRef = 75D2A9E62F20F5CF00013A33 /* DISCOVER_DESIGN_UPDATE.md */; };
+		75D972232F4EEAC500D41DD1 /* UserSearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D9721D2F4EEAC500D41DD1 /* UserSearchViewModel.swift */; };
+		75D972242F4EEAC500D41DD1 /* UserSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D972202F4EEAC500D41DD1 /* UserSearchView.swift */; };
+		75D972252F4EEAC500D41DD1 /* UserSearchRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D9721F2F4EEAC500D41DD1 /* UserSearchRowView.swift */; };
 		75DAD86B2F20131200D1219E /* PROFILE_IMPROVEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD86A2F20131200D1219E /* PROFILE_IMPROVEMENTS.md */; };
 		75DAD86D2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD86C2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md */; };
 		75DAD86F2F20DC0400D1219E /* ONBOARDING_IMPROVEMENTS_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DAD86E2F20DC0400D1219E /* ONBOARDING_IMPROVEMENTS_SUMMARY.md */; };
@@ -181,6 +184,9 @@
 		75A174242ED107AF00CEB48F /* SpotifyConnectionSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyConnectionSection.swift; sourceTree = "<group>"; };
 		75D2A9E42F20F2E500013A33 /* ONBOARDING_DESIGN_UPDATE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ONBOARDING_DESIGN_UPDATE.md; sourceTree = "<group>"; };
 		75D2A9E62F20F5CF00013A33 /* DISCOVER_DESIGN_UPDATE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DISCOVER_DESIGN_UPDATE.md; sourceTree = "<group>"; };
+		75D9721D2F4EEAC500D41DD1 /* UserSearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSearchViewModel.swift; sourceTree = "<group>"; };
+		75D9721F2F4EEAC500D41DD1 /* UserSearchRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSearchRowView.swift; sourceTree = "<group>"; };
+		75D972202F4EEAC500D41DD1 /* UserSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSearchView.swift; sourceTree = "<group>"; };
 		75DAD86A2F20131200D1219E /* PROFILE_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROFILE_IMPROVEMENTS.md; sourceTree = "<group>"; };
 		75DAD86C2F2014F000D1219E /* PHOTO_SYSTEM_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PHOTO_SYSTEM_IMPROVEMENTS.md; sourceTree = "<group>"; };
 		75DAD86E2F20DC0400D1219E /* ONBOARDING_IMPROVEMENTS_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ONBOARDING_IMPROVEMENTS_SUMMARY.md; sourceTree = "<group>"; };
@@ -246,6 +252,7 @@
 		199ABAA96F3F4D8DBC4A1627 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				75D972222F4EEAC500D41DD1 /* Follow */,
 				6517BA20D553470AA96D4092 /* Discover */,
 			);
 			path = Features;
@@ -472,6 +479,32 @@
 			path = Profile;
 			sourceTree = "<group>";
 		};
+		75D9721E2F4EEAC500D41DD1 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				75D9721D2F4EEAC500D41DD1 /* UserSearchViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		75D972212F4EEAC500D41DD1 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				75D9721F2F4EEAC500D41DD1 /* UserSearchRowView.swift */,
+				75D972202F4EEAC500D41DD1 /* UserSearchView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		75D972222F4EEAC500D41DD1 /* Follow */ = {
+			isa = PBXGroup;
+			children = (
+				75D9721E2F4EEAC500D41DD1 /* ViewModels */,
+				75D972212F4EEAC500D41DD1 /* Views */,
+			);
+			path = Follow;
+			sourceTree = "<group>";
+		};
 		76B0C1A22F12345600112233 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
@@ -677,6 +710,9 @@
 				75A1740A2EC8BBFA00CEB48F /* AppUser.swift in Sources */,
 				7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */,
 				75DD8CA62F21367200D60202 /* TrackLikesDetailView_Improved.swift in Sources */,
+				75D972232F4EEAC500D41DD1 /* UserSearchViewModel.swift in Sources */,
+				75D972242F4EEAC500D41DD1 /* UserSearchView.swift in Sources */,
+				75D972252F4EEAC500D41DD1 /* UserSearchRowView.swift in Sources */,
 				756E44922EFE8BF600F49C30 /* ProfileSetupWizardViewModel.swift in Sources */,
 				756E44932EFE8BF600F49C30 /* ProfileGateViewModel.swift in Sources */,
 				75DD8CA42F2130D900D60202 /* DiscoverCardViewNew.swift in Sources */,
