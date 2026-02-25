@@ -137,11 +137,10 @@ struct ProfileView: View {
                 let previewData = ProfilePreviewData.from(userProfile: profile)
 
                 VStack(spacing: 16) {
-                    SharedProfilePreviewView(data: previewData)
-
-                    // Stats row
-                    if statsLoaded {
-                        statsSection(uid: profile.uid)
+                    SharedProfilePreviewView(data: previewData) {
+                        if statsLoaded {
+                            statsSection(uid: profile.uid)
+                        }
                     }
 
                     // Edit Profile button

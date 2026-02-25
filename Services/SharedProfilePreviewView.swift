@@ -10,6 +10,7 @@ struct ProfilePreviewData: Equatable {
     let heroPhotoURL: String?
     let additionalPhotoURLs: [String]
     let fullName: String
+    let firstName: String
     let age: Int?
     let city: String?
     let gender: String?
@@ -45,6 +46,7 @@ struct ProfilePreviewData: Equatable {
             heroPhotoURL: userProfile.displayHeroPhotoURL,
             additionalPhotoURLs: additionalPhotos,
             fullName: userProfile.fullName,
+            firstName: userProfile.firstName.trimmingCharacters(in: .whitespacesAndNewlines),
             age: userProfile.age,
             city: userProfile.city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : userProfile.city,
             gender: userProfile.gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : userProfile.gender,
@@ -65,10 +67,18 @@ struct ProfilePreviewData: Equatable {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
+        let resolvedFirstName: String = {
+            if let fn = appUser.firstName?.trimmingCharacters(in: .whitespacesAndNewlines), !fn.isEmpty {
+                return fn
+            }
+            return appUser.displayName.components(separatedBy: " ").first ?? appUser.displayName
+        }()
+
         return ProfilePreviewData(
             heroPhotoURL: appUser.photoURLs?.first,
             additionalPhotoURLs: additionalPhotos,
             fullName: appUser.displayName,
+            firstName: resolvedFirstName,
             age: appUser.age,
             city: appUser.hometown?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.hometown : nil,
             gender: appUser.gender?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.gender : nil,
@@ -82,27 +92,44 @@ struct ProfilePreviewData: Equatable {
 
 // MARK: - Shared Profile Preview Component
 
-/// ✅ Single shared component for profile preview display
+/// Single shared component for profile preview display
 /// Used in both ProfileView (your own) and UserProfilePreviewView (others)
-struct SharedProfilePreviewView: View {
+struct SharedProfilePreviewView<StatsContent: View>: View {
 
     let data: ProfilePreviewData
     var userId: String? = nil
+    let statsContent: StatsContent
 
     @Environment(\.openURL) private var openURL
     @State private var followingCount: Int = 0
     @State private var followerCount: Int = 0
     @State private var followStatsLoaded = false
 
+    init(data: ProfilePreviewData, userId: String? = nil) where StatsContent == EmptyView {
+        self.data = data
+        self.userId = userId
+        self.statsContent = EmptyView()
+    }
+
+    init(data: ProfilePreviewData, userId: String? = nil, @ViewBuilder statsContent: () -> StatsContent) {
+        self.data = data
+        self.userId = userId
+        self.statsContent = statsContent()
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             heroSection
 
+            detailsSection
+
+            // Follow stats for other users
             if userId != nil, followStatsLoaded {
                 followStatsSection
             }
 
-            detailsSection
+            // Injected stats (own profile)
+            statsContent
 
             if let spotifyURL = data.spotifyProfileURL {
                 spotifyButton(url: spotifyURL)
@@ -207,10 +234,10 @@ struct SharedProfilePreviewView: View {
     // MARK: - Hero Section
     
     private var heroSection: some View {
+        let displayName = data.firstName.isEmpty ? data.fullName : data.firstName
         let ageText = data.age.map { ", \($0)" } ?? ""
-        let city = data.city ?? ""
         let gender = data.gender ?? ""
-        
+
         return GeometryReader { geometry in
             let width = geometry.size.width
             
@@ -254,28 +281,16 @@ struct SharedProfilePreviewView: View {
                     
                     // Name and info overlay
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(data.fullName)\(ageText)")
+                        Text("\(displayName)\(ageText)")
                             .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                             .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-                        
-                        if !city.isEmpty {
-                            HStack(spacing: 4) {
-                                Image(systemName: "location.fill")
-                                    .font(.system(size: 12, weight: .semibold))
-                                Text(city)
-                                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                                    .lineLimit(1)
-                            }
-                            .foregroundColor(.white.opacity(0.95))
-                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-                        }
-                        
+
                         if !gender.isEmpty {
                             Text(gender)
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
                                 .foregroundColor(.white.opacity(0.9))
                                 .lineLimit(1)
                                 .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
