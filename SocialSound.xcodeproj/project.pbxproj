@@ -90,6 +90,7 @@
 		75DD8CA42F2130D900D60202 /* DiscoverCardViewNew.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DD8CA12F212FB900D60202 /* DiscoverCardViewNew.swift */; };
 		75DD8CA62F21367200D60202 /* TrackLikesDetailView_Improved.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DD8CA52F21367200D60202 /* TrackLikesDetailView_Improved.swift */; };
 		75DD8CA82F2136A000D60202 /* UI_UX_IMPROVEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DD8CA72F2136A000D60202 /* UI_UX_IMPROVEMENTS.md */; };
+		75DDECAE2F3E3FE1009426B5 /* FollowApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DDECAD2F3E3FE1009426B5 /* FollowApiService.swift */; };
 		75EAD1672F213ECC00588C7D /* TrackLikesDetailView_Final.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EAD1662F213ECC00588C7D /* TrackLikesDetailView_Final.swift */; };
 		76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A02F12345600112233 /* OnboardingStateManager.swift */; };
 		76B0C1A42F12345600112233 /* OnboardingFlowPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */; };
@@ -196,6 +197,7 @@
 		75DD8CA32F21305D00D60202 /* DISCOVER_IMPROVEMENTS_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DISCOVER_IMPROVEMENTS_SUMMARY.md; sourceTree = "<group>"; };
 		75DD8CA52F21367200D60202 /* TrackLikesDetailView_Improved.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesDetailView_Improved.swift; sourceTree = "<group>"; };
 		75DD8CA72F2136A000D60202 /* UI_UX_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UI_UX_IMPROVEMENTS.md; sourceTree = "<group>"; };
+		75DDECAD2F3E3FE1009426B5 /* FollowApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowApiService.swift; sourceTree = "<group>"; };
 		75EAD1662F213ECC00588C7D /* TrackLikesDetailView_Final.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesDetailView_Final.swift; sourceTree = "<group>"; };
 		76B0C1A02F12345600112233 /* OnboardingStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStateManager.swift; sourceTree = "<group>"; };
 		76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowPlaceholderView.swift; sourceTree = "<group>"; };
@@ -362,6 +364,7 @@
 		759F7AEE2EC77A550012A549 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				75DDECAD2F3E3FE1009426B5 /* FollowApiService.swift */,
 				75834AE92F1650A3008C51F8 /* OnboardingProfileService.swift */,
 				7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */,
 				75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */,
@@ -628,6 +631,7 @@
 				79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */,
 				7576DF642F1835050034BF2A /* ProfilePreviewView.swift in Sources */,
 				79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */,
+				75DDECAE2F3E3FE1009426B5 /* FollowApiService.swift in Sources */,
 				79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */,
 				79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */,
 				759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */,
