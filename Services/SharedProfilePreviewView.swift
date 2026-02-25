@@ -13,28 +13,24 @@ struct ProfilePreviewData: Equatable {
     let gender: String?
     let birthday: Date?
     let spotifyId: String?
-    
+    let musicTaste: String?
+    let followerCount: Int?
+    let broadcastMinutes: Int?
+    let likesReceivedCount: Int?
+
     var spotifyProfileURL: URL? {
         guard let id = spotifyId?.trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty else {
             return nil
         }
-        
-        // If already a full URL
-        if let url = URL(string: id), url.scheme != nil {
-            return url
-        }
-        
-        // Otherwise treat as Spotify user ID
+        if let url = URL(string: id), url.scheme != nil { return url }
         return URL(string: "https://open.spotify.com/user/\(id)")
     }
-    
-    /// Create from UserProfile (your own profile)
+
     static func from(userProfile: UserProfile) -> ProfilePreviewData {
-        // Get all photos except the first one (hero)
         let additionalPhotos = Array(userProfile.photoURLs.dropFirst())
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        
+
         return ProfilePreviewData(
             heroPhotoURL: userProfile.displayHeroPhotoURL,
             additionalPhotoURLs: additionalPhotos,
@@ -43,17 +39,19 @@ struct ProfilePreviewData: Equatable {
             city: userProfile.city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : userProfile.city,
             gender: userProfile.gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : userProfile.gender,
             birthday: userProfile.birthday,
-            spotifyId: userProfile.spotifyId
+            spotifyId: userProfile.spotifyId,
+            musicTaste: nil,
+            followerCount: nil,
+            broadcastMinutes: nil,
+            likesReceivedCount: nil
         )
     }
-    
-    /// Create from AppUser (someone else's profile)
+
     static func from(appUser: AppUser) -> ProfilePreviewData {
-        // Get all photos except the first one (hero)
         let additionalPhotos = Array((appUser.photoURLs ?? []).dropFirst())
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        
+
         return ProfilePreviewData(
             heroPhotoURL: appUser.photoURLs?.first,
             additionalPhotoURLs: additionalPhotos,
@@ -62,7 +60,11 @@ struct ProfilePreviewData: Equatable {
             city: appUser.hometown?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.hometown : nil,
             gender: appUser.gender?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.gender : nil,
             birthday: appUser.birthday,
-            spotifyId: appUser.spotifyId
+            spotifyId: appUser.spotifyId,
+            musicTaste: appUser.musicTaste?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.musicTaste : nil,
+            followerCount: nil,
+            broadcastMinutes: appUser.broadcastMinutesTotal,
+            likesReceivedCount: nil
         )
     }
 }
@@ -79,56 +81,115 @@ struct SharedProfilePreviewView: View {
     var body: some View {
         VStack(spacing: 16) {
             heroSection
-            detailsSection
-            
-            // ✅ Spotify button
-            if let spotifyURL = data.spotifyProfileURL {
-                spotifyButton(url: spotifyURL)
-            }
-            
+            aboutSection
+
             if !data.additionalPhotoURLs.isEmpty {
                 photosSection
             }
         }
     }
-    
-    // MARK: - Spotify Button
-    
-    private func spotifyButton(url: URL) -> some View {
+
+    // MARK: - About Section (unified: city, interests, stats, Spotify)
+
+    private var aboutSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if let city = data.city, !city.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.primary)
+                    Text(city)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundColor(AppColors.primaryText)
+                }
+            }
+
+            if let taste = data.musicTaste, !taste.isEmpty {
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.primary)
+                    Text(taste)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundColor(AppColors.primaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppColors.mutedText)
+                Text("Looking for: Coming soon")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.mutedText)
+            }
+
+            Divider().background(Color.white.opacity(0.1))
+
+            statsRow
+
+            if let spotifyURL = data.spotifyProfileURL {
+                Divider().background(Color.white.opacity(0.1))
+                spotifyLink(url: spotifyURL)
+            }
+        }
+        .padding(AppLayout.cardPadding)
+        .background(cardBackground)
+    }
+
+    private var statsRow: some View {
+        HStack(spacing: 0) {
+            statItem(value: data.followerCount.map(String.init) ?? "0", label: "Followers")
+            Spacer()
+            Rectangle().fill(Color.white.opacity(0.1)).frame(width: 1, height: 32)
+            Spacer()
+            statItem(value: formatBroadcastTime(data.broadcastMinutes), label: "Broadcast")
+            Spacer()
+            Rectangle().fill(Color.white.opacity(0.1)).frame(width: 1, height: 32)
+            Spacer()
+            statItem(value: data.likesReceivedCount.map(String.init) ?? "0", label: "Likes")
+        }
+    }
+
+    private func statItem(value: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundColor(AppColors.primaryText)
+            Text(label)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundColor(AppColors.mutedText)
+        }
+        .frame(minWidth: 60)
+    }
+
+    private func formatBroadcastTime(_ minutes: Int?) -> String {
+        guard let minutes, minutes > 0 else { return "0min" }
+        if minutes < 60 { return "\(minutes)min" }
+        let hours = minutes / 60
+        let remaining = minutes % 60
+        if remaining == 0 { return "\(hours)h" }
+        return "\(hours)h \(remaining)m"
+    }
+
+    private func spotifyLink(url: URL) -> some View {
         Button {
             openURL(url)
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "music.note.list")
-                    .font(.system(size: 18, weight: .semibold))
-                
-                Text("Open Spotify Profile")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                
-                Spacer()
-                
+            HStack(spacing: 6) {
                 Image(systemName: "arrow.up.right")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Spotify Profile")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
             }
-            .foregroundColor(.white)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.11, green: 0.73, blue: 0.33),
-                                Color(red: 0.09, green: 0.65, blue: 0.29)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-            )
-            .shadow(color: Color(red: 0.11, green: 0.73, blue: 0.33).opacity(0.3), radius: 12, x: 0, y: 6)
+            .foregroundColor(.white.opacity(0.5))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(Color.white.opacity(0.08)))
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     // MARK: - Hero Section
@@ -136,8 +197,7 @@ struct SharedProfilePreviewView: View {
     private var heroSection: some View {
         let ageText = data.age.map { ", \($0)" } ?? ""
         let city = data.city ?? ""
-        let gender = data.gender ?? ""
-        
+
         return GeometryReader { geometry in
             let width = geometry.size.width
             
@@ -200,13 +260,6 @@ struct SharedProfilePreviewView: View {
                             .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
                         }
                         
-                        if !gender.isEmpty {
-                            Text(gender)
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundColor(.white.opacity(0.9))
-                                .lineLimit(1)
-                                .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
@@ -240,79 +293,6 @@ struct SharedProfilePreviewView: View {
                     .foregroundColor(AppColors.secondaryText)
             }
         }
-    }
-    
-    // MARK: - Details Section
-    
-    private var detailsSection: some View {
-        let rows = buildDetailRows()
-        
-        return VStack(alignment: .leading, spacing: 14) {
-            Text("About")
-                .font(AppFonts.sectionTitle())
-                .foregroundColor(AppColors.primaryText)
-            
-            if rows.isEmpty {
-                HStack(spacing: 12) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(AppColors.primary.opacity(0.7))
-                    
-                    Text("No additional details available.")
-                        .font(AppFonts.body())
-                        .foregroundColor(AppColors.secondaryText)
-                }
-                .padding(.vertical, 8)
-            } else {
-                VStack(spacing: 14) {
-                    ForEach(rows) { row in
-                        detailRow(title: row.title, value: row.value)
-                        
-                        if row.id != rows.last?.id {
-                            Divider()
-                                .background(Color.white.opacity(0.1))
-                        }
-                    }
-                }
-            }
-        }
-        .padding(AppLayout.cardPadding)
-        .background(cardBackground)
-    }
-    
-    private func detailRow(title: String, value: String) -> some View {
-        HStack(alignment: .center, spacing: 14) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .foregroundColor(AppColors.mutedText)
-                .frame(width: 90, alignment: .leading)
-            
-            Text(value)
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .foregroundColor(AppColors.primaryText)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.vertical, 2)
-    }
-    
-    private func buildDetailRows() -> [DetailRow] {
-        var rows: [DetailRow] = []
-        
-        // ✅ City always included (already in hero overlay, but also here for consistency)
-        if let city = data.city, !city.isEmpty {
-            rows.append(DetailRow(title: "City", value: city))
-        }
-        
-        if let gender = data.gender, !gender.isEmpty {
-            rows.append(DetailRow(title: "Gender", value: gender))
-        }
-        
-        // ✅ Show age instead of exact birthday
-        if let age = data.age {
-            rows.append(DetailRow(title: "Age", value: "\(age) years old"))
-        }
-        
-        return rows
     }
     
     // MARK: - Photos Section

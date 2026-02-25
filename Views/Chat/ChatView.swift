@@ -79,7 +79,10 @@ struct ChatView: View {
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { vm.start(conversationId: conversationId) }
-        .onDisappear { vm.stop() }
+        .onDisappear {
+            Task { await vm.markAsRead(conversationId: conversationId) }
+            vm.stop()
+        }
     }
 
     private var composer: some View {

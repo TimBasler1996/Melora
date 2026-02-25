@@ -59,7 +59,7 @@ struct DiscoverCardView: View {
                                             .font(.system(size: 13, weight: .medium, design: .rounded))
                                         
                                         if let distance = broadcast.distanceMeters {
-                                            Text("· \(distance)m")
+                                            Text("· \(Self.formatDistance(distance))")
                                                 .font(.system(size: 13, weight: .medium, design: .rounded))
                                         }
                                     }
@@ -566,7 +566,14 @@ struct DiscoverCardView: View {
 
     private var distanceText: String {
         guard let distance = broadcast.distanceMeters else { return "Unknown" }
-        return "\(distance)m"
+        return Self.formatDistance(distance)
+    }
+
+    static func formatDistance(_ meters: Int) -> String {
+        if meters < 10 { return "nearby" }
+        if meters < 1000 { return "\(meters)m" }
+        let km = Double(meters) / 1000.0
+        return String(format: "%.1fkm", km)
     }
 }
 

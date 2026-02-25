@@ -674,27 +674,14 @@ struct ProfileView: View {
 
     private var settingsSheet: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundColor(AppColors.primary)
-
-                Text("Settings")
-                    .font(AppFonts.sectionTitle())
-
-                Text("Settings options will appear here soon.")
-                    .font(AppFonts.body())
-                    .foregroundColor(AppColors.secondaryText)
-                    .multilineTextAlignment(.center)
-            }
-            .padding()
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { showSettings = false }
+            SettingsContentView()
+                .navigationTitle("Settings")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { showSettings = false }
+                    }
                 }
-            }
         }
     }
 

@@ -30,6 +30,11 @@ final class BroadcastManager: ObservableObject {
     private let broadcastsCollection = "broadcasts"
     private var locationService: LocationService?
 
+    // MARK: - Time tracking
+
+    private var broadcastStartedAt: Date?
+    private let broadcastStartKey = "BroadcastManager_startedAt"
+
     // MARK: - Timers (throttle sync)
 
     private var locationSyncTask: Task<Void, Never>?
@@ -39,6 +44,10 @@ final class BroadcastManager: ObservableObject {
 
     init(userService: UserApiService = .shared) {
         self.userService = userService
+        // Restore broadcastStartedAt from UserDefaults (in case app was terminated during broadcast)
+        if let saved = UserDefaults.standard.object(forKey: broadcastStartKey) as? Date {
+            self.broadcastStartedAt = saved
+        }
     }
 
     deinit {
@@ -88,6 +97,8 @@ final class BroadcastManager: ObservableObject {
         }
 
         isBroadcasting = true
+        broadcastStartedAt = Date()
+        UserDefaults.standard.set(broadcastStartedAt, forKey: broadcastStartKey)
 
         // 1) Set broadcasting=true in Firestore
         await withCheckedContinuation { cont in
@@ -124,6 +135,17 @@ final class BroadcastManager: ObservableObject {
         trackSyncTask = nil
 
         isBroadcasting = false
+
+        // Track broadcasting time
+        if let startedAt = broadcastStartedAt {
+            let elapsed = Date().timeIntervalSince(startedAt)
+            let minutes = Int(elapsed / 60)
+            if minutes > 0 {
+                userService.addBroadcastMinutes(uid: uid, minutes: minutes)
+            }
+        }
+        broadcastStartedAt = nil
+        UserDefaults.standard.removeObject(forKey: broadcastStartKey)
 
         // set broadcasting=false and clear currentTrack if you want
         await withCheckedContinuation { cont in

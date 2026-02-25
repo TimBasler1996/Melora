@@ -191,24 +191,19 @@ struct NowPlayingView: View {
                     
                     Spacer()
                     
-                    // Open in Spotify button
+                    // Open in Spotify button (subtle)
                     Button(action: {
                         openSpotifyLibrary()
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "arrow.up.right")
-                                .font(.system(size: 13, weight: .semibold))
-                            Text("Spotify")
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundColor(.white.opacity(0.7))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.12))
-                        )
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.4))
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.06))
+                            )
                     }
                     
                     Spacer()
@@ -406,7 +401,7 @@ private struct CompactBroadcastToggle: View {
             ))
             .labelsHidden()
             .tint(Color(red: 0.2, green: 0.85, blue: 0.4))
-            .disabled(!spotifyAuth.isAuthorized || !hasTrack)
+            .disabled(!spotifyAuth.isAuthorized || (!hasTrack && !broadcast.isBroadcasting))
             .opacity(hasTrack ? 1.0 : 0.5)
         }
         .padding(.horizontal, 16)
