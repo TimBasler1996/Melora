@@ -73,9 +73,9 @@ final class ChatViewModel: ObservableObject {
     func markAsRead(conversationId: String) async {
         guard let myId = Auth.auth().currentUser?.uid else { return }
         do {
-            try await db.collection("conversations").document(conversationId).setData([
+            try await db.collection("conversations").document(conversationId).updateData([
                 "lastReadAt.\(myId)": Timestamp(date: Date())
-            ], merge: true)
+            ])
         } catch {
             print("❌ [Chat] markAsRead failed:", error.localizedDescription)
         }
