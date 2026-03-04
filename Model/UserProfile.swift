@@ -27,11 +27,7 @@ struct UserProfile: Identifiable, Equatable {
 
     var fullName: String {
         let trimmedFirst = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedLast = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let combined = [trimmedFirst, trimmedLast].filter { !$0.isEmpty }.joined(separator: " ")
-        if !combined.isEmpty {
-            return combined
-        }
+        if !trimmedFirst.isEmpty { return trimmedFirst }
         return spotifyDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
             ? (spotifyDisplayName ?? "")
             : "Your Name"
