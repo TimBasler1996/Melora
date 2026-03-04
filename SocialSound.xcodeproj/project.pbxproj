@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1B2C3D42F3000000000FCM1 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D32F3000000000FCM1 /* FirebaseMessaging */; };
 		22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867F3432B825422BBA8DB009 /* DiscoverCardView.swift */; };
 		5BE3C3AF6AB442B096226779 /* DiscoverModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E7962926804ED6997F6667 /* DiscoverModels.swift */; };
 		66DB9590C4A94D7BB7C2DABE /* DiscoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E051118A634A34AB907992 /* DiscoverViewModel.swift */; };
@@ -249,6 +250,7 @@
 				756E44AC2EFE8FB300F49C30 /* FirebaseStorage in Frameworks */,
 				756E44AA2EFE8FA300F49C30 /* FirebaseAuth in Frameworks */,
 				759F7B282EC7A05A0012A549 /* FirebaseFirestore in Frameworks */,
+				A1B2C3D42F3000000000FCM1 /* FirebaseMessaging in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -613,6 +615,7 @@
 				759F7B272EC7A05A0012A549 /* FirebaseFirestore */,
 				756E44A92EFE8FA300F49C30 /* FirebaseAuth */,
 				756E44AB2EFE8FB300F49C30 /* FirebaseStorage */,
+				A1B2C3D32F3000000000FCM1 /* FirebaseMessaging */,
 			);
 			productName = SocialSound;
 			productReference = 759F7ADB2EC779740012A549 /* SocialSound.app */;
@@ -1012,6 +1015,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 759F7B242EC7A05A0012A549 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		A1B2C3D32F3000000000FCM1 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 759F7B242EC7A05A0012A549 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
