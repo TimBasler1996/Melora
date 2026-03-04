@@ -5,10 +5,9 @@ import FirebaseAuth
 
 struct ProfileView: View {
 
-    enum Mode: String, CaseIterable, Identifiable {
-        case preview = "Preview"
-        case edit = "Edit"
-        var id: String { rawValue }
+    enum Mode {
+        case preview
+        case edit
     }
 
     // ✅ Inject for previews/testing
@@ -50,14 +49,6 @@ struct ProfileView: View {
 
                 VStack(spacing: 14) {
                     header
-
-                    Picker("Profile mode", selection: $mode) {
-                        ForEach(Mode.allCases) { m in
-                            Text(m.rawValue).tag(m)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, AppLayout.screenPadding)
 
                     ScrollView(.vertical) {
                         VStack(spacing: 16) {
@@ -106,8 +97,28 @@ struct ProfileView: View {
 
     private var header: some View {
         HStack(alignment: .center) {
+            if mode == .edit {
+                Button {
+                    if viewModel.hasDraftChanges {
+                        showDiscardAlert = true
+                    } else {
+                        viewModel.discardDraft()
+                        mode = .preview
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Back")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(AppColors.primary)
+                }
+                .buttonStyle(.plain)
+            }
+
             VStack(alignment: .leading, spacing: 6) {
-                Text("Your Profile")
+                Text(mode == .preview ? "Your Profile" : "Edit Profile")
                     .font(AppFonts.title())
                     .foregroundColor(AppColors.primaryText)
 
@@ -118,15 +129,32 @@ struct ProfileView: View {
 
             Spacer()
 
-            Button { showSettings = true } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(AppColors.primary)
-                    .frame(width: 40, height: 40)
-                    .background(Circle().fill(AppColors.tintedBackground.opacity(0.35)))
+            if mode == .preview {
+                HStack(spacing: 12) {
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        mode = .edit
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(AppColors.primary)
+                            .frame(width: 40, height: 40)
+                            .background(Circle().fill(AppColors.tintedBackground.opacity(0.35)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Edit Profile")
+
+                    Button { showSettings = true } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(AppColors.primary)
+                            .frame(width: 40, height: 40)
+                            .background(Circle().fill(AppColors.tintedBackground.opacity(0.35)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Settings")
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Settings")
         }
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.top, 12)
@@ -762,15 +790,6 @@ struct ProfileView: View {
     private func handleModeChange(oldValue: Mode, newValue: Mode) {
         if newValue == .edit {
             viewModel.beginEditing()
-        }
-
-        if oldValue == .edit && newValue == .preview {
-            if viewModel.hasDraftChanges {
-                showDiscardAlert = true
-                mode = .edit
-            } else {
-                viewModel.discardDraft()
-            }
         }
     }
 }
