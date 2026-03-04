@@ -74,6 +74,7 @@ struct LikesInboxView: View {
         }
         .onDisappear {
             vm.markAllAsSeen()
+            followersVM.markAllAsSeen()
             followersVM.stopListening()
         }
         .refreshable {
@@ -157,13 +158,27 @@ struct LikesInboxView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(vm.clusters) { cluster in
-                        NavigationLink {
-                            TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
-                        } label: {
-                            ModernTrackLikesClusterRow(cluster: cluster)
+                    if !vm.todayClusters.isEmpty {
+                        sectionHeader("Today")
+                        ForEach(vm.todayClusters) { cluster in
+                            NavigationLink {
+                                TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
+                            } label: {
+                                ModernTrackLikesClusterRow(cluster: cluster)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                    }
+                    if !vm.earlierClusters.isEmpty {
+                        sectionHeader("Earlier")
+                        ForEach(vm.earlierClusters) { cluster in
+                            NavigationLink {
+                                TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
+                            } label: {
+                                ModernTrackLikesClusterRow(cluster: cluster)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
                 .padding(.horizontal, 20)
@@ -172,6 +187,18 @@ struct LikesInboxView: View {
             }
             .scrollIndicators(.hidden)
         }
+    }
+
+    // MARK: - Section Header
+
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundColor(.white.opacity(0.5))
+            Spacer()
+        }
+        .padding(.top, title == "Earlier" ? 8 : 0)
     }
 
     // MARK: - Followers Content
@@ -190,7 +217,7 @@ struct LikesInboxView: View {
                     .padding(.top, 12)
                 Spacer()
             }
-        } else if followersVM.followers.isEmpty {
+        } else if followersVM.newFollowers.isEmpty {
             VStack(spacing: 20) {
                 Spacer()
 
@@ -199,11 +226,11 @@ struct LikesInboxView: View {
                     .foregroundColor(.white.opacity(0.4))
 
                 VStack(spacing: 8) {
-                    Text("No Followers Yet")
+                    Text("No New Followers")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
 
-                    Text("When someone follows you,\nthey'll appear here")
+                    Text("When someone new follows you,\nthey'll appear here")
                         .font(.system(size: 15, weight: .medium, design: .rounded))
                         .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
@@ -215,8 +242,17 @@ struct LikesInboxView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(followersVM.followers) { follower in
-                        FollowerRowView(follower: follower)
+                    if !followersVM.todayFollowers.isEmpty {
+                        sectionHeader("Today")
+                        ForEach(followersVM.todayFollowers) { follower in
+                            FollowerRowView(follower: follower)
+                        }
+                    }
+                    if !followersVM.earlierFollowers.isEmpty {
+                        sectionHeader("Earlier")
+                        ForEach(followersVM.earlierFollowers) { follower in
+                            FollowerRowView(follower: follower)
+                        }
                     }
                 }
                 .padding(.horizontal, 20)

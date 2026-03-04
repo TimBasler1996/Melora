@@ -79,13 +79,27 @@ struct ChatInboxView: View {
         } else {
             ScrollView {
                 VStack(spacing: 12) {
-                    ForEach(vm.rows) { row in
-                        NavigationLink {
-                            ChatView(conversationId: row.conversationId)
-                        } label: {
-                            ChatInboxRowView(row: row)
+                    if !vm.todayRows.isEmpty {
+                        chatSectionHeader("Today")
+                        ForEach(vm.todayRows) { row in
+                            NavigationLink {
+                                ChatView(conversationId: row.conversationId)
+                            } label: {
+                                ChatInboxRowView(row: row)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                    }
+                    if !vm.earlierRows.isEmpty {
+                        chatSectionHeader("Earlier")
+                        ForEach(vm.earlierRows) { row in
+                            NavigationLink {
+                                ChatView(conversationId: row.conversationId)
+                            } label: {
+                                ChatInboxRowView(row: row)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
                 .padding(.horizontal, AppLayout.screenPadding)
@@ -93,6 +107,16 @@ struct ChatInboxView: View {
             }
             .scrollIndicators(.hidden)
         }
+    }
+
+    private func chatSectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundColor(.white.opacity(0.5))
+            Spacer()
+        }
+        .padding(.top, title == "Earlier" ? 8 : 0)
     }
 }
 
