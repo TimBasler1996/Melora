@@ -15,9 +15,12 @@ struct ChatInboxView: View {
         NavigationStack {
             ZStack {
                 LinearGradient(
-                    colors: [AppColors.primary, AppColors.secondary],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    colors: [
+                        Color(red: 0.15, green: 0.15, blue: 0.2),
+                        Color.black.opacity(0.95)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
                 .ignoresSafeArea()
 
@@ -25,6 +28,7 @@ struct ChatInboxView: View {
             }
             .navigationTitle("Chats")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .onAppear { vm.startListening() }
             .onDisappear { vm.stopListening() }
             .refreshable { vm.reloadOnce() }
