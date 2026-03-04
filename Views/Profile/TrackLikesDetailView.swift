@@ -32,7 +32,7 @@ struct TrackLikesDetailView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    trackCard
+                    SpotifyLinkCard(track: track)
                     likesSection
 
                     if let toast {

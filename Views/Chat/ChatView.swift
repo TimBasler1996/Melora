@@ -122,6 +122,21 @@ private struct ChatBubble: View {
         return message.senderId == myId
     }
 
+    /// Extract a Spotify track ID from the message text, if present.
+    private var spotifyTrackId: String? {
+        let text = message.text
+        // Match "https://open.spotify.com/track/{id}" or "spotify:track:{id}"
+        if let range = text.range(of: #"open\.spotify\.com/track/([A-Za-z0-9]+)"#, options: .regularExpression) {
+            let match = String(text[range])
+            return match.components(separatedBy: "/").last
+        }
+        if let range = text.range(of: #"spotify:track:([A-Za-z0-9]+)"#, options: .regularExpression) {
+            let match = String(text[range])
+            return match.components(separatedBy: ":").last
+        }
+        return nil
+    }
+
     var body: some View {
         HStack {
             if isMine { Spacer(minLength: 40) }
@@ -130,6 +145,18 @@ private struct ChatBubble: View {
                 Text(message.text)
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
+
+                // Show a Spotify link card if the message contains a track URL
+                if let trackId = spotifyTrackId {
+                    SpotifyLinkCard(
+                        trackId: trackId,
+                        title: "Spotify Track",
+                        artist: "Tap to open",
+                        album: nil,
+                        artworkURL: nil
+                    )
+                    .padding(.top, 4)
+                }
 
                 Text(message.createdAt.formatted(date: .omitted, time: .shortened))
                     .font(.system(size: 11, weight: .regular, design: .rounded))

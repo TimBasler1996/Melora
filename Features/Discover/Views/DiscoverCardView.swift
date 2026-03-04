@@ -45,6 +45,12 @@ struct DiscoverCardView: View {
                     actionButtonsRow
                         .transition(.move(edge: .top).combined(with: .opacity))
 
+                    // Spotify Link Card — rich track preview
+                    SpotifyLinkCard(discoverTrack: broadcast.track)
+                        .padding(.horizontal, 14)
+                        .padding(.bottom, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+
                     if showMessageField {
                         messageInputField
                             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -127,7 +133,7 @@ struct DiscoverCardView: View {
             .padding(.horizontal, 14)
     }
 
-    // MARK: - 5 Action Buttons (Like, Message, Spotify, Profile, X)
+    // MARK: - 4 Action Buttons (Like, Message, Profile, X) + Spotify Link Card
 
     private var actionButtonsRow: some View {
         HStack(spacing: 0) {
@@ -149,18 +155,7 @@ struct DiscoverCardView: View {
                 handleMessageAction()
             }
 
-            // 3. Spotify (open track)
-            if let spotifyURL = broadcast.track.spotifyURLValue {
-                actionButton(
-                    icon: "music.note",
-                    label: "Spotify",
-                    color: Color(red: 0.2, green: 0.85, blue: 0.4)
-                ) {
-                    openURL(spotifyURL)
-                }
-            }
-
-            // 4. Profile
+            // 3. Profile
             actionButton(
                 icon: "person.crop.circle",
                 label: "Profile",
@@ -169,7 +164,7 @@ struct DiscoverCardView: View {
                 onViewProfile()
             }
 
-            // 5. Dismiss (X)
+            // 4. Dismiss (X)
             actionButton(
                 icon: "xmark",
                 label: "",
