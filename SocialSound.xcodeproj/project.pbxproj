@@ -99,6 +99,7 @@
 		78B0C1B12F20000100112233 /* OnboardingStepPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */; };
 		79A1C0012F30000100112233 /* Date+Age.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0002F30000100112233 /* Date+Age.swift */; };
 		79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */; };
+		79A1C0062F30000300112233 /* CitySearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0052F30000300112233 /* CitySearchField.swift */; };
 		79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0082F30000300112233 /* AvatarCropperView.swift */; };
 		79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */; };
 		79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00C2F30000300112233 /* PhotoCard.swift */; };
@@ -215,6 +216,7 @@
 		78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepPhotosView.swift; sourceTree = "<group>"; };
 		79A1C0002F30000100112233 /* Date+Age.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Date+Age.swift"; sourceTree = "<group>"; };
 		79A1C0022F30000100112233 /* ProfilePreviewHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePreviewHeader.swift; sourceTree = "<group>"; };
+		79A1C0052F30000300112233 /* CitySearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitySearchField.swift; sourceTree = "<group>"; };
 		79A1C0082F30000300112233 /* AvatarCropperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarCropperView.swift; sourceTree = "<group>"; };
 		79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarPhotoCard.swift; sourceTree = "<group>"; };
 		79A1C00C2F30000300112233 /* PhotoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCard.swift; sourceTree = "<group>"; };
@@ -543,8 +545,7 @@
 		79A1C0042F30000100112233 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				7507869F2F584341005285EB /* PhotoGridView.swift */,
-				750786A02F584341005285EB /* SpotifyLinkCard.swift */,
+				79A1C0052F30000300112233 /* CitySearchField.swift */,
 				79A1C0082F30000300112233 /* AvatarCropperView.swift */,
 				79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */,
 				79A1C00C2F30000300112233 /* PhotoCard.swift */,
@@ -661,6 +662,7 @@
 				79A1C0012F30000100112233 /* Date+Age.swift in Sources */,
 				79A1C0032F30000100112233 /* ProfilePreviewHeader.swift in Sources */,
 				7576DF642F1835050034BF2A /* ProfilePreviewView.swift in Sources */,
+				79A1C0062F30000300112233 /* CitySearchField.swift in Sources */,
 				79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */,
 				75DDECAE2F3E3FE1009426B5 /* FollowApiService.swift in Sources */,
 				79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */,
