@@ -11,6 +11,7 @@ struct SocialSoundApp: App {
     @StateObject private var currentUserStore = CurrentUserStore()
     @StateObject private var onboardingState = OnboardingStateManager()
     @StateObject private var notificationService = BroadcastNotificationService()
+    @StateObject private var likeNotificationService = LikeNotificationService()
 
     init() {
         FirebaseApp.configure()
@@ -39,6 +40,7 @@ struct SocialSoundApp: App {
                 currentUserStore.startListening()
                 locationService.requestAuthorizationIfNeeded()
                 notificationService.start(locationService: locationService)
+                likeNotificationService.start()
             }
             .environmentObject(spotifyAuth)
             .environmentObject(broadcast)

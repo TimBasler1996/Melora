@@ -173,24 +173,37 @@ actor LikeApiService {
         )
     }
 
-    // MARK: - Update Like Status (Receiver-side only)
+    // MARK: - Update Like Status (both sides)
 
-    /// Receiver can reliably update ONLY their own likesReceived due to Firestore rules.
+    /// Updates like status on both receiver's likesReceived and sender's likesGiven.
     func setLikeStatusReceivedOnly(
         likeId: String,
         toUserId: String,
         status: TrackLike.Status
     ) async throws {
 
+        let statusData: [String: Any] = [
+            "status": status.rawValue,
+            "respondedAt": Timestamp(date: Date())
+        ]
+
+        // Update receiver's likesReceived
         let receivedRef = db.collection(usersCollection)
             .document(toUserId)
             .collection("likesReceived")
             .document(likeId)
 
-        try await receivedRef.updateData([
-            "status": status.rawValue,
-            "respondedAt": Timestamp(date: Date())
-        ])
+        try await receivedRef.updateData(statusData)
+
+        // Also update sender's likesGiven mirror so they can see the status change
+        let receivedDoc = try await receivedRef.getDocument()
+        if let fromUserId = receivedDoc.data()?["fromUserId"] as? String {
+            let givenRef = db.collection(usersCollection)
+                .document(fromUserId)
+                .collection("likesGiven")
+                .document(likeId)
+            try? await givenRef.updateData(statusData)
+        }
     }
 
     // MARK: - Fetching
