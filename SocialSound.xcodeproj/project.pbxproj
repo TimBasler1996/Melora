@@ -14,8 +14,8 @@
 		7507869B2F58402C005285EB /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 759F7B222EC79EC30012A549 /* GoogleService-Info.plist */; };
 		7507869C2F58403F005285EB /* SocialSound-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 759F7B0E2EC7890E0012A549 /* SocialSound-Info.plist */; };
 		7507869E2F5841EE005285EB /* BroadcastNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7507869D2F5841EE005285EB /* BroadcastNotificationService.swift */; };
-		750786A12F584341005285EB /* PhotoGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7507869F2F584341005285EB /* PhotoGridView.swift */; };
-		750786A22F584341005285EB /* SpotifyLinkCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750786A02F584341005285EB /* SpotifyLinkCard.swift */; };
+		750786C42F5851E4005285EB /* PhotoGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750786C22F5851E4005285EB /* PhotoGridView.swift */; };
+		750786C52F5851E4005285EB /* SpotifyLinkCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750786C32F5851E4005285EB /* SpotifyLinkCard.swift */; };
 		753AD78C2F2CC12500521CF9 /* SharedProfilePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 753AD78B2F2CC12500521CF9 /* SharedProfilePreviewView.swift */; };
 		7556B7FC2F2CAA3E00DA2EE8 /* FixLikesUserDataScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7556B7FB2F2CAA3E00DA2EE8 /* FixLikesUserDataScript.swift */; };
 		7556B7FE2F2CADF400DA2EE8 /* UserProfilePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7556B7FD2F2CADF400DA2EE8 /* UserProfilePreviewView.swift */; };
@@ -114,6 +114,8 @@
 		7507869D2F5841EE005285EB /* BroadcastNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastNotificationService.swift; sourceTree = "<group>"; };
 		7507869F2F584341005285EB /* PhotoGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGridView.swift; sourceTree = "<group>"; };
 		750786A02F584341005285EB /* SpotifyLinkCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyLinkCard.swift; sourceTree = "<group>"; };
+		750786C22F5851E4005285EB /* PhotoGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGridView.swift; sourceTree = "<group>"; };
+		750786C32F5851E4005285EB /* SpotifyLinkCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyLinkCard.swift; sourceTree = "<group>"; };
 		753AD78B2F2CC12500521CF9 /* SharedProfilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedProfilePreviewView.swift; sourceTree = "<group>"; };
 		753AD78D2F2CC1A800521CF9 /* PROFILE_REFACTORING_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROFILE_REFACTORING_SUMMARY.md; sourceTree = "<group>"; };
 		753AD78F2F2CC3DF00521CF9 /* PROFILE_UI_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROFILE_UI_IMPROVEMENTS.md; sourceTree = "<group>"; };
@@ -289,6 +291,15 @@
 			path = Discover;
 			sourceTree = "<group>";
 		};
+		750786B72F5850EC005285EB /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				7507869F2F584341005285EB /* PhotoGridView.swift */,
+				750786A02F584341005285EB /* SpotifyLinkCard.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		756E44A82EFE8FA300F49C30 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -333,6 +344,7 @@
 				75DAD86E2F20DC0400D1219E /* ONBOARDING_IMPROVEMENTS_SUMMARY.md */,
 				75DAD8702F20DD8E00D1219E /* FIXES_APPLIED.md */,
 				7556B7FB2F2CAA3E00DA2EE8 /* FixLikesUserDataScript.swift */,
+				750786B72F5850EC005285EB /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -545,6 +557,8 @@
 		79A1C0042F30000100112233 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				750786C22F5851E4005285EB /* PhotoGridView.swift */,
+				750786C32F5851E4005285EB /* SpotifyLinkCard.swift */,
 				79A1C0052F30000300112233 /* CitySearchField.swift */,
 				79A1C0082F30000300112233 /* AvatarCropperView.swift */,
 				79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */,
@@ -678,6 +692,8 @@
 				756E44A12EFE8C1000F49C30 /* ProfileSetupWizardView.swift in Sources */,
 				756E44A22EFE8C1000F49C30 /* ProfileBasicsStepView.swift in Sources */,
 				756E44A32EFE8C1000F49C30 /* UserProfileDetailView.swift in Sources */,
+				750786C42F5851E4005285EB /* PhotoGridView.swift in Sources */,
+				750786C52F5851E4005285EB /* SpotifyLinkCard.swift in Sources */,
 				756E44A42EFE8C1000F49C30 /* ProfilePhotosStepView.swift in Sources */,
 				75DAD8772F20E80500D1219E /* OnboardingStepSpotifyView.swift in Sources */,
 				75DAD87B2F20EBE900D1219E /* NowPlayingView.swift in Sources */,
@@ -748,8 +764,6 @@
 				759F7B172EC78DB70012A549 /* SpotifyAuthManager.swift in Sources */,
 				759F7AFE2EC781A70012A549 /* MainView.swift in Sources */,
 				75A174232ED1007200CEB48F /* LikesInboxViewModel.swift in Sources */,
-				750786A12F584341005285EB /* PhotoGridView.swift in Sources */,
-				750786A22F584341005285EB /* SpotifyLinkCard.swift in Sources */,
 				75F1A0022F5B000100ABC001 /* ChatBadgeViewModel.swift in Sources */,
 				75F1A0042F5B000100ABC002 /* FollowersInboxViewModel.swift in Sources */,
 				75F1A0062F5B000100ABC003 /* SettingsContentView.swift in Sources */,
