@@ -119,16 +119,21 @@ final class DiscoverViewModel: ObservableObject {
         pollTimer?.cancel()
         pollTimer = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+                try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
                 guard !Task.isCancelled else { break }
                 await self?.refreshBroadcasts()
             }
         }
     }
-    
+
     private func refreshBroadcasts() async {
-        // Silently refresh without showing loading indicator
-        // The listener will automatically get updates, this is just a safety mechanism
+        // Safety fallback: one-shot fetch in case the snapshot listener missed an update
+        do {
+            let records = try await service.fetchBroadcastsOnce()
+            await handleBroadcastRecords(records)
+        } catch {
+            // Silently ignore – the snapshot listener is the primary source
+        }
     }
 
     func updateCurrentLocation(_ location: LocationPoint?) {

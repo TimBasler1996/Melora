@@ -69,6 +69,12 @@ final class DiscoverService {
         }
     }
 
+    /// One-shot fetch of all current broadcasts (used as polling fallback).
+    func fetchBroadcastsOnce() async throws -> [BroadcastRecord] {
+        let snapshot = try await db.collection(broadcastsCollection).getDocuments()
+        return snapshot.documents.compactMap { Self.broadcastRecord(from: $0) }
+    }
+
     func fetchDiscoverUser(userId: String) async throws -> DiscoverUser? {
         let snapshot = try await db.collection(usersCollection).document(userId).getDocument()
         guard let data = snapshot.data() else { return nil }

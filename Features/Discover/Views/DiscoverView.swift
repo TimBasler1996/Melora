@@ -76,7 +76,7 @@ struct DiscoverView: View {
                     viewModel.cancelDismiss()
                 }
             }
-            .task {
+            .onAppear {
                 guard !isRunningInPreview else { return }
                 locationService.requestAuthorizationIfNeeded()
                 viewModel.startListening()
@@ -196,12 +196,17 @@ struct DiscoverView: View {
                             hasMessaged: viewModel.hasMessage(broadcast)
                         )
                         .padding(.horizontal, max(AppLayout.screenPadding, 20))
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .top).combined(with: .opacity),
+                            removal: .opacity
+                        ))
                     }
                 }
                 .padding(.vertical, 18)
                 .frame(maxWidth: .infinity)
             }
             .scrollIndicators(.hidden)
+            .animation(.easeInOut(duration: 0.3), value: viewModel.visibleBroadcasts.map(\.id))
         }
     }
 
