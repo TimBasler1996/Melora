@@ -118,8 +118,8 @@ final class LikeNotificationService: ObservableObject {
 
                         let fromUserId = data["fromUserId"] as? String ?? ""
                         let trackTitle = data["trackTitle"] as? String ?? "a track"
-                        let displayName = data["fromUserDisplayName"] as? String
-                            ?? await self.fetchDisplayName(uid: fromUserId)
+                        let storedName = data["fromUserDisplayName"] as? String
+                        let displayName = storedName ?? (await self.fetchDisplayName(uid: fromUserId))
 
                         await self.sendLocalNotification(
                             id: "like-received-\(likeId)",
