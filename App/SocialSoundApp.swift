@@ -5,6 +5,8 @@ import FirebaseAuth
 @main
 struct SocialSoundApp: App {
 
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     @StateObject private var spotifyAuth = SpotifyAuthManager.shared
     @StateObject private var broadcast = BroadcastManager()
     @StateObject private var locationService = LocationService()
