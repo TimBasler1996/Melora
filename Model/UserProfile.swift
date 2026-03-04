@@ -15,6 +15,8 @@ struct UserProfile: Identifiable, Equatable {
     /// Uncropped hero photo for profile view (full size, not cropped)
     var heroPhotoURL: String?
 
+    var lookingFor: String?
+
     var spotifyId: String?
     var spotifyCountry: String?
     var countryCode: String?
@@ -87,6 +89,7 @@ struct UserProfile: Identifiable, Equatable {
             gender: stringValue("gender") ?? "",
             photoURLs: photoURLs,
             heroPhotoURL: stringValue("heroPhotoURL"),
+            lookingFor: stringValue("lookingFor"),
             spotifyId: stringValue("spotifyId"),
             spotifyCountry: stringValue("spotifyCountry"),
             countryCode: stringValue("countryCode"),

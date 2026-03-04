@@ -149,6 +149,7 @@ struct ProfileView: View {
                     birthday: profile.birthday,
                     spotifyId: profile.spotifyId,
                     musicTaste: nil,
+                    lookingFor: profile.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? profile.lookingFor : nil,
                     followerCount: followerCount,
                     broadcastMinutes: currentUserStore.user?.broadcastMinutesTotal,
                     likesReceivedCount: likesReceivedCount
@@ -536,16 +537,50 @@ struct ProfileView: View {
                 birthdayPicker
 
                 labeledField(title: "City") {
-                    TextField("City", text: draftBinding(\.city))
-                        .textInputAutocapitalization(.words)
-                        .keyboardType(.default)
+                    CitySearchFieldEdit(city: draftBinding(\.city))
                 }
 
                 genderSelector(currentGender: draft.gender)
+
+                lookingForSelector(currentValue: draft.lookingFor)
             }
         }
         .padding(AppLayout.cardPadding)
         .background(cardBackground)
+    }
+
+    private let lookingForOptions = ["New Music", "Friends", "Open for all"]
+
+    private func lookingForSelector(currentValue: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Looking for")
+                .font(AppFonts.footnote())
+                .foregroundColor(AppColors.mutedText)
+
+            fieldContainer {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(lookingForOptions, id: \.self) { option in
+                            Button {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                viewModel.updateDraft { $0.lookingFor = option }
+                            } label: {
+                                Text(option)
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundColor(currentValue == option ? .white : AppColors.primaryText)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Capsule().fill(currentValue == option ? AppColors.primary : AppColors.tintedBackground.opacity(0.8))
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
     }
 
     private var birthdayPicker: some View {

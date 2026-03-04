@@ -38,6 +38,7 @@ struct AppUser: Identifiable, Codable, Equatable {
     var city: String? // ✅ Added city field (alias for hometown in some contexts)
     var hometown: String?
     var musicTaste: String?
+    var lookingFor: String?
 
     // MARK: - Photos
 
@@ -72,6 +73,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         city: String? = nil,
         hometown: String? = nil,
         musicTaste: String? = nil,
+        lookingFor: String? = nil,
         countryCode: String? = nil,
         gender: String? = nil,
         firstName: String? = nil,
@@ -98,6 +100,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         self.city = city
         self.hometown = hometown
         self.musicTaste = musicTaste
+        self.lookingFor = lookingFor
         self.countryCode = countryCode
         self.gender = gender
 
@@ -247,6 +250,7 @@ struct AppUser: Identifiable, Codable, Equatable {
             city: stringValue("city"), // ✅ Parse city from Firestore
             hometown: stringValue("hometown"),
             musicTaste: stringValue("musicTaste"),
+            lookingFor: stringValue("lookingFor"),
             countryCode: stringValue("countryCode"),
             gender: stringValue("gender"),
             firstName: firstName,

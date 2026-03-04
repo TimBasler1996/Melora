@@ -26,12 +26,13 @@ final class OnboardingProfileService {
         let city: String
         let birthday: Date
         let gender: String
+        let lookingFor: String?
     }
 
     // MARK: - Step 1: Save basics
 
     func saveBasics(_ basics: Basics, uid: String) async throws {
-        let data: [String: Any] = [
+        var data: [String: Any] = [
             "firstName": basics.firstName,
             "lastName": basics.lastName,
             "city": basics.city,
@@ -39,6 +40,9 @@ final class OnboardingProfileService {
             "gender": basics.gender,
             "updatedAt": FieldValue.serverTimestamp()
         ]
+        if let lookingFor = basics.lookingFor {
+            data["lookingFor"] = lookingFor
+        }
 
         try await db.collection("users")
             .document(uid)

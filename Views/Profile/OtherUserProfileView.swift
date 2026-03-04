@@ -32,6 +32,7 @@ struct OtherUserProfileView: View {
                         birthday: user.birthday,
                         spotifyId: user.spotifyId,
                         musicTaste: user.musicTaste?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? user.musicTaste : nil,
+                        lookingFor: user.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? user.lookingFor : nil,
                         followerCount: followerCount,
                         broadcastMinutes: user.broadcastMinutesTotal,
                         likesReceivedCount: likesReceivedCount
@@ -113,17 +114,6 @@ struct OtherUserProfileView: View {
     @ViewBuilder
     private func aboutCard(data: ProfilePreviewData) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            if let city = data.city, !city.isEmpty {
-                HStack(spacing: 6) {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(AppColors.primary)
-                    Text(city)
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
-                        .foregroundColor(AppColors.primaryText)
-                }
-            }
-
             if let taste = data.musicTaste, !taste.isEmpty {
                 HStack(alignment: .top, spacing: 6) {
                     Image(systemName: "music.note")
@@ -133,6 +123,17 @@ struct OtherUserProfileView: View {
                         .font(.system(size: 15, weight: .medium, design: .rounded))
                         .foregroundColor(AppColors.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if let lookingFor = data.lookingFor, !lookingFor.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.primary)
+                    Text(lookingFor)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundColor(AppColors.primaryText)
                 }
             }
 

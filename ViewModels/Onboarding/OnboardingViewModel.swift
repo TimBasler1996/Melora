@@ -19,6 +19,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var city: String = ""
     @Published var birthday: Date = Calendar.current.date(byAdding: .year, value: -20, to: Date()) ?? Date()
     @Published var gender: String = ""
+    @Published var lookingFor: String = ""
 
     // MARK: - Step 2: Photos (2-5 required)
 
@@ -174,12 +175,14 @@ final class OnboardingViewModel: ObservableObject {
         defer { isFinishing = false }
 
         do {
+            let trimmedLookingFor = lookingFor.trimmingCharacters(in: .whitespacesAndNewlines)
             let basics = OnboardingProfileService.Basics(
                 firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
                 lastName: lastName.trimmingCharacters(in: .whitespacesAndNewlines),
                 city: city.trimmingCharacters(in: .whitespacesAndNewlines),
                 birthday: birthday,
-                gender: gender.trimmingCharacters(in: .whitespacesAndNewlines)
+                gender: gender.trimmingCharacters(in: .whitespacesAndNewlines),
+                lookingFor: trimmedLookingFor.isEmpty ? nil : trimmedLookingFor
             )
             try await profileService.saveBasics(basics, uid: uid)
 

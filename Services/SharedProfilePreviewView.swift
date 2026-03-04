@@ -14,6 +14,7 @@ struct ProfilePreviewData: Equatable {
     let birthday: Date?
     let spotifyId: String?
     let musicTaste: String?
+    let lookingFor: String?
     let followerCount: Int?
     let broadcastMinutes: Int?
     let likesReceivedCount: Int?
@@ -41,6 +42,7 @@ struct ProfilePreviewData: Equatable {
             birthday: userProfile.birthday,
             spotifyId: userProfile.spotifyId,
             musicTaste: nil,
+            lookingFor: userProfile.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? userProfile.lookingFor : nil,
             followerCount: nil,
             broadcastMinutes: nil,
             likesReceivedCount: nil
@@ -62,6 +64,7 @@ struct ProfilePreviewData: Equatable {
             birthday: appUser.birthday,
             spotifyId: appUser.spotifyId,
             musicTaste: appUser.musicTaste?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.musicTaste : nil,
+            lookingFor: appUser.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.lookingFor : nil,
             followerCount: nil,
             broadcastMinutes: appUser.broadcastMinutesTotal,
             likesReceivedCount: nil
@@ -93,17 +96,6 @@ struct SharedProfilePreviewView: View {
 
     private var aboutSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if let city = data.city, !city.isEmpty {
-                HStack(spacing: 6) {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(AppColors.primary)
-                    Text(city)
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
-                        .foregroundColor(AppColors.primaryText)
-                }
-            }
-
             if let taste = data.musicTaste, !taste.isEmpty {
                 HStack(alignment: .top, spacing: 6) {
                     Image(systemName: "music.note")
@@ -116,13 +108,15 @@ struct SharedProfilePreviewView: View {
                 }
             }
 
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(AppColors.mutedText)
-                Text("Looking for: Coming soon")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(AppColors.mutedText)
+            if let lookingFor = data.lookingFor, !lookingFor.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppColors.primary)
+                    Text(lookingFor)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundColor(AppColors.primaryText)
+                }
             }
 
             Divider().background(Color.white.opacity(0.1))

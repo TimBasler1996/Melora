@@ -32,13 +32,54 @@ struct OnboardingStepBasicsView: View {
 
                 birthdayPicker
 
-                labeledField(title: "City") {
-                    TextField("City", text: $viewModel.city)
-                        .textInputAutocapitalization(.words)
-                        .keyboardType(.default)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("City")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.5))
+
+                    fieldContainer {
+                        CitySearchFieldOnboarding(city: $viewModel.city)
+                    }
                 }
 
                 genderSelector
+
+                lookingForSelector
+            }
+        }
+    }
+
+    private let lookingForOptions = ["New Music", "Friends", "Open for all"]
+
+    private var lookingForSelector: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Looking for")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundColor(.white.opacity(0.5))
+
+            VStack(spacing: 10) {
+                ForEach(lookingForOptions, id: \.self) { option in
+                    Button {
+                        viewModel.lookingFor = option
+                    } label: {
+                        Text(option)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(viewModel.lookingFor == option ? Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.3) : Color.white.opacity(0.08))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(
+                                        viewModel.lookingFor == option ? Color(red: 0.2, green: 0.85, blue: 0.4) : Color.white.opacity(0.15),
+                                        lineWidth: viewModel.lookingFor == option ? 2 : 1
+                                    )
+                            )
+                    }
+                }
             }
         }
     }
