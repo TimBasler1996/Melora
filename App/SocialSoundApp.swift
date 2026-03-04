@@ -16,8 +16,12 @@ struct SocialSoundApp: App {
     @StateObject private var likeNotificationService = LikeNotificationService()
 
     init() {
-        FirebaseApp.configure()
-        print("🔥 Firebase configured")
+        // Firebase is configured here (before AppDelegate's didFinishLaunching)
+        // so that all @StateObject services can use Firestore immediately.
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+            print("🔥 Firebase configured")
+        }
     }
 
     var body: some Scene {
