@@ -1,201 +1,324 @@
 import Foundation
+import FirebaseAuth
 import FirebaseFirestore
 
-/// Handles "likes" on tracks between users.
-/// Structure in Firestore:
-///
-/// users/{userId}/likesReceived/{likeId}
-/// users/{userId}/likesGiven/{likeId}
-///
-/// Beide Collections enthalten im Prinzip die gleichen Felder,
-/// nur aus Sicht des jeweiligen Users.
 actor LikeApiService {
-    
+
     static let shared = LikeApiService()
-    
+
     private let db = Firestore.firestore()
-    
     private let usersCollection = "users"
-    private let sessionsCollection = "sessions"
-    
-    // MARK: - Public API
-    
-    /// Creates a like from `fromUser` to `toUser` on a specific track (with session + location context).
-    ///
-    /// - Parameters:
-    ///   - fromUser: The user who likes (current user).
-    ///   - toUser:   The user who is being liked (session owner).
-    ///   - sessionId: The session in which the track was playing.
-    ///   - track: The track that was liked.
-    ///   - sessionLocation: The location of the session at the time of the like.
-    ///   - placeLabel: Optional human readable label for the place (e.g. "Gym A").
-    ///
-    /// - Returns: A `TrackLike` representing the created like.
-    /// 
-    func likeTrack(
-        fromUser: User,
-        toUser: User,
-        sessionId: String,
+
+    // MARK: - Create Like (Broadcast)
+
+    func likeBroadcastTrack(
+        fromUser: AppUser?,
+        toUser: AppUser,
         track: Track,
         sessionLocation: LocationPoint?,
-        placeLabel: String? = nil
+        placeLabel: String? = nil,
+        message: String? = nil
     ) async throws -> TrackLike {
+
+        guard let authedUid = Auth.auth().currentUser?.uid else {
+            throw NSError(domain: "LikeApiService", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+        }
+
+        let fromUserId = fromUser?.uid ?? authedUid
+
+        guard fromUserId != toUser.uid else {
+            throw NSError(domain: "LikeApiService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Cannot like yourself"])
+        }
+
+        // ✅ IMPROVED: Always fetch complete user data from Firestore to ensure displayName + avatar are set
+        var likerUser = fromUser
         
+        // Always fetch from Firestore if:
+        // - We don't have a user object
+        // - The displayName is empty or "Unknown"
+        // - The avatarURL is missing
+        let needsFetch = likerUser == nil || 
+                        likerUser?.displayName.isEmpty == true || 
+                        likerUser?.displayName == "Unknown" ||
+                        likerUser?.avatarURL == nil
+        
+        if needsFetch {
+            print("🔄 [Like] Fetching complete user data from Firestore for uid=\(fromUserId)...")
+            do {
+                likerUser = try await fetchUserAsync(uid: fromUserId)
+                
+                // Check if fetched user still has "Unknown" as display name
+                if likerUser?.displayName == "Unknown" || likerUser?.displayName.isEmpty == true {
+                    print("⚠️ [Like] WARNING: User \(fromUserId) has incomplete profile (displayName=\(likerUser?.displayName ?? "nil"))")
+                    print("   This user should complete their profile to appear correctly in likes.")
+                } else {
+                    print("✅ [Like] Fetched user: displayName=\(likerUser?.displayName ?? "nil"), avatarURL=\(likerUser?.avatarURL ?? "nil")")
+                }
+            } catch {
+                print("❌ [Like] Failed to fetch user from Firestore: \(error.localizedDescription)")
+                // Continue with whatever data we have
+            }
+        }
+
+        // ✅ Smart avatar URL with fallback to first photo
+        let avatarURL: String? = {
+            if let avatar = likerUser?.avatarURL, !avatar.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return avatar
+            }
+            // Fallback to first photo
+            if let photos = likerUser?.photoURLs, !photos.isEmpty {
+                let firstPhoto = photos[0].trimmingCharacters(in: .whitespacesAndNewlines)
+                return firstPhoto.isEmpty ? nil : firstPhoto
+            }
+            return nil
+        }()
+
+        let receivedCollection = db.collection(usersCollection)
+            .document(toUser.uid)
+            .collection("likesReceived")
+
+        // Prevent duplicates: same liker + same track
+        let dupCheck = try await receivedCollection
+            .whereField("fromUserId", isEqualTo: fromUserId)
+            .whereField("trackId", isEqualTo: track.id)
+            .limit(to: 1)
+            .getDocuments()
+
+        if !dupCheck.documents.isEmpty {
+            // already liked -> return a local-ish model
+            return TrackLike(
+                id: dupCheck.documents.first?.documentID ?? UUID().uuidString,
+                fromUserId: fromUserId,
+                toUserId: toUser.uid,
+                trackId: track.id,
+                trackTitle: track.title,
+                trackArtist: track.artist,
+                trackAlbum: track.album,
+                trackArtworkURL: track.artworkURL?.absoluteString,
+                sessionId: nil,
+                createdAt: Date(),
+                placeLabel: placeLabel,
+                latitude: sessionLocation?.latitude,
+                longitude: sessionLocation?.longitude,
+                fromUserDisplayName: likerUser?.displayName,
+                fromUserAvatarURL: avatarURL, // ✅ Use smart fallback
+                message: message,
+                status: .pending
+            )
+        }
+
         let now = Date()
-        
-        // Firestore kann keine URL speichern → wir speichern Strings.
+
         let trackArtworkURLString = track.artworkURL?.absoluteString
-        let fromUserAvatarURLString = fromUser.avatarURL?.absoluteString
-        
+
+        let trimmedMessage: String? = {
+            let t = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : String(t.prefix(160))
+        }()
+
         let payload: [String: Any] = [
-            "fromUserId": fromUser.id,
-            "toUserId": toUser.id,
+            "fromUserId": fromUserId,
+            "toUserId": toUser.uid,
+
             "trackId": track.id,
             "trackTitle": track.title,
             "trackArtist": track.artist,
             "trackAlbum": track.album as Any,
-            "sessionId": sessionId,
+
             "createdAt": now,
             "placeLabel": placeLabel as Any,
             "latitude": sessionLocation?.latitude as Any,
             "longitude": sessionLocation?.longitude as Any,
-            
-            // Liker-Infos direkt im Like speichern
-            "fromUserDisplayName": fromUser.displayName as Any,
-            "fromUserAvatarURL": fromUserAvatarURLString as Any,
-            
-            // Track-Artwork (als String)
-            "trackArtworkURL": trackArtworkURLString as Any
+
+            // ✅ Important: store display name + avatar directly in like doc
+            "fromUserDisplayName": likerUser?.displayName as Any,
+            "fromUserAvatarURL": avatarURL as Any,
+
+            "trackArtworkURL": trackArtworkURLString as Any,
+            "sessionId": NSNull(),
+
+            "message": trimmedMessage as Any,
+            "status": TrackLike.Status.pending.rawValue
         ]
-        
-        // 1) likesReceived for the target user
-        let receivedRef = db.collection(usersCollection)
-            .document(toUser.id)
-            .collection("likesReceived")
-            .document()
-        
-        try await receivedRef.setData(payload)
-        
-        // 2) likesGiven for the liking user (gleicher Payload)
+
+        // likesReceived
+        let createdReceivedRef = receivedCollection.document()
+        try await createdReceivedRef.setData(payload)
+
+        // likesGiven mirror (owner = liker)
         let givenRef = db.collection(usersCollection)
-            .document(fromUser.id)
+            .document(fromUserId)
             .collection("likesGiven")
-            .document(receivedRef.documentID) // gleiche likeId verwenden
+            .document(createdReceivedRef.documentID)
         try await givenRef.setData(payload)
-        
-        // 3) likeCount in der Session hochzählen
-        try await incrementSessionLikeCount(sessionId: sessionId)
-        
-        // 4) Lokales Modell bauen
-        let like = TrackLike(
-            id: receivedRef.documentID,
-            fromUserId: fromUser.id,
-            toUserId: toUser.id,
+
+        return TrackLike(
+            id: createdReceivedRef.documentID,
+            fromUserId: fromUserId,
+            toUserId: toUser.uid,
             trackId: track.id,
             trackTitle: track.title,
             trackArtist: track.artist,
             trackAlbum: track.album,
             trackArtworkURL: trackArtworkURLString,
-            sessionId: sessionId,
+            sessionId: nil,
             createdAt: now,
             placeLabel: placeLabel,
             latitude: sessionLocation?.latitude,
             longitude: sessionLocation?.longitude,
-            fromUserDisplayName: fromUser.displayName,
-            fromUserAvatarURL: fromUserAvatarURLString
+            fromUserDisplayName: likerUser?.displayName,
+            fromUserAvatarURL: avatarURL, // ✅ Use smart fallback
+            message: trimmedMessage,
+            status: .pending
         )
-        
-        print("💜 Created like from \(fromUser.id) → \(toUser.id) on track \(track.title)")
-        return like
     }
-    
-    /// Fetches all likes that the given user has received (most recent first).
+
+    // MARK: - Update Like Status (both sides)
+
+    /// Updates like status on both receiver's likesReceived and sender's likesGiven.
+    func setLikeStatusReceivedOnly(
+        likeId: String,
+        toUserId: String,
+        status: TrackLike.Status
+    ) async throws {
+
+        let statusData: [String: Any] = [
+            "status": status.rawValue,
+            "respondedAt": Timestamp(date: Date())
+        ]
+
+        // Update receiver's likesReceived
+        let receivedRef = db.collection(usersCollection)
+            .document(toUserId)
+            .collection("likesReceived")
+            .document(likeId)
+
+        try await receivedRef.updateData(statusData)
+
+        // Also update sender's likesGiven mirror so they can see the status change
+        let receivedDoc = try await receivedRef.getDocument()
+        if let fromUserId = receivedDoc.data()?["fromUserId"] as? String {
+            let givenRef = db.collection(usersCollection)
+                .document(fromUserId)
+                .collection("likesGiven")
+                .document(likeId)
+            try? await givenRef.updateData(statusData)
+        }
+    }
+
+    // MARK: - Fetching
+
     func fetchLikesReceived(for userId: String) async throws -> [TrackLike] {
         let snapshot = try await db.collection(usersCollection)
             .document(userId)
             .collection("likesReceived")
             .order(by: "createdAt", descending: true)
             .getDocuments()
-        
+
         return snapshot.documents.compactMap { doc in
-            Self.decodeTrackLike(from: doc.data(), id: doc.documentID)
+            TrackLike.fromFirestore(id: doc.documentID, data: doc.data())
         }
     }
-    
-    /// Fetches all likes that the given user has given to others.
+
     func fetchLikesGiven(by userId: String) async throws -> [TrackLike] {
         let snapshot = try await db.collection(usersCollection)
             .document(userId)
             .collection("likesGiven")
             .order(by: "createdAt", descending: true)
             .getDocuments()
-        
-        return snapshot.documents.compactMap { doc in
-            Self.decodeTrackLike(from: doc.data(), id: doc.documentID)
-        }
-    }
-    
-    // MARK: - Session likeCount
-    
-    /// Erhöht den `likeCount` einer Session atomar um 1.
-    private func incrementSessionLikeCount(sessionId: String) async throws {
-        let sessionRef = db.collection(sessionsCollection).document(sessionId)
-        try await sessionRef.updateData([
-            "likeCount": FieldValue.increment(Int64(1))
-        ])
-    }
-    
-    // MARK: - Decoding helper
-    
-    private static func decodeTrackLike(from data: [String: Any], id: String) -> TrackLike? {
-        
-        guard
-            let fromUserId = data["fromUserId"] as? String,
-            let toUserId = data["toUserId"] as? String,
-            let trackId = data["trackId"] as? String,
-            let trackTitle = data["trackTitle"] as? String,
-            let trackArtist = data["trackArtist"] as? String
-        else {
-            return nil
-        }
-        
-        // createdAt handling: Timestamp oder Date
-        let createdAt: Date
-        if let ts = data["createdAt"] as? Timestamp {
-            createdAt = ts.dateValue()
-        } else if let date = data["createdAt"] as? Date {
-            createdAt = date
-        } else {
-            createdAt = Date()
-        }
-        
-        let trackAlbum = data["trackAlbum"] as? String
-        let placeLabel = data["placeLabel"] as? String
-        
-        let latitude = data["latitude"] as? Double
-        let longitude = data["longitude"] as? Double
-        
-        let fromUserDisplayName = data["fromUserDisplayName"] as? String
-        let fromUserAvatarURL = data["fromUserAvatarURL"] as? String
-        
-        let trackArtworkURL = data["trackArtworkURL"] as? String
 
-        return TrackLike(
-            id: id,
-            fromUserId: fromUserId,
-            toUserId: toUserId,
-            trackId: trackId,
-            trackTitle: trackTitle,
-            trackArtist: trackArtist,
-            trackAlbum: trackAlbum,
-            trackArtworkURL: trackArtworkURL,
-            sessionId: data["sessionId"] as? String,
-            createdAt: createdAt,
-            placeLabel: placeLabel,
-            latitude: latitude,
-            longitude: longitude,
-            fromUserDisplayName: fromUserDisplayName,
-            fromUserAvatarURL: fromUserAvatarURL
+        return snapshot.documents.compactMap { doc in
+            TrackLike.fromFirestore(id: doc.documentID, data: doc.data())
+        }
+    }
+
+    // MARK: - Helper: Fetch User
+
+    private func fetchUserAsync(uid: String) async throws -> AppUser {
+        let snapshot = try await db.collection(usersCollection).document(uid).getDocument()
+        guard let data = snapshot.data() else {
+            throw NSError(domain: "LikeApiService", code: 404, userInfo: [NSLocalizedDescriptionKey: "User \(uid) not found"])
+        }
+        return AppUser.fromFirestore(uid: uid, data: data)
+    }
+    
+    // MARK: - Enrich Likes with User Data
+    
+    /// Enriches likes with complete user data (displayName, avatarURL) if missing
+    /// This is useful for existing likes that might have incomplete user info
+    func enrichLikesWithUserData(_ likes: [TrackLike]) async -> [TrackLike] {
+        var enriched = likes
+        
+        // Find all likes that need user data
+        let userIdsNeedingFetch = Set(
+            likes.filter { like in
+                let hasNoDisplayName = like.fromUserDisplayName == nil || like.fromUserDisplayName?.isEmpty == true
+                let hasNoAvatar = like.fromUserAvatarURL == nil || like.fromUserAvatarURL?.isEmpty == true
+                return hasNoDisplayName || hasNoAvatar
+            }.map { $0.fromUserId }
         )
+        
+        guard !userIdsNeedingFetch.isEmpty else {
+            print("✅ [Like] All \(likes.count) likes already have complete user data")
+            return enriched
+        }
+        
+        print("🔄 [Like] Fetching user data for \(userIdsNeedingFetch.count) users...")
+        
+        // Fetch all needed users in parallel
+        var fetchedUsers: [String: AppUser] = [:]
+        await withTaskGroup(of: (String, AppUser?).self) { group in
+            for userId in userIdsNeedingFetch {
+                group.addTask { [self] in
+                    do {
+                        let user = try await self.fetchUserAsync(uid: userId)
+                        print("  ✅ Fetched user: \(user.displayName) (uid: \(userId))")
+                        return (userId, user)
+                    } catch {
+                        print("  ❌ Failed to fetch user \(userId): \(error.localizedDescription)")
+                        return (userId, nil)
+                    }
+                }
+            }
+            
+            for await (userId, user) in group {
+                if let user {
+                    fetchedUsers[userId] = user
+                }
+            }
+        }
+        
+        print("📊 [Like] Fetched \(fetchedUsers.count) users successfully")
+        
+        // Update likes with fetched user data
+        for i in enriched.indices {
+            let like = enriched[i]
+            if let user = fetchedUsers[like.fromUserId] {
+                enriched[i].fromUserDisplayName = user.displayName
+                
+                // ✅ Smart avatar fallback: avatarURL -> first photoURL -> nil
+                let avatarURL: String? = {
+                    if let avatar = user.avatarURL, !avatar.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        return avatar
+                    }
+                    // Fallback to first photo
+                    if let photos = user.photoURLs, !photos.isEmpty {
+                        let firstPhoto = photos[0].trimmingCharacters(in: .whitespacesAndNewlines)
+                        return firstPhoto.isEmpty ? nil : firstPhoto
+                    }
+                    return nil
+                }()
+                
+                enriched[i].fromUserAvatarURL = avatarURL
+                print("  ✨ Enriched like \(like.id): \(user.displayName) -> avatar: \(avatarURL != nil ? "✅" : "❌") (source: \(user.avatarURL != nil ? "avatarURL" : "photoURLs[0]"))")
+            } else {
+                print("  ⚠️ Could not enrich like \(like.id): user \(like.fromUserId) not found")
+            }
+        }
+        
+        print("✅ [Like] Enrichment complete: \(enriched.filter { $0.fromUserDisplayName != nil }.count)/\(enriched.count) likes have display names")
+        
+        return enriched
     }
 }
+

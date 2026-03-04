@@ -3,6 +3,8 @@ import SwiftUI
 /// Root view of the app that shows the main tab bar.
 struct MainView: View {
 
+    @StateObject private var chatBadge = ChatBadgeViewModel()
+
     var body: some View {
         TabView {
             NowPlayingView()
@@ -15,6 +17,12 @@ struct MainView: View {
                     Label("Discover", systemImage: "dot.radiowaves.left.and.right")
                 }
 
+            ChatInboxView()
+                .tabItem {
+                    Label("Chats", systemImage: "message")
+                }
+                .badge(chatBadge.unreadCount)
+
             NavigationStack {
                 ProfileView()
             }
@@ -23,6 +31,8 @@ struct MainView: View {
             }
         }
         .tint(AppColors.primary)
+        .onAppear { chatBadge.startListening() }
+        .onDisappear { chatBadge.stopListening() }
     }
 }
 

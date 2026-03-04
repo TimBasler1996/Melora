@@ -1,0 +1,58 @@
+# Architecture (MVVM)
+
+This project follows a strict MVVM architecture.
+
+## Folder structure
+Use feature-based organization:
+
+- `Features/<FeatureName>/Models`
+- `Features/<FeatureName>/ViewModels`
+- `Features/<FeatureName>/Views`
+- `Services/` (cross-feature services, e.g. Firebase wrappers)
+- `UI/` or `DesignSystem/` (shared UI components, colors, fonts, layout constants)
+
+Keep file names simple: **no "+"** in file names.
+
+## Views (SwiftUI)
+Rules:
+- Views contain UI composition only
+- Views must not call Firebase directly
+- Avoid heavy logic in view initializers
+- Use `.task` / `.onAppear` to trigger async work
+- Use `sheet` / `navigationDestination` for navigation, keep it predictable
+
+Preview safety:
+- Previews must not trigger Firebase, network, location permissions, or long async tasks
+- Use preview/mock initializers or guard with:
+  `ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"`
+
+## ViewModels
+Rules:
+- All ViewModels are `@MainActor`
+- Use `ObservableObject` + `@Published` state
+- ViewModels orchestrate services, mapping to view state
+- Do NOT start Firestore listeners in `init()`
+
+Listener lifecycle:
+- Provide explicit functions like:
+  - `startListening()`
+  - `stopListening()`
+- Start them from the view using `.task` or `.onAppear`
+- Stop them on `.onDisappear` if necessary
+
+Error handling:
+- Expose user-facing errors as `@Published var errorMessage: String?`
+- Prefer graceful fallback states over crashes
+
+## Services
+Rules:
+- Services encapsulate Firebase/Spotify/CoreLocation calls
+- Services should be reusable and testable
+- Avoid UI dependencies inside services
+- Prefer async/await APIs where possible
+- If a service uses listeners, expose them cleanly and manage lifecycle
+
+## Code quality
+- Prefer complete files over scattered diffs
+- Keep code production-ready (no "prototype hacks")
+- Keep UX calm and premium: spacing, hierarchy, typography matter

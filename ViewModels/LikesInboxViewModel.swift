@@ -14,6 +14,14 @@ final class LikesInboxViewModel: ObservableObject {
     @Published var clusters: [TrackLikesCluster] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+
+    var todayClusters: [TrackLikesCluster] {
+        clusters.filter { Calendar.current.isDateInToday($0.lastLikeAt) }
+    }
+
+    var earlierClusters: [TrackLikesCluster] {
+        clusters.filter { !Calendar.current.isDateInToday($0.lastLikeAt) }
+    }
     
     /// Wann der User die Inbox das letzte Mal gesehen hat.
     @Published var lastSeenDate: Date?
@@ -33,7 +41,24 @@ final class LikesInboxViewModel: ObservableObject {
         
         Task {
             do {
-                let likes = try await likeService.fetchLikesReceived(for: userId)
+                var likes = try await likeService.fetchLikesReceived(for: userId)
+                
+                // ✅ IMPORTANT: Enrich likes with missing user data
+                print("🔄 [Inbox] Fetched \(likes.count) likes, enriching with user data...")
+                
+                // Debug: Check what data we have before enrichment
+                for (index, like) in likes.enumerated().prefix(3) {
+                    print("  📋 Like \(index): fromUserId=\(like.fromUserId), displayName=\(like.fromUserDisplayName ?? "nil"), avatar=\(like.fromUserAvatarURL ?? "nil")")
+                }
+                
+                likes = await likeService.enrichLikesWithUserData(likes)
+                
+                // Debug: Check what data we have after enrichment
+                print("✅ [Inbox] Likes enriched, checking results...")
+                for (index, like) in likes.enumerated().prefix(3) {
+                    print("  ✨ Like \(index): fromUserId=\(like.fromUserId), displayName=\(like.fromUserDisplayName ?? "nil"), avatar=\(like.fromUserAvatarURL ?? "nil")")
+                }
+                
                 let newClusters = buildClusters(from: likes)
                 
                 self.clusters = newClusters

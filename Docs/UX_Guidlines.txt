@@ -1,0 +1,52 @@
+# UX Guidelines
+
+SocialSound should feel:
+- calm
+- premium
+- dating-app quality
+- music-first
+
+## General principles
+- Prioritize readability: key info must be visible at a glance
+- Avoid dense list UI; prefer cards and clear hierarchy
+- Use breathing room (padding and spacing)
+- Use subtle motion only (no flashy animations)
+- Avoid "developer UI" look
+
+## Profile
+Preview mode:
+- emotional and clean
+- hero image is NOT round-cropped
+- no "now playing" section in profile preview
+- Spotify profile is linked via an icon/badge, not text
+
+Edit mode:
+- functional Hinge-like editing
+- 6 photo slots in a 2x3 grid
+- small tiles
+- tap to replace, X to remove (soft delete)
+- Discard restores local snapshot without reload
+
+## Discover
+Feed:
+- large cards, but NOT full width (show scroll affordance)
+- hero photo is dominant
+- show clearly:
+  - Name + age
+  - Track title (larger)
+  - Artist (smaller)
+  - City
+  - Distance in meters
+- sort by distance ascending when possible
+
+Interactions:
+- tap card -> detail sheet
+- dismiss with X or swipe
+- after dismiss ask:
+  - not interested in song (mute track)
+  - not interested in user (mute user)
+
+Detail sheet:
+- top: Spotify-like track header (artwork + title + artist + album)
+- actions: like + optional message + send
+- bottom: profile snapshot (compact)
