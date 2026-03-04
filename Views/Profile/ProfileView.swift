@@ -25,7 +25,9 @@ struct ProfileView: View {
 
     @EnvironmentObject private var currentUserStore: CurrentUserStore
 
+    @State private var mode: Mode = .preview
     @State private var showSettings = false
+    @State private var showDiscardAlert = false
     @State private var photoPickerItems: [PhotosPickerItem?] = Array(repeating: nil, count: 6)
     @State private var avatarPickerItem: PhotosPickerItem?
     @State private var followerCount: Int?
@@ -54,7 +56,11 @@ struct ProfileView: View {
                             } else if let error = viewModel.errorMessage {
                                 errorState(error)
                             } else {
-                                profileContent
+                                if mode == .preview {
+                                    previewContent
+                                } else {
+                                    editContent
+                                }
                             }
                         }
                         .frame(width: contentWidth, alignment: .center)
@@ -65,13 +71,25 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $showSettings) { settingsSheet }
+        .alert("Discard changes?", isPresented: $showDiscardAlert) {
+            Button("Discard", role: .destructive) {
+                viewModel.discardDraft()
+                mode = .preview
+            }
+            Button("Keep Editing", role: .cancel) {}
+        } message: {
+            Text("You have unsaved edits. Discard them and return to Preview?")
+        }
         .task {
             if !isXcodePreview {
                 await viewModel.loadProfile()
-                viewModel.beginEditing()
                 await loadProfileStats()
             }
         }
+        .onChange(of: mode) { oldValue, newValue in
+            handleModeChange(oldValue: oldValue, newValue: newValue)
+        }
+        .animation(.easeInOut(duration: 0.18), value: mode)
     }
 
     // MARK: - Header
@@ -103,7 +121,7 @@ struct ProfileView: View {
                     .font(AppFonts.title())
                     .foregroundColor(AppColors.primaryText)
 
-                Text("Edit your profile details")
+                Text(mode == .preview ? "This is how others see you" : "Edit your profile details")
                     .font(AppFonts.footnote())
                     .foregroundColor(AppColors.secondaryText)
             }
@@ -141,12 +159,43 @@ struct ProfileView: View {
         .padding(.top, 12)
     }
 
-    // MARK: - Profile Content (stats + edit)
+    // MARK: - Preview Content
+
+    private var previewContent: some View {
+        Group {
+            statsSection
+
+            if let profile = viewModel.profile {
+                let previewData = ProfilePreviewData(
+                    heroPhotoURL: profile.displayHeroPhotoURL,
+                    additionalPhotoURLs: Array(profile.photoURLs.dropFirst())
+                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty },
+                    fullName: profile.fullName,
+                    age: profile.age,
+                    city: profile.city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : profile.city,
+                    gender: profile.gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : profile.gender,
+                    birthday: profile.birthday,
+                    spotifyId: profile.spotifyId,
+                    musicTaste: nil,
+                    lookingFor: profile.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? profile.lookingFor : nil,
+                    followerCount: followerCount,
+                    broadcastMinutes: currentUserStore.user?.broadcastMinutesTotal,
+                    likesReceivedCount: likesReceivedCount
+                )
+                SharedProfilePreviewView(data: previewData)
+            } else {
+                Text("No profile data available")
+                    .font(AppFonts.body())
+                    .foregroundColor(AppColors.secondaryText)
+            }
+        }
+    }
+
+    // MARK: - Edit Content
 
     @ViewBuilder
-    private var profileContent: some View {
-        statsSection
-
+    private var editContent: some View {
         if let draft = viewModel.draft {
             VStack(spacing: 18) {
                 editHeader(draft: draft)
@@ -156,7 +205,8 @@ struct ProfileView: View {
                 // Save button
                 Button {
                     Task {
-                        await viewModel.saveDraftChanges()
+                        let didSave = await viewModel.saveDraftChanges()
+                        if didSave { mode = .preview }
                     }
                 } label: {
                     HStack(spacing: 10) {
@@ -176,6 +226,24 @@ struct ProfileView: View {
                     )
                     .foregroundColor(.white)
                     .shadow(color: viewModel.hasDraftChanges ? AppColors.primary.opacity(0.3) : .clear, radius: 12, x: 0, y: 6)
+                }
+                .disabled(viewModel.isSaving || !viewModel.hasDraftChanges)
+
+                // Discard button
+                Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    viewModel.discardDraft()
+                    mode = .preview
+                } label: {
+                    Text("Discard Changes")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                                .fill(AppColors.tintedBackground.opacity(0.6))
+                        )
+                        .foregroundColor(AppColors.primaryText.opacity(viewModel.hasDraftChanges ? 1.0 : 0.5))
                 }
                 .disabled(viewModel.isSaving || !viewModel.hasDraftChanges)
 
