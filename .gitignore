@@ -60,3 +60,5 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+firebase-functions/node_modules/
+firebase-functions-2/node_modules/
