@@ -20,6 +20,7 @@ final class DiscoverService {
         let trackArtworkURL: String?
         let spotifyTrackURL: String?
         let broadcastedAt: Date
+        let updatedAt: Date?
         let location: LocationPoint?
     }
 
@@ -158,6 +159,12 @@ final class DiscoverService {
             return Date()
         }()
 
+        let updatedAt: Date? = {
+            if let ts = data["updatedAt"] as? Timestamp { return ts.dateValue() }
+            if let date = data["updatedAt"] as? Date { return date }
+            return nil
+        }()
+
         let location: LocationPoint? = {
             if let geopoint = data["location"] as? GeoPoint {
                 return LocationPoint(latitude: geopoint.latitude, longitude: geopoint.longitude)
@@ -179,6 +186,7 @@ final class DiscoverService {
             trackArtworkURL: trackArtworkURL,
             spotifyTrackURL: spotifyTrackURL,
             broadcastedAt: broadcastedAt,
+            updatedAt: updatedAt,
             location: location
         )
     }

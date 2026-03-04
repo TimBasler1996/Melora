@@ -273,6 +273,8 @@ final class BroadcastManager: ObservableObject {
             payload["longitude"] = location.longitude
         }
 
+        payload["updatedAt"] = Timestamp(date: Date())
+
         if isNew {
             payload["broadcastedAt"] = Timestamp(date: Date())
         }
