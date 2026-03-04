@@ -1,4 +1,5 @@
 import UIKit
+import UserNotifications
 import FirebaseMessaging
 import FirebaseAuth
 import FirebaseFirestore
@@ -6,15 +7,45 @@ import FirebaseFirestore
 /// Handles APNs device token registration and FCM token refresh.
 /// FCM tokens are stored in Firestore at users/{uid}/fcmToken so Cloud Functions
 /// can look them up when sending push notifications.
-class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
 
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // Set notification delegate and request permission
+        UNUserNotificationCenter.current().delegate = self
+        requestNotificationPermission(application)
+
         Messaging.messaging().delegate = self
-        application.registerForRemoteNotifications()
         return true
+    }
+
+    private func requestNotificationPermission(_ application: UIApplication) {
+        UNUserNotificationCenter.current().requestAuthorization(
+            options: [.alert, .badge, .sound]
+        ) { granted, error in
+            if let error {
+                print("❌ [Notifications] Permission error: \(error.localizedDescription)")
+            } else {
+                print("📱 [Notifications] Permission granted: \(granted)")
+            }
+            if granted {
+                DispatchQueue.main.async {
+                    application.registerForRemoteNotifications()
+                }
+            }
+        }
+    }
+
+    // MARK: - Foreground notification display
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .badge])
     }
 
     // MARK: - APNs token forwarding
