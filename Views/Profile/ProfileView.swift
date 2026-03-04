@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import UIKit
+import FirebaseAuth
 
 struct ProfileView: View {
 
@@ -23,11 +24,15 @@ struct ProfileView: View {
         _viewModel = StateObject(wrappedValue: ProfileViewModel())
     }
 
+    @EnvironmentObject private var currentUserStore: CurrentUserStore
+
     @State private var mode: Mode = .preview
     @State private var showSettings = false
     @State private var photoPickerItems: [PhotosPickerItem?] = Array(repeating: nil, count: 6)
     @State private var avatarPickerItem: PhotosPickerItem?
     @State private var showDiscardAlert = false
+    @State private var followerCount: Int?
+    @State private var likesReceivedCount: Int?
 
     private let genderOptions = ["Female", "Male", "Non-binary", "Other"]
     private let avatarSize: CGFloat = 84
@@ -88,6 +93,7 @@ struct ProfileView: View {
         .task {
             if !isXcodePreview {
                 await viewModel.loadProfile()
+                await loadProfileStats()
             }
         }
         .onChange(of: mode) { oldValue, newValue in
@@ -131,7 +137,22 @@ struct ProfileView: View {
     private var previewContent: some View {
         Group {
             if let profile = viewModel.profile {
-                let previewData = ProfilePreviewData.from(userProfile: profile)
+                let previewData = ProfilePreviewData(
+                    heroPhotoURL: profile.displayHeroPhotoURL,
+                    additionalPhotoURLs: Array(profile.photoURLs.dropFirst())
+                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty },
+                    fullName: profile.fullName,
+                    age: profile.age,
+                    city: profile.city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : profile.city,
+                    gender: profile.gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : profile.gender,
+                    birthday: profile.birthday,
+                    spotifyId: profile.spotifyId,
+                    musicTaste: nil,
+                    followerCount: followerCount,
+                    broadcastMinutes: currentUserStore.user?.broadcastMinutesTotal,
+                    likesReceivedCount: likesReceivedCount
+                )
                 SharedProfilePreviewView(data: previewData)
             } else {
                 Text("No profile data available")
@@ -640,6 +661,22 @@ struct ProfileView: View {
 
     private var minimumDate: Date {
         Calendar.current.date(from: DateComponents(year: 1900, month: 1, day: 1)) ?? .distantPast
+    }
+
+    // MARK: - Stats Loading
+
+    private func loadProfileStats() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+
+        // Fetch follower count
+        if let followers = try? await FollowApiService.shared.fetchFollowerIds(of: uid) {
+            followerCount = followers.count
+        }
+
+        // Fetch likes received count
+        if let likes = try? await LikeApiService.shared.fetchLikesReceived(for: uid) {
+            likesReceivedCount = likes.count
+        }
     }
 
     private var cardBackground: some View {

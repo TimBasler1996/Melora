@@ -6,6 +6,7 @@ struct OtherUserProfileView: View {
     @State private var isFollowing: Bool = false
     @State private var isLoadingFollow: Bool = true
     @State private var followerCount: Int = 0
+    @State private var likesReceivedCount: Int = 0
 
     var body: some View {
         ZStack {
@@ -33,7 +34,7 @@ struct OtherUserProfileView: View {
                         musicTaste: user.musicTaste?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? user.musicTaste : nil,
                         followerCount: followerCount,
                         broadcastMinutes: user.broadcastMinutesTotal,
-                        likesReceivedCount: nil
+                        likesReceivedCount: likesReceivedCount
                     )
 
                     // About section (reusing shared pattern)
@@ -53,6 +54,8 @@ struct OtherUserProfileView: View {
             isLoadingFollow = false
             let followers = (try? await FollowApiService.shared.fetchFollowerIds(of: user.uid)) ?? []
             followerCount = followers.count
+            let likes = (try? await LikeApiService.shared.fetchLikesReceived(for: user.uid)) ?? []
+            likesReceivedCount = likes.count
         }
     }
 
