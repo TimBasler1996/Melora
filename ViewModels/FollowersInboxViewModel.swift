@@ -17,8 +17,36 @@ final class FollowersInboxViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
+    private let lastSeenKey = "FollowersInbox_lastSeenDate"
+    @Published var lastSeenDate: Date?
+
+    var newFollowers: [FollowerEntry] {
+        guard let seen = lastSeenDate else { return followers }
+        return followers.filter { $0.followedAt > seen }
+    }
+
+    var todayFollowers: [FollowerEntry] {
+        newFollowers.filter { Calendar.current.isDateInToday($0.followedAt) }
+    }
+
+    var earlierFollowers: [FollowerEntry] {
+        newFollowers.filter { !Calendar.current.isDateInToday($0.followedAt) }
+    }
+
+    func markAllAsSeen() {
+        let now = Date()
+        lastSeenDate = now
+        UserDefaults.standard.set(now, forKey: lastSeenKey)
+    }
+
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
+
+    init() {
+        if let stored = UserDefaults.standard.object(forKey: lastSeenKey) as? Date {
+            lastSeenDate = stored
+        }
+    }
 
     func startListening() {
         stopListening()

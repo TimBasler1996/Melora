@@ -141,18 +141,23 @@ struct DiscoverView: View {
             if viewModel.discoverMode == .friends {
                 friendsEmptyState
             } else {
-                VStack(spacing: 10) {
+                VStack(spacing: 16) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.system(size: 44))
+                        .foregroundColor(.white.opacity(0.3))
+
                     Text("No one is live right now")
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
 
                     Text("When someone nearby starts broadcasting, they'll show up here.")
                         .font(AppFonts.footnote())
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 28)
                 }
-                .padding(.top, 40)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, 60)
             }
         } else {
             ScrollView {

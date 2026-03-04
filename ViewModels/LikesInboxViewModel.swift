@@ -14,6 +14,14 @@ final class LikesInboxViewModel: ObservableObject {
     @Published var clusters: [TrackLikesCluster] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+
+    var todayClusters: [TrackLikesCluster] {
+        clusters.filter { Calendar.current.isDateInToday($0.lastLikeAt) }
+    }
+
+    var earlierClusters: [TrackLikesCluster] {
+        clusters.filter { !Calendar.current.isDateInToday($0.lastLikeAt) }
+    }
     
     /// Wann der User die Inbox das letzte Mal gesehen hat.
     @Published var lastSeenDate: Date?

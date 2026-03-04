@@ -30,6 +30,20 @@ final class ChatInboxViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
+    var todayRows: [ChatInboxRow] {
+        rows.filter { row in
+            guard let date = row.lastMessageAt ?? row.updatedAt else { return false }
+            return Calendar.current.isDateInToday(date)
+        }
+    }
+
+    var earlierRows: [ChatInboxRow] {
+        rows.filter { row in
+            guard let date = row.lastMessageAt ?? row.updatedAt else { return true }
+            return !Calendar.current.isDateInToday(date)
+        }
+    }
+
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
 
