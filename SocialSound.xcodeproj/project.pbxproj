@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1B2C3D42F3000000000FCM1 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D32F3000000000FCM1 /* FirebaseMessaging */; };
 		22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867F3432B825422BBA8DB009 /* DiscoverCardView.swift */; };
 		5BE3C3AF6AB442B096226779 /* DiscoverModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E7962926804ED6997F6667 /* DiscoverModels.swift */; };
 		66DB9590C4A94D7BB7C2DABE /* DiscoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E051118A634A34AB907992 /* DiscoverViewModel.swift */; };
@@ -38,6 +37,7 @@
 		7576DF642F1835050034BF2A /* ProfilePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7576DF632F1835050034BF2A /* ProfilePreviewView.swift */; };
 		7576DF662F1836BE0034BF2A /* ProfileChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7576DF652F1836BE0034BF2A /* ProfileChip.swift */; };
 		757B182E2EFEF8D500801991 /* TrackLikesClusterRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */; };
+		7580E7932F587F8A005A648C /* BlockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7580E7922F587F8A005A648C /* BlockService.swift */; };
 		75834A802F091CC0008C51F8 /* BroadcastToggleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */; };
 		75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */; };
 		75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */; };
@@ -96,6 +96,9 @@
 		75DD8CA82F2136A000D60202 /* UI_UX_IMPROVEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 75DD8CA72F2136A000D60202 /* UI_UX_IMPROVEMENTS.md */; };
 		75DDECAE2F3E3FE1009426B5 /* FollowApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DDECAD2F3E3FE1009426B5 /* FollowApiService.swift */; };
 		75EAD1672F213ECC00588C7D /* TrackLikesDetailView_Final.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75EAD1662F213ECC00588C7D /* TrackLikesDetailView_Final.swift */; };
+		75F1A0022F5B000100ABC001 /* ChatBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F1A0012F5B000100ABC001 /* ChatBadgeViewModel.swift */; };
+		75F1A0042F5B000100ABC002 /* FollowersInboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F1A0032F5B000100ABC002 /* FollowersInboxViewModel.swift */; };
+		75F1A0062F5B000100ABC003 /* SettingsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F1A0052F5B000100ABC003 /* SettingsContentView.swift */; };
 		76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A02F12345600112233 /* OnboardingStateManager.swift */; };
 		76B0C1A42F12345600112233 /* OnboardingFlowPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */; };
 		76B0C1A72F12345600112233 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1A62F12345600112233 /* OnboardingViewModel.swift */; };
@@ -108,19 +111,17 @@
 		79A1C0072F30000300112233 /* AvatarCropperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0082F30000300112233 /* AvatarCropperView.swift */; };
 		79A1C0092F30000300112233 /* AvatarPhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00A2F30000300112233 /* AvatarPhotoCard.swift */; };
 		79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00C2F30000300112233 /* PhotoCard.swift */; };
+		7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */; };
+		7A2B2C2D3E4F5A6B7C8D9E00 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */; };
+		A1B2C3D42F3000000000FCM1 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D32F3000000000FCM1 /* FirebaseMessaging */; };
 		A1C2D3E42F60000100APDLG1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3E32F60000100APDLG1 /* AppDelegate.swift */; };
 		A1C2D3E62F60000100LKNTF1 /* LikeNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3E52F60000100LKNTF1 /* LikeNotificationService.swift */; };
 		A1C2D3E82F60000100BCNTF1 /* BroadcastNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3E72F60000100BCNTF1 /* BroadcastNotificationService.swift */; };
 		A1C2D3EA2F60000100PHGRD1 /* PhotoGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3E92F60000100PHGRD1 /* PhotoGridView.swift */; };
 		A1C2D3EC2F60000100SPLNK1 /* SpotifyLinkCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3EB2F60000100SPLNK1 /* SpotifyLinkCard.swift */; };
-		7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */; };
-		7A2B2C2D3E4F5A6B7C8D9E00 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */; };
 		CCCEEE84C08D478CBD670188 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF916ADE61D344A28E4A3266 /* DiscoverView.swift */; };
 		E6D61480FDDD4862A5606347 /* DiscoverDetailSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */; };
 		FF0A5E9459D24E7A8705F315 /* DiscoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */; };
-		75F1A0022F5B000100ABC001 /* ChatBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F1A0012F5B000100ABC001 /* ChatBadgeViewModel.swift */; };
-		75F1A0042F5B000100ABC002 /* FollowersInboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F1A0032F5B000100ABC002 /* FollowersInboxViewModel.swift */; };
-		75F1A0062F5B000100ABC003 /* SettingsContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F1A0052F5B000100ABC003 /* SettingsContentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -153,6 +154,7 @@
 		7576DF632F1835050034BF2A /* ProfilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePreviewView.swift; sourceTree = "<group>"; };
 		7576DF652F1836BE0034BF2A /* ProfileChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileChip.swift; sourceTree = "<group>"; };
 		757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesClusterRowView.swift; sourceTree = "<group>"; };
+		7580E7922F587F8A005A648C /* BlockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockService.swift; sourceTree = "<group>"; };
 		75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastToggleCard.swift; sourceTree = "<group>"; };
 		75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesBadgeViewModel.swift; sourceTree = "<group>"; };
 		75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxButton.swift; sourceTree = "<group>"; };
@@ -215,6 +217,9 @@
 		75DD8CA72F2136A000D60202 /* UI_UX_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UI_UX_IMPROVEMENTS.md; sourceTree = "<group>"; };
 		75DDECAD2F3E3FE1009426B5 /* FollowApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowApiService.swift; sourceTree = "<group>"; };
 		75EAD1662F213ECC00588C7D /* TrackLikesDetailView_Final.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesDetailView_Final.swift; sourceTree = "<group>"; };
+		75F1A0012F5B000100ABC001 /* ChatBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBadgeViewModel.swift; sourceTree = "<group>"; };
+		75F1A0032F5B000100ABC002 /* FollowersInboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowersInboxViewModel.swift; sourceTree = "<group>"; };
+		75F1A0052F5B000100ABC003 /* SettingsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsContentView.swift; sourceTree = "<group>"; };
 		76B0C1A02F12345600112233 /* OnboardingStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStateManager.swift; sourceTree = "<group>"; };
 		76B0C1A32F12345600112233 /* OnboardingFlowPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowPlaceholderView.swift; sourceTree = "<group>"; };
 		76B0C1A62F12345600112233 /* OnboardingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingViewModel.swift; sourceTree = "<group>"; };
@@ -230,19 +235,16 @@
 		7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
 		867F3432B825422BBA8DB009 /* DiscoverCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverCardView.swift; sourceTree = "<group>"; };
-		C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverDetailSheetView.swift; sourceTree = "<group>"; };
-		C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverService.swift; sourceTree = "<group>"; };
-		CF916ADE61D344A28E4A3266 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
-		E7E051118A634A34AB907992 /* DiscoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverViewModel.swift; sourceTree = "<group>"; };
-		F5E7962926804ED6997F6667 /* DiscoverModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverModels.swift; sourceTree = "<group>"; };
-		75F1A0012F5B000100ABC001 /* ChatBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatBadgeViewModel.swift; sourceTree = "<group>"; };
-		75F1A0032F5B000100ABC002 /* FollowersInboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowersInboxViewModel.swift; sourceTree = "<group>"; };
-		75F1A0052F5B000100ABC003 /* SettingsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsContentView.swift; sourceTree = "<group>"; };
 		A1C2D3E32F60000100APDLG1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A1C2D3E52F60000100LKNTF1 /* LikeNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeNotificationService.swift; sourceTree = "<group>"; };
 		A1C2D3E72F60000100BCNTF1 /* BroadcastNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastNotificationService.swift; sourceTree = "<group>"; };
 		A1C2D3E92F60000100PHGRD1 /* PhotoGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGridView.swift; sourceTree = "<group>"; };
 		A1C2D3EB2F60000100SPLNK1 /* SpotifyLinkCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyLinkCard.swift; sourceTree = "<group>"; };
+		C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverDetailSheetView.swift; sourceTree = "<group>"; };
+		C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverService.swift; sourceTree = "<group>"; };
+		CF916ADE61D344A28E4A3266 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
+		E7E051118A634A34AB907992 /* DiscoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverViewModel.swift; sourceTree = "<group>"; };
+		F5E7962926804ED6997F6667 /* DiscoverModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -332,6 +334,7 @@
 		759F7AD22EC779740012A549 = {
 			isa = PBXGroup;
 			children = (
+				7580E7922F587F8A005A648C /* BlockService.swift */,
 				755D06AD2F2D077D00BD1112 /* Assets.xcassets */,
 				7576DF432F18036A0034BF2A /* Readme.txt */,
 				759F7B222EC79EC30012A549 /* GoogleService-Info.plist */,
@@ -770,6 +773,7 @@
 				759F7B1F2EC7974A0012A549 /* NearbyViewModel.swift in Sources */,
 				75A174252ED107AF00CEB48F /* SpotifyConnectionSection.swift in Sources */,
 				75A174082EC8B0E400CEB48F /* UserApiService.swift in Sources */,
+				7580E7932F587F8A005A648C /* BlockService.swift in Sources */,
 				759F7ADF2EC779740012A549 /* SocialSoundApp.swift in Sources */,
 				75A174122ECBB68900CEB48F /* User.swift in Sources */,
 				75A1741F2ECFAD0100CEB48F /* SpotifyPlaybackError.swift in Sources */,
