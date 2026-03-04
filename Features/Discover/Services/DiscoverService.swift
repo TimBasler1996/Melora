@@ -41,6 +41,34 @@ final class DiscoverService {
         }
     }
 
+    /// Listens only for newly added broadcasts (ignores initial snapshot and modifications).
+    func listenToNewBroadcasts(
+        onNew: @escaping (Result<[BroadcastRecord], Error>) -> Void
+    ) -> ListenerRegistration {
+        var isFirstSnapshot = true
+        let query = db.collection(broadcastsCollection)
+        return query.addSnapshotListener { snapshot, error in
+            if let error {
+                onNew(.failure(error))
+                return
+            }
+            guard let snapshot else { return }
+
+            if isFirstSnapshot {
+                isFirstSnapshot = false
+                return
+            }
+
+            let newRecords = snapshot.documentChanges
+                .filter { $0.type == .added }
+                .compactMap { Self.broadcastRecord(from: $0.document) }
+
+            if !newRecords.isEmpty {
+                onNew(.success(newRecords))
+            }
+        }
+    }
+
     func fetchDiscoverUser(userId: String) async throws -> DiscoverUser? {
         let snapshot = try await db.collection(usersCollection).document(userId).getDocument()
         guard let data = snapshot.data() else { return nil }
