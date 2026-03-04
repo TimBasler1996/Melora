@@ -7,6 +7,8 @@ struct OtherUserProfileView: View {
     @State private var isLoadingFollow: Bool = true
     @State private var followerCount: Int = 0
     @State private var likesReceivedCount: Int = 0
+    @State private var showBlockConfirm = false
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
@@ -50,6 +52,32 @@ struct OtherUserProfileView: View {
         }
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button(role: .destructive) {
+                        showBlockConfirm = true
+                    } label: {
+                        Label("Block User", systemImage: "hand.raised")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+            }
+        }
+        .confirmationDialog("Block this user?", isPresented: $showBlockConfirm, titleVisibility: .visible) {
+            Button("Block User", role: .destructive) {
+                Task {
+                    try? await BlockService.shared.blockUser(userId: user.uid)
+                    dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("They won't appear in your Discover, Chats, or Likes.")
+        }
         .task {
             isFollowing = (try? await FollowApiService.shared.isFollowing(userId: user.uid)) ?? false
             isLoadingFollow = false

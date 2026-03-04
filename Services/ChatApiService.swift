@@ -135,6 +135,14 @@ actor ChatApiService {
         )
     }
 
+    // MARK: - Delete Conversation
+
+    func deleteConversation(conversationId: String) async throws {
+        let convoRef = db.collection(conversationsCollection).document(conversationId)
+        try await convoRef.delete()
+        print("✅ [Chat] deleted conversation \(conversationId)")
+    }
+
     // MARK: - Send Message (Discover Like Flow)
 
     func sendMessage(

@@ -11,6 +11,8 @@ struct LikesInboxView: View {
     @StateObject private var vm = LikesInboxViewModel()
     @StateObject private var followersVM = FollowersInboxViewModel()
     @State private var selectedTab: InboxTab = .likes
+    @State private var showEarlierLikes = false
+    @State private var showEarlierFollowers = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -158,7 +160,12 @@ struct LikesInboxView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    if !vm.todayClusters.isEmpty {
+                    if vm.todayClusters.isEmpty {
+                        todayEmptyMessage(
+                            icon: "heart",
+                            text: "No likes received today yet — go broadcast something!"
+                        )
+                    } else {
                         sectionHeader("Today")
                         ForEach(vm.todayClusters) { cluster in
                             NavigationLink {
@@ -170,15 +177,22 @@ struct LikesInboxView: View {
                         }
                     }
                     if !vm.earlierClusters.isEmpty {
-                        sectionHeader("Earlier")
-                        ForEach(vm.earlierClusters) { cluster in
-                            NavigationLink {
-                                TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
-                            } label: {
-                                ModernTrackLikesClusterRow(cluster: cluster)
+                        DisclosureGroup(isExpanded: $showEarlierLikes) {
+                            ForEach(vm.earlierClusters) { cluster in
+                                NavigationLink {
+                                    TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
+                                } label: {
+                                    ModernTrackLikesClusterRow(cluster: cluster)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
+                        } label: {
+                            Text("Earlier")
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
                         }
+                        .tint(.white.opacity(0.5))
+                        .padding(.top, 8)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -189,7 +203,7 @@ struct LikesInboxView: View {
         }
     }
 
-    // MARK: - Section Header
+    // MARK: - Helpers
 
     private func sectionHeader(_ title: String) -> some View {
         HStack {
@@ -198,7 +212,19 @@ struct LikesInboxView: View {
                 .foregroundColor(.white.opacity(0.5))
             Spacer()
         }
-        .padding(.top, title == "Earlier" ? 8 : 0)
+    }
+
+    private func todayEmptyMessage(icon: String, text: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.white.opacity(0.3))
+            Text(text)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundColor(.white.opacity(0.5))
+        }
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Followers Content
@@ -242,17 +268,29 @@ struct LikesInboxView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    if !followersVM.todayFollowers.isEmpty {
+                    if followersVM.todayFollowers.isEmpty {
+                        todayEmptyMessage(
+                            icon: "person.2",
+                            text: "No new followers today"
+                        )
+                    } else {
                         sectionHeader("Today")
                         ForEach(followersVM.todayFollowers) { follower in
                             FollowerRowView(follower: follower)
                         }
                     }
                     if !followersVM.earlierFollowers.isEmpty {
-                        sectionHeader("Earlier")
-                        ForEach(followersVM.earlierFollowers) { follower in
-                            FollowerRowView(follower: follower)
+                        DisclosureGroup(isExpanded: $showEarlierFollowers) {
+                            ForEach(followersVM.earlierFollowers) { follower in
+                                FollowerRowView(follower: follower)
+                            }
+                        } label: {
+                            Text("Earlier")
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
                         }
+                        .tint(.white.opacity(0.5))
+                        .padding(.top, 8)
                     }
                 }
                 .padding(.horizontal, 20)

@@ -68,8 +68,11 @@ struct DiscoverView: View {
                     Button("Not interested in this song") {
                         viewModel.muteTrack(for: target)
                     }
-                    Button("Not interested in this user", role: .destructive) {
+                    Button("Not interested in this user") {
                         viewModel.muteUser(for: target)
+                    }
+                    Button("Block this user", role: .destructive) {
+                        viewModel.blockUser(for: target)
                     }
                 }
                 Button("Cancel", role: .cancel) {

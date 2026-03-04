@@ -11,6 +11,8 @@ final class ChatViewModel: ObservableObject {
 
     @Published var draft: String = ""
     @Published var isSending: Bool = false
+    @Published var otherUserId: String?
+    @Published var isFollowingOther: Bool = false
 
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
@@ -31,6 +33,15 @@ final class ChatViewModel: ObservableObject {
                     self.errorMessage = "Conversation not found."
                     print("❌ [Chat] conversation does not exist:", conversationId)
                     return
+                }
+
+                // Extract other user ID
+                if let myId = Auth.auth().currentUser?.uid,
+                   let participants = convoSnap.data()?["participantIds"] as? [String] {
+                    self.otherUserId = participants.first(where: { $0 != myId })
+                    if let otherId = self.otherUserId {
+                        self.isFollowingOther = (try? await FollowApiService.shared.isFollowing(userId: otherId)) ?? false
+                    }
                 }
 
                 // ✅ Now start listening to messages (rules can now resolve get(conversation))
@@ -78,6 +89,38 @@ final class ChatViewModel: ObservableObject {
             ])
         } catch {
             print("❌ [Chat] markAsRead failed:", error.localizedDescription)
+        }
+    }
+
+    func deleteConversation(conversationId: String) async {
+        do {
+            try await ChatApiService.shared.deleteConversation(conversationId: conversationId)
+        } catch {
+            print("❌ [Chat] delete failed:", error.localizedDescription)
+        }
+    }
+
+    func blockOtherUser() async {
+        guard let otherId = otherUserId else { return }
+        do {
+            try await BlockService.shared.blockUser(userId: otherId)
+        } catch {
+            print("❌ [Chat] block failed:", error.localizedDescription)
+        }
+    }
+
+    func toggleFollow() async {
+        guard let otherId = otherUserId else { return }
+        do {
+            if isFollowingOther {
+                try await FollowApiService.shared.unfollow(userId: otherId)
+                isFollowingOther = false
+            } else {
+                try await FollowApiService.shared.follow(userId: otherId)
+                isFollowingOther = true
+            }
+        } catch {
+            print("❌ [Chat] follow toggle failed:", error.localizedDescription)
         }
     }
 
