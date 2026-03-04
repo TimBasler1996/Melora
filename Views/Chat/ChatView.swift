@@ -152,8 +152,8 @@ private struct ChatBubble: View {
                         trackId: trackId,
                         title: "Spotify Track",
                         artist: "Tap to open",
-                        album: nil,
-                        artworkURL: nil
+                        album: String?.none,
+                        artworkURL: URL?.none
                     )
                     .padding(.top, 4)
                 }
