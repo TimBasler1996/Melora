@@ -38,6 +38,7 @@
 		7576DF662F1836BE0034BF2A /* ProfileChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7576DF652F1836BE0034BF2A /* ProfileChip.swift */; };
 		757B182E2EFEF8D500801991 /* TrackLikesClusterRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */; };
 		7580E7932F587F8A005A648C /* BlockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7580E7922F587F8A005A648C /* BlockService.swift */; };
+		7580E7952F5888CC005A648C /* FollowersListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7580E7942F5888CC005A648C /* FollowersListView.swift */; };
 		75834A802F091CC0008C51F8 /* BroadcastToggleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */; };
 		75834A822F0C2CD0008C51F8 /* LikesBadgeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */; };
 		75834A842F0C2CE7008C51F8 /* LikesInboxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */; };
@@ -155,6 +156,7 @@
 		7576DF652F1836BE0034BF2A /* ProfileChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileChip.swift; sourceTree = "<group>"; };
 		757B182D2EFEF8D500801991 /* TrackLikesClusterRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLikesClusterRowView.swift; sourceTree = "<group>"; };
 		7580E7922F587F8A005A648C /* BlockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockService.swift; sourceTree = "<group>"; };
+		7580E7942F5888CC005A648C /* FollowersListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowersListView.swift; sourceTree = "<group>"; };
 		75834A7F2F091CC0008C51F8 /* BroadcastToggleCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastToggleCard.swift; sourceTree = "<group>"; };
 		75834A812F0C2CD0008C51F8 /* LikesBadgeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesBadgeViewModel.swift; sourceTree = "<group>"; };
 		75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikesInboxButton.swift; sourceTree = "<group>"; };
@@ -334,6 +336,7 @@
 		759F7AD22EC779740012A549 = {
 			isa = PBXGroup;
 			children = (
+				7580E7942F5888CC005A648C /* FollowersListView.swift */,
 				7580E7922F587F8A005A648C /* BlockService.swift */,
 				755D06AD2F2D077D00BD1112 /* Assets.xcassets */,
 				7576DF432F18036A0034BF2A /* Readme.txt */,
@@ -768,6 +771,7 @@
 				CCCEEE84C08D478CBD670188 /* DiscoverView.swift in Sources */,
 				7556B7FE2F2CADF400DA2EE8 /* UserProfilePreviewView.swift in Sources */,
 				E6D61480FDDD4862A5606347 /* DiscoverDetailSheetView.swift in Sources */,
+				7580E7952F5888CC005A648C /* FollowersListView.swift in Sources */,
 				FF0A5E9459D24E7A8705F315 /* DiscoverService.swift in Sources */,
 				75A174182ECE548000CEB48F /* OtherUserProfileView.swift in Sources */,
 				759F7B1F2EC7974A0012A549 /* NearbyViewModel.swift in Sources */,
