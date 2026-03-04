@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "socialsound-5fdd9"
-  }
+    "default": "socialsound-5fdd9",
+    "staging": "socialsound-5fdd9"
+  },
+  "targets": {},
+  "etags": {}
 }

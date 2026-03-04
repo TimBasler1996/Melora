@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1B2C3D42F3000000000FCM1 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D32F3000000000FCM1 /* FirebaseMessaging */; };
 		22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867F3432B825422BBA8DB009 /* DiscoverCardView.swift */; };
 		5BE3C3AF6AB442B096226779 /* DiscoverModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E7962926804ED6997F6667 /* DiscoverModels.swift */; };
 		66DB9590C4A94D7BB7C2DABE /* DiscoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E051118A634A34AB907992 /* DiscoverViewModel.swift */; };
@@ -106,6 +105,7 @@
 		79A1C00B2F30000300112233 /* PhotoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C00C2F30000300112233 /* PhotoCard.swift */; };
 		7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */; };
 		7A2B2C2D3E4F5A6B7C8D9E00 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */; };
+		A1B2C3D42F3000000000FCM1 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D32F3000000000FCM1 /* FirebaseMessaging */; };
 		CCCEEE84C08D478CBD670188 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF916ADE61D344A28E4A3266 /* DiscoverView.swift */; };
 		E6D61480FDDD4862A5606347 /* DiscoverDetailSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CB947EB8574FFABB29FE28 /* DiscoverDetailSheetView.swift */; };
 		FF0A5E9459D24E7A8705F315 /* DiscoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5AC8ABBA47D4526A6C59012 /* DiscoverService.swift */; };
@@ -117,6 +117,7 @@
 		750786A02F584341005285EB /* SpotifyLinkCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyLinkCard.swift; sourceTree = "<group>"; };
 		750786C22F5851E4005285EB /* PhotoGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoGridView.swift; sourceTree = "<group>"; };
 		750786C32F5851E4005285EB /* SpotifyLinkCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyLinkCard.swift; sourceTree = "<group>"; };
+		750786D02F585CC1005285EB /* SocialSound.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SocialSound.entitlements; sourceTree = "<group>"; };
 		753AD78B2F2CC12500521CF9 /* SharedProfilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedProfilePreviewView.swift; sourceTree = "<group>"; };
 		753AD78D2F2CC1A800521CF9 /* PROFILE_REFACTORING_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROFILE_REFACTORING_SUMMARY.md; sourceTree = "<group>"; };
 		753AD78F2F2CC3DF00521CF9 /* PROFILE_UI_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROFILE_UI_IMPROVEMENTS.md; sourceTree = "<group>"; };
@@ -329,6 +330,7 @@
 		759F7AD22EC779740012A549 = {
 			isa = PBXGroup;
 			children = (
+				750786D02F585CC1005285EB /* SocialSound.entitlements */,
 				755D06AD2F2D077D00BD1112 /* Assets.xcassets */,
 				7576DF432F18036A0034BF2A /* Readme.txt */,
 				759F7B222EC79EC30012A549 /* GoogleService-Info.plist */,
@@ -901,6 +903,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SocialSound.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -934,6 +937,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SocialSound.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
