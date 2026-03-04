@@ -5,12 +5,6 @@ import FirebaseAuth
 
 struct ProfileView: View {
 
-    enum Mode: String, CaseIterable, Identifiable {
-        case preview = "Preview"
-        case edit = "Edit"
-        var id: String { rawValue }
-    }
-
     // ✅ Inject for previews/testing
     @StateObject private var viewModel: ProfileViewModel
 
@@ -26,16 +20,13 @@ struct ProfileView: View {
 
     @EnvironmentObject private var currentUserStore: CurrentUserStore
 
-    @State private var mode: Mode = .preview
     @State private var showSettings = false
     @State private var photoPickerItems: [PhotosPickerItem?] = Array(repeating: nil, count: 6)
     @State private var avatarPickerItem: PhotosPickerItem?
-    @State private var showDiscardAlert = false
     @State private var followerCount: Int?
     @State private var likesReceivedCount: Int?
 
     private let genderOptions = ["Female", "Male", "Non-binary", "Other"]
-    private let avatarSize: CGFloat = 84
 
     private var isXcodePreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
@@ -51,14 +42,6 @@ struct ProfileView: View {
                 VStack(spacing: 14) {
                     header
 
-                    Picker("Profile mode", selection: $mode) {
-                        ForEach(Mode.allCases) { m in
-                            Text(m.rawValue).tag(m)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, AppLayout.screenPadding)
-
                     ScrollView(.vertical) {
                         VStack(spacing: 16) {
                             if viewModel.isLoading {
@@ -66,11 +49,7 @@ struct ProfileView: View {
                             } else if let error = viewModel.errorMessage {
                                 errorState(error)
                             } else {
-                                if mode == .preview {
-                                    previewContent
-                                } else {
-                                    editContent()
-                                }
+                                profileContent
                             }
                         }
                         .frame(width: contentWidth, alignment: .center)
@@ -81,25 +60,13 @@ struct ProfileView: View {
             }
         }
         .sheet(isPresented: $showSettings) { settingsSheet }
-        .alert("Discard changes?", isPresented: $showDiscardAlert) {
-            Button("Discard", role: .destructive) {
-                viewModel.discardDraft()
-                mode = .preview
-            }
-            Button("Keep Editing", role: .cancel) {}
-        } message: {
-            Text("You have unsaved edits. Discard them and return to Preview?")
-        }
         .task {
             if !isXcodePreview {
                 await viewModel.loadProfile()
+                viewModel.beginEditing()
                 await loadProfileStats()
             }
         }
-        .onChange(of: mode) { oldValue, newValue in
-            handleModeChange(oldValue: oldValue, newValue: newValue)
-        }
-        .animation(.easeInOut(duration: 0.18), value: mode)
     }
 
     // MARK: - Header
@@ -111,7 +78,7 @@ struct ProfileView: View {
                     .font(AppFonts.title())
                     .foregroundColor(AppColors.primaryText)
 
-                Text(mode == .preview ? "This is how others see you" : "Edit your profile details")
+                Text("Edit your profile details")
                     .font(AppFonts.footnote())
                     .foregroundColor(AppColors.secondaryText)
             }
@@ -132,95 +99,43 @@ struct ProfileView: View {
         .padding(.top, 12)
     }
 
-    // MARK: - Preview Content
-
-    private var previewContent: some View {
-        Group {
-            if let profile = viewModel.profile {
-                let previewData = ProfilePreviewData(
-                    heroPhotoURL: profile.displayHeroPhotoURL,
-                    additionalPhotoURLs: Array(profile.photoURLs.dropFirst())
-                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                        .filter { !$0.isEmpty },
-                    fullName: profile.fullName,
-                    age: profile.age,
-                    city: profile.city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : profile.city,
-                    gender: profile.gender.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : profile.gender,
-                    birthday: profile.birthday,
-                    spotifyId: profile.spotifyId,
-                    musicTaste: nil,
-                    lookingFor: profile.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? profile.lookingFor : nil,
-                    followerCount: followerCount,
-                    broadcastMinutes: currentUserStore.user?.broadcastMinutesTotal,
-                    likesReceivedCount: likesReceivedCount
-                )
-                SharedProfilePreviewView(data: previewData)
-            } else {
-                Text("No profile data available")
-                    .font(AppFonts.body())
-                    .foregroundColor(AppColors.secondaryText)
-            }
-        }
-    }
-
-
-    // MARK: - Edit Content
+    // MARK: - Profile Content (stats + edit)
 
     @ViewBuilder
-    private func editContent() -> some View {
+    private var profileContent: some View {
+        statsSection
+
         if let draft = viewModel.draft {
             VStack(spacing: 18) {
                 editHeader(draft: draft)
                 basicsSection(draft: draft)
                 photoEditorSection(draft: draft)
 
-                VStack(spacing: 14) {
-                    // Save button
-                    Button {
-                        Task {
-                            let didSave = await viewModel.saveDraftChanges()
-                            if didSave { mode = .preview }
-                        }
-                    } label: {
-                        HStack(spacing: 10) {
-                            if viewModel.isSaving {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.9)
-                            }
-                            Text(viewModel.isSaving ? "Saving..." : "Save Changes")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                                .fill(viewModel.hasDraftChanges && !viewModel.isSaving ? AppColors.primary : AppColors.primary.opacity(0.5))
-                        )
-                        .foregroundColor(.white)
-                        .shadow(color: viewModel.hasDraftChanges ? AppColors.primary.opacity(0.3) : .clear, radius: 12, x: 0, y: 6)
+                // Save button
+                Button {
+                    Task {
+                        await viewModel.saveDraftChanges()
                     }
-                    .disabled(viewModel.isSaving || !viewModel.hasDraftChanges)
-                    
-                    // Discard button
-                    Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        viewModel.discardDraft()
-                        mode = .preview
-                    } label: {
-                        Text("Discard Changes")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(
-                                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                                    .fill(AppColors.tintedBackground.opacity(0.6))
-                            )
-                            .foregroundColor(AppColors.primaryText.opacity(viewModel.hasDraftChanges ? 1.0 : 0.5))
+                } label: {
+                    HStack(spacing: 10) {
+                        if viewModel.isSaving {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.9)
+                        }
+                        Text(viewModel.isSaving ? "Saving..." : "Save Changes")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
                     }
-                    .disabled(viewModel.isSaving || !viewModel.hasDraftChanges)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                            .fill(viewModel.hasDraftChanges && !viewModel.isSaving ? AppColors.primary : AppColors.primary.opacity(0.5))
+                    )
+                    .foregroundColor(.white)
+                    .shadow(color: viewModel.hasDraftChanges ? AppColors.primary.opacity(0.3) : .clear, radius: 12, x: 0, y: 6)
                 }
-                .padding(.top, 6)
+                .disabled(viewModel.isSaving || !viewModel.hasDraftChanges)
 
                 if viewModel.saveSucceeded {
                     HStack(spacing: 8) {
@@ -251,6 +166,73 @@ struct ProfileView: View {
         }
     }
 
+    // MARK: - Stats Section
+
+    private var statsSection: some View {
+        HStack(spacing: 0) {
+            NavigationLink {
+                FollowersListView()
+            } label: {
+                statItem(
+                    value: followerCount.map(String.init) ?? "0",
+                    label: "Followers",
+                    tappable: true
+                )
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+            Rectangle().fill(Color.white.opacity(0.1)).frame(width: 1, height: 32)
+            Spacer()
+
+            statItem(
+                value: formatBroadcastTime(currentUserStore.user?.broadcastMinutesTotal),
+                label: "Broadcast"
+            )
+
+            Spacer()
+            Rectangle().fill(Color.white.opacity(0.1)).frame(width: 1, height: 32)
+            Spacer()
+
+            statItem(
+                value: likesReceivedCount.map(String.init) ?? "0",
+                label: "Likes"
+            )
+        }
+        .padding(AppLayout.cardPadding)
+        .background(cardBackground)
+    }
+
+    private func statItem(value: String, label: String, tappable: Bool = false) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundColor(AppColors.primaryText)
+            HStack(spacing: 4) {
+                Text(label)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.mutedText)
+                if tappable {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(AppColors.mutedText)
+                }
+            }
+        }
+        .frame(minWidth: 60)
+    }
+
+    private func formatBroadcastTime(_ minutes: Int?) -> String {
+        guard let minutes, minutes > 0 else { return "0min" }
+        if minutes < 60 { return "\(minutes)min" }
+        let hours = minutes / 60
+        let remaining = minutes % 60
+        if remaining == 0 { return "\(hours)h" }
+        return "\(hours)h \(remaining)m"
+    }
+
+    // MARK: - Edit Header (hero photo)
+
     private func editHeader(draft: ProfileViewModel.ProfileDraft) -> some View {
         let avatarURL = draft.photoURLs.first?.trimmingCharacters(in: .whitespacesAndNewlines)
         let fallbackAvatarURL = viewModel.profile?.spotifyAvatarURL
@@ -261,7 +243,7 @@ struct ProfileView: View {
             Text("Profile Photo")
                 .font(AppFonts.sectionTitle())
                 .foregroundColor(AppColors.primaryText)
-            
+
             PhotosPicker(selection: $avatarPickerItem, matching: .images, photoLibrary: .shared()) {
                 ZStack(alignment: .bottomTrailing) {
                     // Large hero image preview
@@ -298,7 +280,7 @@ struct ProfileView: View {
                         RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
                             .stroke(Color.white.opacity(0.1), lineWidth: 1)
                     )
-                    
+
                     // Edit button overlay
                     HStack(spacing: 8) {
                         Image(systemName: "pencil.circle.fill")
@@ -336,7 +318,7 @@ struct ProfileView: View {
         .padding(AppLayout.cardPadding)
         .background(cardBackground)
     }
-    
+
     private var heroEditPlaceholder: some View {
         ZStack {
             LinearGradient(
@@ -366,9 +348,9 @@ struct ProfileView: View {
                 Text("Photos")
                     .font(AppFonts.sectionTitle())
                     .foregroundColor(AppColors.primaryText)
-                
+
                 Spacer()
-                
+
                 Text("Tap to add or replace")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(AppColors.mutedText)
@@ -754,23 +736,6 @@ struct ProfileView: View {
                         Button("Done") { showSettings = false }
                     }
                 }
-        }
-    }
-
-    // MARK: - Mode handling
-
-    private func handleModeChange(oldValue: Mode, newValue: Mode) {
-        if newValue == .edit {
-            viewModel.beginEditing()
-        }
-
-        if oldValue == .edit && newValue == .preview {
-            if viewModel.hasDraftChanges {
-                showDiscardAlert = true
-                mode = .edit
-            } else {
-                viewModel.discardDraft()
-            }
         }
     }
 }
