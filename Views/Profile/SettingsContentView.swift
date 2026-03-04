@@ -23,7 +23,7 @@ struct SettingsContentView: View {
                 if notifyBroadcast {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Label("Radius", systemImage: "location.circle")
+                            Label("Notification radius", systemImage: "location.circle")
                                 .font(.system(size: 16, weight: .regular))
                             Spacer()
                             Text(formatRadius(radiusMeters))
@@ -45,6 +45,9 @@ struct SettingsContentView: View {
                                 .font(.system(size: 11, weight: .medium, design: .rounded))
                                 .foregroundColor(.secondary)
                         }
+                        Text("You'll be notified when someone starts broadcasting within this distance.")
+                            .font(.system(size: 12, weight: .regular, design: .rounded))
+                            .foregroundColor(.secondary)
                     }
                 }
 
@@ -54,7 +57,7 @@ struct SettingsContentView: View {
             } header: {
                 Text("Broadcasts")
             } footer: {
-                Text("Get notified when someone you follow or someone nearby starts streaming.")
+                Text("These settings control when you receive notifications. Your broadcast is always visible to everyone on the map.")
             }
 
             // MARK: - Other Notifications
