@@ -35,6 +35,7 @@ final class ProfileViewModel: ObservableObject {
         var city: String
         var birthday: Date
         var gender: String
+        var lookingFor: String
         var photoURLs: [String]
         var selectedImages: [UIImage?]
         var heroImageChanged: Bool // Track if hero image was changed
@@ -46,6 +47,7 @@ final class ProfileViewModel: ObservableObject {
         let city: String
         let birthday: Date
         let gender: String
+        let lookingFor: String
         let photoURLs: [String]
     }
 
@@ -59,6 +61,7 @@ final class ProfileViewModel: ObservableObject {
             draft.lastName != snapshot.lastName ||
             draft.city != snapshot.city ||
             draft.gender != snapshot.gender ||
+            draft.lookingFor != snapshot.lookingFor ||
             draft.birthday != snapshot.birthday
 
         let photosChanged = (draft.photoURLs != snapshot.photoURLs) || draft.selectedImages.contains { $0 != nil }
@@ -103,6 +106,7 @@ final class ProfileViewModel: ObservableObject {
             city: snapshot.city,
             birthday: snapshot.birthday,
             gender: snapshot.gender,
+            lookingFor: snapshot.lookingFor,
             photoURLs: snapshot.photoURLs,
             selectedImages: Array(repeating: nil, count: 6),
             heroImageChanged: false
@@ -158,12 +162,14 @@ final class ProfileViewModel: ObservableObject {
         errorMessage = nil
 
         do {
+            let trimmedLookingFor = currentDraft.lookingFor.trimmingCharacters(in: .whitespacesAndNewlines)
             let basics = OnboardingProfileService.Basics(
                 firstName: currentDraft.firstName.trimmingCharacters(in: .whitespacesAndNewlines),
                 lastName: currentDraft.lastName.trimmingCharacters(in: .whitespacesAndNewlines),
                 city: currentDraft.city.trimmingCharacters(in: .whitespacesAndNewlines),
                 birthday: currentDraft.birthday,
-                gender: currentDraft.gender.trimmingCharacters(in: .whitespacesAndNewlines)
+                gender: currentDraft.gender.trimmingCharacters(in: .whitespacesAndNewlines),
+                lookingFor: trimmedLookingFor.isEmpty ? nil : trimmedLookingFor
             )
 
             try await profileService.saveBasics(basics, uid: uid)
@@ -265,6 +271,7 @@ final class ProfileViewModel: ObservableObject {
             city: profile?.city ?? "",
             birthday: profile?.birthday ?? fallbackDate,
             gender: profile?.gender ?? "",
+            lookingFor: profile?.lookingFor ?? "",
             photoURLs: photoURLs
         )
     }
