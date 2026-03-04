@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Compact, expandable Discover Card matching the design:
 /// - Collapsed: User photo (left) · Name / Track · Artist / Distance · Album art (right) · Chevron
-/// - Expanded: + divider + 4 action buttons (Like, Message, Profile, X)
+/// - Expanded: + divider + 5 action buttons (Like, Message, Spotify, Profile, X)
 struct DiscoverCardView: View {
     let broadcast: DiscoverBroadcast
     @Binding var isExpanded: Bool
@@ -13,6 +13,8 @@ struct DiscoverCardView: View {
 
     var hasLiked: Bool = false
     var hasMessaged: Bool = false
+
+    @Environment(\.openURL) private var openURL
 
     @State private var isLiked: Bool = false
     @State private var showHeartAnimation: Bool = false
@@ -125,7 +127,7 @@ struct DiscoverCardView: View {
             .padding(.horizontal, 14)
     }
 
-    // MARK: - 4 Action Buttons (Like, Message, Profile, X)
+    // MARK: - 5 Action Buttons (Like, Message, Spotify, Profile, X)
 
     private var actionButtonsRow: some View {
         HStack(spacing: 0) {
@@ -147,7 +149,18 @@ struct DiscoverCardView: View {
                 handleMessageAction()
             }
 
-            // 3. Profile
+            // 3. Spotify (open track)
+            if let spotifyURL = broadcast.track.spotifyURLValue {
+                actionButton(
+                    icon: "music.note",
+                    label: "Spotify",
+                    color: Color(red: 0.2, green: 0.85, blue: 0.4)
+                ) {
+                    openURL(spotifyURL)
+                }
+            }
+
+            // 4. Profile
             actionButton(
                 icon: "person.crop.circle",
                 label: "Profile",
@@ -156,7 +169,7 @@ struct DiscoverCardView: View {
                 onViewProfile()
             }
 
-            // 4. Dismiss (X)
+            // 5. Dismiss (X)
             actionButton(
                 icon: "xmark",
                 label: "",

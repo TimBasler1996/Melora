@@ -47,29 +47,9 @@ struct DiscoverView: View {
                 UserSearchView()
             }
             .sheet(item: $viewModel.selectedBroadcast) { broadcast in
-                BroadcastProfileView(
-                    broadcast: broadcast,
-                    hasAlreadyLiked: viewModel.isLiked(broadcast),
-                    hasAlreadyMessaged: viewModel.hasMessage(broadcast),
-                    onLike: {
-                        Task {
-                            try? await viewModel.sendLike(
-                                for: broadcast,
-                                from: currentUserStore.user,
-                                message: nil
-                            )
-                        }
-                    },
-                    onMessage: { message in
-                        Task {
-                            try? await viewModel.sendLike(
-                                for: broadcast,
-                                from: currentUserStore.user,
-                                message: message
-                            )
-                        }
-                    }
-                )
+                NavigationStack {
+                    UserProfilePreviewView(userId: broadcast.user.id)
+                }
                 .presentationDetents([.large])
             }
             .confirmationDialog(
