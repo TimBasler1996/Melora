@@ -45,6 +45,7 @@ final class DiscoverViewModel: ObservableObject {
 
     private var mutedUserIds: Set<String> = []
     private var mutedTrackIds: Set<String> = []
+    private var blockedUserIds: Set<String> = []
     private var currentLocation: CLLocation?
 
     private var isListening = false
@@ -77,6 +78,7 @@ final class DiscoverViewModel: ObservableObject {
         errorMessage = nil
 
         loadMutedPreferencesIfNeeded()
+        loadBlockedUsers()
 
         // Listen to following list for friends mode
         followListener = followService.listenToFollowing { [weak self] (ids: Set<String>) in
@@ -163,6 +165,14 @@ final class DiscoverViewModel: ObservableObject {
         mutedTrackIds.insert(broadcast.track.id)
         persistMutedPreferences()
         removeBroadcast(broadcast)
+    }
+
+    func blockUser(for broadcast: DiscoverBroadcast) {
+        blockedUserIds.insert(broadcast.user.id)
+        removeBroadcast(broadcast)
+        Task {
+            try? await BlockService.shared.blockUser(userId: broadcast.user.id)
+        }
     }
 
     func sendLike(
@@ -280,6 +290,7 @@ final class DiscoverViewModel: ObservableObject {
         let filtered = records.filter { record in
             if let currentUserId, record.userId == currentUserId { return false }
             if mutedUserIds.contains(record.userId) { return false }
+            if blockedUserIds.contains(record.userId) { return false }
             if mutedTrackIds.contains(record.trackId) { return false }
             // Hide stale broadcasts (not updated recently)
             let age = now.timeIntervalSince(record.updatedAt ?? record.broadcastedAt)
@@ -339,7 +350,9 @@ final class DiscoverViewModel: ObservableObject {
         let locationAvailable = currentLocation != nil
 
         var updated = allBroadcasts.filter { broadcast in
-            !mutedUserIds.contains(broadcast.user.id) && !mutedTrackIds.contains(broadcast.track.id)
+            !mutedUserIds.contains(broadcast.user.id) &&
+            !blockedUserIds.contains(broadcast.user.id) &&
+            !mutedTrackIds.contains(broadcast.track.id)
         }
 
         // In friends mode, only show broadcasts from followed users
@@ -400,6 +413,12 @@ final class DiscoverViewModel: ObservableObject {
         let defaults = UserDefaults.standard
         defaults.set(Array(mutedUserIds), forKey: "discover.mutedUsers.\(uid)")
         defaults.set(Array(mutedTrackIds), forKey: "discover.mutedTracks.\(uid)")
+    }
+
+    private func loadBlockedUsers() {
+        Task {
+            blockedUserIds = (try? await BlockService.shared.fetchBlockedIds()) ?? []
+        }
     }
 
     private var isRunningInPreview: Bool {

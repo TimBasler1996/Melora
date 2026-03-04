@@ -121,6 +121,7 @@ final class ChatInboxViewModel: ObservableObject {
             self.isLoading = false
 
             self.enrichRowsWithUsers()
+            self.filterBlockedUsers()
         }
     }
 
@@ -132,6 +133,21 @@ final class ChatInboxViewModel: ObservableObject {
     /// One-shot reload (pull-to-refresh)
     func reloadOnce() {
         startListening()
+    }
+
+    func deleteChat(row: ChatInboxRow) {
+        rows.removeAll { $0.id == row.id }
+        Task {
+            try? await ChatApiService.shared.deleteConversation(conversationId: row.conversationId)
+        }
+    }
+
+    private func filterBlockedUsers() {
+        Task {
+            let blockedIds = (try? await BlockService.shared.fetchBlockedIds()) ?? []
+            guard !blockedIds.isEmpty else { return }
+            self.rows.removeAll { blockedIds.contains($0.otherUserId) }
+        }
     }
 
     private func enrichRowsWithUsers() {

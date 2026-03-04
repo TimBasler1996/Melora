@@ -10,6 +10,8 @@ import SwiftUI
 struct ChatInboxView: View {
 
     @StateObject private var vm = ChatInboxViewModel()
+    @State private var showEarlierChats = false
+    @State private var chatToDelete: ChatInboxRow?
 
     var body: some View {
         NavigationStack {
@@ -79,33 +81,74 @@ struct ChatInboxView: View {
         } else {
             ScrollView {
                 VStack(spacing: 12) {
-                    if !vm.todayRows.isEmpty {
+                    if vm.todayRows.isEmpty {
+                        HStack(spacing: 10) {
+                            Image(systemName: "bubble.left")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white.opacity(0.3))
+                            Text("No new messages today")
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        .padding(.vertical, 16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
                         chatSectionHeader("Today")
                         ForEach(vm.todayRows) { row in
-                            NavigationLink {
-                                ChatView(conversationId: row.conversationId)
-                            } label: {
-                                ChatInboxRowView(row: row)
-                            }
-                            .buttonStyle(.plain)
+                            chatRow(row)
                         }
                     }
                     if !vm.earlierRows.isEmpty {
-                        chatSectionHeader("Earlier")
-                        ForEach(vm.earlierRows) { row in
-                            NavigationLink {
-                                ChatView(conversationId: row.conversationId)
-                            } label: {
-                                ChatInboxRowView(row: row)
+                        DisclosureGroup(isExpanded: $showEarlierChats) {
+                            ForEach(vm.earlierRows) { row in
+                                chatRow(row)
                             }
-                            .buttonStyle(.plain)
+                        } label: {
+                            Text("Earlier")
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
                         }
+                        .tint(.white.opacity(0.5))
+                        .padding(.top, 8)
                     }
                 }
                 .padding(.horizontal, AppLayout.screenPadding)
                 .padding(.vertical, 12)
             }
             .scrollIndicators(.hidden)
+            .confirmationDialog(
+                "Delete this chat?",
+                isPresented: Binding(
+                    get: { chatToDelete != nil },
+                    set: { if !$0 { chatToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                if let row = chatToDelete {
+                    Button("Delete Chat", role: .destructive) {
+                        vm.deleteChat(row: row)
+                    }
+                }
+                Button("Cancel", role: .cancel) {
+                    chatToDelete = nil
+                }
+            }
+        }
+    }
+
+    private func chatRow(_ row: ChatInboxRow) -> some View {
+        NavigationLink {
+            ChatView(conversationId: row.conversationId)
+        } label: {
+            ChatInboxRowView(row: row)
+        }
+        .buttonStyle(.plain)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                chatToDelete = row
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
         }
     }
 
@@ -116,7 +159,6 @@ struct ChatInboxView: View {
                 .foregroundColor(.white.opacity(0.5))
             Spacer()
         }
-        .padding(.top, title == "Earlier" ? 8 : 0)
     }
 }
 

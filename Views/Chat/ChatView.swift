@@ -14,6 +14,10 @@ struct ChatView: View {
     let conversationId: String
 
     @StateObject private var vm = ChatViewModel()
+    @State private var showActions = false
+    @State private var showBlockConfirm = false
+    @State private var showDeleteConfirm = false
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
@@ -81,6 +85,60 @@ struct ChatView: View {
         }
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    if let _ = vm.otherUserId {
+                        Button {
+                            Task { await vm.toggleFollow() }
+                        } label: {
+                            Label(
+                                vm.isFollowingOther ? "Unfollow" : "Follow",
+                                systemImage: vm.isFollowingOther ? "person.badge.minus" : "person.badge.plus"
+                            )
+                        }
+
+                        Button(role: .destructive) {
+                            showBlockConfirm = true
+                        } label: {
+                            Label("Block User", systemImage: "hand.raised")
+                        }
+                    }
+
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("Delete Chat", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+            }
+        }
+        .confirmationDialog("Block this user?", isPresented: $showBlockConfirm, titleVisibility: .visible) {
+            Button("Block User", role: .destructive) {
+                Task {
+                    await vm.blockOtherUser()
+                    dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("They won't appear in your Discover, Chats, or Likes.")
+        }
+        .confirmationDialog("Delete this chat?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete Chat", role: .destructive) {
+                Task {
+                    await vm.deleteConversation(conversationId: conversationId)
+                    dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This conversation will be permanently deleted.")
+        }
         .onAppear { vm.start(conversationId: conversationId) }
         .onDisappear {
             Task { await vm.markAsRead(conversationId: conversationId) }
