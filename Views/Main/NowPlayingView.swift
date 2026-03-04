@@ -25,7 +25,7 @@ struct NowPlayingView: View {
             ZStack {
                 dominantColor
                     .ignoresSafeArea()
-                
+
                 LinearGradient(
                     colors: [
                         dominantColor.opacity(0.8),
@@ -40,7 +40,6 @@ struct NowPlayingView: View {
 
             content
 
-            // ✨ Broadcast edge glow effect
             if showBroadcastGlow {
                 EdgeGlowEffect()
                     .ignoresSafeArea()
@@ -48,7 +47,6 @@ struct NowPlayingView: View {
             }
         }
         .overlay(alignment: .top) {
-            // Custom navigation bar (only show chevron when music is playing)
             HStack {
                 if vm.currentTrack != nil {
                     Button {
@@ -92,7 +90,6 @@ struct NowPlayingView: View {
         }
         .onChange(of: vm.currentTrack) { _, newTrack in
             broadcast.updateCurrentTrack(newTrack)
-            // Update dominant color when track changes
             if let artworkURL = newTrack?.artworkURL {
                 Task {
                     await extractDominantColor(from: artworkURL)
@@ -111,17 +108,14 @@ struct NowPlayingView: View {
     @ViewBuilder
     private var content: some View {
         if let track = vm.currentTrack {
-            // ✅ Playing state - full immersive view
             VStack(spacing: 0) {
                 Spacer()
-                    .frame(height: 60) // Space for custom nav bar
-                
-                // Compact Broadcast Toggle
+                    .frame(height: 60)
+
                 CompactBroadcastToggle(hasTrack: true)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 16)
 
-                // Error message if any
                 if let err = vm.errorMessage, !err.isEmpty {
                     Text(err)
                         .font(.system(size: 12, weight: .medium, design: .rounded))
@@ -130,10 +124,19 @@ struct NowPlayingView: View {
                         .padding(.bottom, 8)
                 }
 
-                // Large artwork - MAIN focal point
-                SpotifyArtwork(track: track)
+                // Album artwork with optional LIVE overlay
+                BroadcastArtwork(track: track, isBroadcasting: broadcast.isBroadcasting)
                     .padding(.horizontal, 28)
-                    .padding(.bottom, 32)
+
+                // Simple progress indicator
+                if let durationMs = track.durationMs {
+                    SimpleProgressBar(
+                        progressMs: vm.progressMs,
+                        durationMs: durationMs
+                    )
+                    .padding(.horizontal, 28)
+                    .padding(.top, 12)
+                }
 
                 // Track info
                 VStack(spacing: 6) {
@@ -142,7 +145,7 @@ struct NowPlayingView: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
-                    
+
                     Text(track.artist)
                         .font(.system(size: 16, weight: .semibold, design: .default))
                         .foregroundColor(.white.opacity(0.7))
@@ -150,97 +153,47 @@ struct NowPlayingView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 32)
+                .padding(.top, 24)
                 .padding(.bottom, 28)
 
-                // Progress bar
-                if let durationMs = track.durationMs {
-                    SpotifyProgressBar(
-                        progressMs: vm.progressMs,
-                        durationMs: durationMs,
-                        isScrubbing: $vm.isScrubbing,
-                        onSeek: { newProgress in
-                            Task { await vm.seek(to: newProgress) }
-                        }
-                    )
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 16)
-                }
-
-                // Main playback controls - Spotify style
-                SpotifyControls(
+                // Playback controls
+                PlaybackControls(
                     isPlaying: vm.isPlaying,
                     isBusy: vm.isLoading,
                     onPrevious: { Task { await vm.previous() } },
                     onToggle: { Task { await vm.togglePlayPause() } },
                     onNext: { Task { await vm.next() } }
                 )
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 40)
                 .padding(.bottom, 20)
 
-                // Extra controls (shuffle, open Spotify, repeat)
-                HStack(spacing: 0) {
-                    Button(action: {
-                        Task { await vm.toggleShuffle() }
-                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    }) {
-                        Image(systemName: "shuffle")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(vm.isShuffling ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.6))
-                            .frame(width: 50, height: 50)
-                    }
-                    
-                    Spacer()
-                    
-                    // Open in Spotify button (subtle)
-                    Button(action: {
-                        openSpotifyLibrary()
-                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    }) {
+                // Open in Spotify
+                Button {
+                    openSpotifyLibrary()
+                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                } label: {
+                    HStack(spacing: 6) {
                         Image(systemName: "arrow.up.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.4))
-                            .frame(width: 36, height: 36)
-                            .background(
-                                Circle()
-                                    .fill(Color.white.opacity(0.06))
-                            )
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Open in Spotify")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
                     }
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        Task { await vm.cycleRepeatMode() }
-                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    }) {
-                        let iconName: String = {
-                            switch vm.repeatMode {
-                            case .off: return "repeat"
-                            case .context: return "repeat"
-                            case .track: return "repeat.1"
-                            }
-                        }()
-                        
-                        Image(systemName: iconName)
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(vm.repeatMode != .off ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.6))
-                            .frame(width: 50, height: 50)
-                    }
+                    .foregroundColor(.white.opacity(0.4))
                 }
-                .padding(.horizontal, 32)
                 .padding(.bottom, 24)
 
                 Spacer()
             }
         } else {
-            // ✅ Empty state - nothing playing
+            // Empty state
             VStack(spacing: 0) {
                 Spacer()
-                    .frame(height: 60) // Space for custom nav bar
-                
+                    .frame(height: 60)
+
                 CompactBroadcastToggle(hasTrack: false)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 32)
-                
+
                 Spacer()
 
                 VStack(spacing: 24) {
@@ -317,22 +270,20 @@ struct NowPlayingView: View {
 
         if let color = await uiImage.dominantColor() {
             await MainActor.run {
-                // Make color darker and more saturated for better background
                 var hue: CGFloat = 0
                 var saturation: CGFloat = 0
                 var brightness: CGFloat = 0
                 var alpha: CGFloat = 0
-                
+
                 color.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
-                
-                // Darken and boost saturation
+
                 let adjustedColor = UIColor(
                     hue: hue,
                     saturation: min(saturation * 1.2, 1.0),
-                    brightness: min(brightness * 0.4, 0.5), // Much darker
+                    brightness: min(brightness * 0.4, 0.5),
                     alpha: 1.0
                 )
-                
+
                 dominantColor = Color(adjustedColor)
             }
         }
@@ -358,14 +309,13 @@ struct NowPlayingView: View {
 
 private struct CompactBroadcastToggle: View {
     let hasTrack: Bool
-    
+
     @EnvironmentObject private var broadcast: BroadcastManager
     @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
     @EnvironmentObject private var locationService: LocationService
 
     var body: some View {
         HStack(spacing: 12) {
-            // Indicator dot
             Circle()
                 .fill(broadcast.isBroadcasting ? Color(red: 0.2, green: 0.85, blue: 0.4) : Color.white.opacity(0.3))
                 .frame(width: 8, height: 8)
@@ -413,157 +363,104 @@ private struct CompactBroadcastToggle: View {
     }
 }
 
-// MARK: - Spotify Artwork
+// MARK: - Broadcast Artwork (with LIVE badge)
 
-private struct SpotifyArtwork: View {
+private struct BroadcastArtwork: View {
     let track: Track
+    let isBroadcasting: Bool
+
+    private let liveGreen = Color(red: 0.2, green: 0.85, blue: 0.4)
 
     var body: some View {
-        Group {
-            if let url = track.artworkURL {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        Rectangle()
-                            .fill(Color.white.opacity(0.08))
-                            .overlay(
-                                ProgressView()
-                                    .tint(.white)
-                                    .scaleEffect(1.2)
-                            )
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFit()
-                    case .failure:
-                        Rectangle()
-                            .fill(Color.white.opacity(0.08))
-                            .overlay(
-                                Image(systemName: "music.note")
-                                    .font(.system(size: 60, weight: .thin))
-                                    .foregroundColor(.white.opacity(0.3))
-                            )
-                    @unknown default:
-                        EmptyView()
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if let url = track.artworkURL {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            Rectangle()
+                                .fill(Color.white.opacity(0.08))
+                                .overlay(
+                                    ProgressView()
+                                        .tint(.white)
+                                        .scaleEffect(1.2)
+                                )
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        case .failure:
+                            artworkPlaceholder
+                        @unknown default:
+                            EmptyView()
+                        }
                     }
+                } else {
+                    artworkPlaceholder
                 }
-            } else {
-                Rectangle()
-                    .fill(Color.white.opacity(0.08))
-                    .overlay(
-                        Image(systemName: "music.note")
-                            .font(.system(size: 60, weight: .thin))
-                            .foregroundColor(.white.opacity(0.3))
-                    )
+            }
+            .aspectRatio(1, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isBroadcasting ? liveGreen : Color.clear, lineWidth: 2)
+            )
+            .shadow(color: Color.black.opacity(0.5), radius: 24, x: 0, y: 12)
+
+            // LIVE badge
+            if isBroadcasting {
+                Text("LIVE")
+                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(liveGreen))
+                    .padding(10)
             }
         }
-        .aspectRatio(1, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .shadow(color: Color.black.opacity(0.6), radius: 30, x: 0, y: 15)
+    }
+
+    private var artworkPlaceholder: some View {
+        Rectangle()
+            .fill(Color.white.opacity(0.08))
+            .overlay(
+                Image(systemName: "music.note")
+                    .font(.system(size: 60, weight: .thin))
+                    .foregroundColor(.white.opacity(0.3))
+            )
     }
 }
 
-// MARK: - Spotify Progress Bar
+// MARK: - Simple Progress Bar (no scrubbing)
 
-private struct SpotifyProgressBar: View {
+private struct SimpleProgressBar: View {
     let progressMs: Int
     let durationMs: Int
-    @Binding var isScrubbing: Bool
-    let onSeek: (Int) -> Void
-
-    @State private var localProgress: Double = 0
-    @State private var showRemaining: Bool = false
-
-    private func format(ms: Int, showRemaining: Bool = false) -> String {
-        var value = ms
-        if showRemaining {
-            value = max(durationMs - ms, 0)
-        }
-        let totalSeconds = max(value / 1000, 0)
-        let minutes = totalSeconds / 60
-        let seconds = totalSeconds % 60
-        let prefix = showRemaining ? "-" : ""
-        return String(format: "%@%d:%02d", prefix, minutes, seconds)
-    }
 
     var body: some View {
-        VStack(spacing: 6) {
-            // Custom slider
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // Background track
-                    Capsule()
-                        .fill(Color.white.opacity(0.25))
-                        .frame(height: 4)
-
-                    // Progress track
-                    Capsule()
-                        .fill(Color.white)
-                        .frame(
-                            width: max(0, geometry.size.width * CGFloat(localProgress) / CGFloat(durationMs)),
-                            height: 4
-                        )
-
-                    // Thumb (only visible when scrubbing)
-                    if isScrubbing {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 14, height: 14)
-                            .offset(x: max(0, geometry.size.width * CGFloat(localProgress) / CGFloat(durationMs)) - 7)
-                    }
-                }
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            if !isScrubbing {
-                                isScrubbing = true
-                                localProgress = Double(progressMs)
-                            }
-                            let newProgress = Double(durationMs) * Double(value.location.x / geometry.size.width)
-                            localProgress = min(max(newProgress, 0), Double(durationMs))
-                        }
-                        .onEnded { _ in
-                            isScrubbing = false
-                            onSeek(Int(localProgress))
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        }
-                )
-            }
-            .frame(height: 20)
-            .onAppear {
-                localProgress = Double(progressMs)
-            }
-            .onChange(of: progressMs) { _, newValue in
-                if !isScrubbing {
-                    localProgress = Double(newValue)
-                }
-            }
-
-            // Time labels
-            HStack {
-                Text(format(ms: Int(isScrubbing ? localProgress : Double(progressMs))))
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.6))
-                    .monospacedDigit()
-
-                Spacer()
-
-                Text(format(ms: Int(isScrubbing ? localProgress : Double(progressMs)), showRemaining: showRemaining))
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.6))
-                    .monospacedDigit()
-                    .onTapGesture {
-                        showRemaining.toggle()
-                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    }
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.15))
+                    .frame(height: 3)
+                Capsule()
+                    .fill(Color.white.opacity(0.6))
+                    .frame(width: max(0, geo.size.width * progress), height: 3)
+                    .animation(.linear(duration: 0.3), value: progressMs)
             }
         }
+        .frame(height: 3)
+    }
+
+    private var progress: CGFloat {
+        guard durationMs > 0 else { return 0 }
+        return min(CGFloat(progressMs) / CGFloat(durationMs), 1.0)
     }
 }
 
-// MARK: - Spotify Controls
+// MARK: - Playback Controls
 
-private struct SpotifyControls: View {
+private struct PlaybackControls: View {
     let isPlaying: Bool
     let isBusy: Bool
     let onPrevious: () -> Void
@@ -572,51 +469,43 @@ private struct SpotifyControls: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Previous
             Button(action: {
                 onPrevious()
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }) {
                 Image(systemName: "backward.fill")
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 80, height: 80)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(width: 60, height: 60)
             }
             .disabled(isBusy)
             .opacity(isBusy ? 0.4 : 1.0)
 
             Spacer()
 
-            // Play/Pause - BIG white circle
             Button(action: {
                 onToggle()
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             }) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 68, height: 68)
-
-                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 28, weight: .black))
-                        .foregroundColor(.black)
-                        .offset(x: isPlaying ? 0 : 2)
-                }
+                Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 38, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 72, height: 72)
+                    .offset(x: isPlaying ? 0 : 2)
             }
             .disabled(isBusy)
             .opacity(isBusy ? 0.6 : 1.0)
 
             Spacer()
 
-            // Next
             Button(action: {
                 onNext()
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }) {
                 Image(systemName: "forward.fill")
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 80, height: 80)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(width: 60, height: 60)
             }
             .disabled(isBusy)
             .opacity(isBusy ? 0.4 : 1.0)
@@ -629,7 +518,6 @@ private struct SpotifyControls: View {
 private struct EdgeGlowEffect: View {
     var body: some View {
         ZStack {
-            // Top edge
             LinearGradient(
                 colors: [Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8), Color.clear],
                 startPoint: .top,
@@ -638,7 +526,6 @@ private struct EdgeGlowEffect: View {
             .frame(height: 2)
             .frame(maxHeight: .infinity, alignment: .top)
 
-            // Leading edge
             LinearGradient(
                 colors: [Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8), Color.clear],
                 startPoint: .leading,
@@ -647,7 +534,6 @@ private struct EdgeGlowEffect: View {
             .frame(width: 2)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Trailing edge
             LinearGradient(
                 colors: [Color.clear, Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8)],
                 startPoint: .leading,
@@ -656,7 +542,6 @@ private struct EdgeGlowEffect: View {
             .frame(width: 2)
             .frame(maxWidth: .infinity, alignment: .trailing)
 
-            // Bottom edge
             LinearGradient(
                 colors: [Color.clear, Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8)],
                 startPoint: .top,
