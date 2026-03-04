@@ -116,13 +116,18 @@ struct UserSearchView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(viewModel.results) { user in
-                        UserSearchRowView(
-                            user: user,
-                            isFollowing: viewModel.isFollowing(user.uid),
-                            onToggleFollow: {
-                                Task { await viewModel.toggleFollow(userId: user.uid) }
-                            }
-                        )
+                        NavigationLink {
+                            UserProfilePreviewView(userId: user.uid)
+                        } label: {
+                            UserSearchRowView(
+                                user: user,
+                                isFollowing: viewModel.isFollowing(user.uid),
+                                onToggleFollow: {
+                                    Task { await viewModel.toggleFollow(userId: user.uid) }
+                                }
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, AppLayout.screenPadding)

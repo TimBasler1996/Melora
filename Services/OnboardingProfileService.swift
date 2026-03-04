@@ -35,6 +35,9 @@ final class OnboardingProfileService {
         var data: [String: Any] = [
             "firstName": basics.firstName,
             "lastName": basics.lastName,
+            "firstNameLower": basics.firstName.lowercased(),
+            "lastNameLower": basics.lastName.lowercased(),
+            "displayName": basics.firstName,
             "city": basics.city,
             "birthday": Timestamp(date: basics.birthday),
             "gender": basics.gender,

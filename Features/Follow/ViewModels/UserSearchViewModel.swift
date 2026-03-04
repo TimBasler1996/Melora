@@ -77,10 +77,10 @@ final class UserSearchViewModel: ObservableObject {
             .limit(to: 20)
             .getDocuments()
 
-        // Search by displayName (prefix match)
-        let displayNameSnap = try await db.collection("users")
-            .whereField("displayNameLower", isGreaterThanOrEqualTo: lowered)
-            .whereField("displayNameLower", isLessThan: end)
+        // Search by lastName (prefix match)
+        let lastNameSnap = try await db.collection("users")
+            .whereField("lastNameLower", isGreaterThanOrEqualTo: lowered)
+            .whereField("lastNameLower", isLessThan: end)
             .limit(to: 20)
             .getDocuments()
 
@@ -88,7 +88,7 @@ final class UserSearchViewModel: ObservableObject {
         var seen = Set<String>()
         var users: [AppUser] = []
 
-        for doc in firstNameSnap.documents + displayNameSnap.documents {
+        for doc in firstNameSnap.documents + lastNameSnap.documents {
             let uid = doc.documentID
             guard uid != currentUid, !seen.contains(uid) else { continue }
             seen.insert(uid)

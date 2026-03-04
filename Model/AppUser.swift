@@ -218,23 +218,17 @@ struct AppUser: Identifiable, Codable, Equatable {
         let explicitDisplayName = stringValue("displayName")
         
         let resolvedDisplayName: String = {
-            // First try explicit displayName
+            // Prefer firstName only (never show lastName)
+            let first = firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !first.isEmpty {
+                return first
+            }
+
+            // Fallback to explicit displayName
             if let name = explicitDisplayName, !name.isEmpty, name != "Unknown" {
                 return name
             }
-            
-            // Then try to construct from first/last name
-            let first = firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            let last = lastName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            
-            if !first.isEmpty && !last.isEmpty {
-                return "\(first) \(last)"
-            } else if !first.isEmpty {
-                return first
-            } else if !last.isEmpty {
-                return last
-            }
-            
+
             // Final fallback
             return "Unknown"
         }()
