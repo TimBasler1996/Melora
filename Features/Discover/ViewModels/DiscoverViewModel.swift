@@ -208,20 +208,23 @@ final class DiscoverViewModel: ObservableObject {
             broadcastId: broadcast.id
         )
 
+        // If the like was auto-accepted (prior relationship exists), create conversation stub now
+        if like.status == .accepted {
+            _ = try? await chatService.createConversationStubIfNeeded(
+                acceptedLike: like,
+                receiverUserId: broadcast.user.id
+            )
+        }
+
+        // Message is stored in the like document via likeBroadcastTrack(..., message:).
+        // The conversation + first message will be created when the like is accepted
+        // (in ChatApiService.createConversationStubIfNeeded).
         let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedMessage.isEmpty {
-            try await chatService.sendMessage(
-                from: senderId,
-                to: broadcast.user.id,
-                text: trimmedMessage,
-                createdFromTrackId: broadcast.track.id,
-                createdFromLikeId: like.id
-            )
-            // Mark this broadcast as messaged
             messagedBroadcastIds.insert(broadcast.id)
             saveMessagedBroadcastsToCache()
         }
-        
+
         // Mark this broadcast as liked
         likedBroadcastIds.insert(broadcast.id)
         saveLikedBroadcastsToCache()
@@ -271,12 +274,19 @@ final class DiscoverViewModel: ObservableObject {
         selectedBroadcast = broadcast
     }
 
+    /// Broadcasts older than this are considered stale and hidden.
+    private static let maxBroadcastAge: TimeInterval = 5 * 60 // 5 minutes
+
     private func handleBroadcastRecords(_ records: [DiscoverService.BroadcastRecord]) async {
         let currentUserId = service.currentUserId()
+        let now = Date()
         let filtered = records.filter { record in
             if let currentUserId, record.userId == currentUserId { return false }
             if mutedUserIds.contains(record.userId) { return false }
             if mutedTrackIds.contains(record.trackId) { return false }
+            // Hide stale broadcasts (not updated recently)
+            let age = now.timeIntervalSince(record.updatedAt ?? record.broadcastedAt)
+            if age > Self.maxBroadcastAge { return false }
             return true
         }
 

@@ -73,12 +73,20 @@ final class LikeNotificationService: ObservableObject {
 
                         let toUserId = data["toUserId"] as? String ?? ""
                         let trackTitle = data["trackTitle"] as? String ?? "a track"
+                        let likeMessage = data["message"] as? String
                         let displayName = await self.fetchDisplayName(uid: toUserId)
+
+                        let body: String
+                        if let msg = likeMessage, !msg.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            body = "Your message on \"\(trackTitle)\" was delivered. Start chatting!"
+                        } else {
+                            body = "Your like on \"\(trackTitle)\" was accepted. Start chatting now!"
+                        }
 
                         await self.sendLocalNotification(
                             id: "like-accepted-\(likeId)",
                             title: "\(displayName) accepted your interaction!",
-                            body: "Your like on \"\(trackTitle)\" was accepted. Start chatting now!",
+                            body: body,
                             userInfo: ["likeId": likeId, "type": "likeAccepted"]
                         )
                     }
@@ -118,8 +126,12 @@ final class LikeNotificationService: ObservableObject {
 
                         let fromUserId = data["fromUserId"] as? String ?? ""
                         let trackTitle = data["trackTitle"] as? String ?? "a track"
-                        let displayName = data["fromUserDisplayName"] as? String
-                            ?? await self.fetchDisplayName(uid: fromUserId)
+                        let displayName: String
+                        if let storedName = data["fromUserDisplayName"] as? String {
+                            displayName = storedName
+                        } else {
+                            displayName = await self.fetchDisplayName(uid: fromUserId)
+                        }
 
                         await self.sendLocalNotification(
                             id: "like-received-\(likeId)",
