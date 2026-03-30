@@ -4,26 +4,6 @@ import FirebaseFirestore
 import CoreLocation
 import UserNotifications
 
-// MARK: - Notification Delegate (foreground banner display)
-
-final class BroadcastNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
-        completionHandler([.banner, .sound])
-    }
-
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
-    ) {
-        completionHandler()
-    }
-}
-
 // MARK: - Broadcast Notification Service
 
 @MainActor
@@ -51,9 +31,6 @@ final class BroadcastNotificationService: ObservableObject {
     private var cachedUsers: [String: DiscoverUser] = [:]
     private var isRunning = false
 
-    // Foreground notification delegate (must be retained)
-    let notificationDelegate = BroadcastNotificationDelegate()
-
     init(
         discoverService: DiscoverService = .shared,
         followService: FollowApiService = .shared
@@ -77,10 +54,7 @@ final class BroadcastNotificationService: ObservableObject {
         guard !isRunning else { return }
         self.locationService = locationService
 
-        // Set up foreground notification display
-        UNUserNotificationCenter.current().delegate = notificationDelegate
-
-        // Register notification category
+        // Register notification category (delegate is managed by AppDelegate)
         let category = UNNotificationCategory(
             identifier: "BROADCAST_NOTIFICATION",
             actions: [],

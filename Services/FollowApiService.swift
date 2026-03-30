@@ -61,6 +61,14 @@ final class FollowApiService {
         return Set(ids)
     }
 
+    /// Returns the number of followers for a given user using aggregation count.
+    func fetchFollowerCount(of userId: String) async throws -> Int {
+        let query = db.collection(collection)
+            .whereField("followingId", isEqualTo: userId)
+        let snapshot = try await query.count.getAggregation(source: .server)
+        return Int(truncating: snapshot.count)
+    }
+
     /// Check if current user follows a specific user.
     func isFollowing(userId: String) async throws -> Bool {
         guard let currentUid = Auth.auth().currentUser?.uid else { return false }
