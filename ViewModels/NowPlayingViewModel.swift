@@ -18,6 +18,7 @@ final class NowPlayingViewModel: ObservableObject {
 
     private var pollTask: Task<Void, Never>?
     private var progressTask: Task<Void, Never>?
+    private var hasLoadedOnce = false
 
     // MARK: - Lifecycle
 
@@ -57,8 +58,8 @@ final class NowPlayingViewModel: ObservableObject {
     // MARK: - Now Playing
 
     func refreshNowPlaying() async {
-        isLoading = true
-        defer { isLoading = false }
+        if !hasLoadedOnce { isLoading = true }
+        defer { isLoading = false; hasLoadedOnce = true }
 
         do {
             let state = try await SpotifyService.shared.fetchNowPlayingState()

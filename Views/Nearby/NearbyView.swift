@@ -6,6 +6,7 @@ struct NearbyView: View {
     
     @EnvironmentObject private var locationService: LocationService
     @StateObject private var viewModel = NearbyViewModel()
+    @State private var expandedSessionId: String?
     
     var body: some View {
         NavigationStack {
@@ -71,9 +72,18 @@ struct NearbyView: View {
                             ScrollView {
                                 LazyVStack(spacing: 14) {
                                     ForEach(viewModel.sessions.indices, id: \.self) { index in
+                                        let sessionId = viewModel.sessions[index].id
                                         SessionRowView(
                                             session: $viewModel.sessions[index],
-                                            userLocation: locationService.currentLocationPoint
+                                            userLocation: locationService.currentLocationPoint,
+                                            isExpanded: Binding(
+                                                get: { expandedSessionId == sessionId },
+                                                set: { newValue in
+                                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                                        expandedSessionId = newValue ? sessionId : nil
+                                                    }
+                                                }
+                                            )
                                         )
                                         .padding(.horizontal, AppLayout.screenPadding)
                                     }

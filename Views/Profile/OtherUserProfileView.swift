@@ -51,12 +51,14 @@ struct OtherUserProfileView: View {
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            isFollowing = (try? await FollowApiService.shared.isFollowing(userId: user.uid)) ?? false
+            async let followCheck = FollowApiService.shared.isFollowing(userId: user.uid)
+            async let countFetch = FollowApiService.shared.fetchFollowerCount(of: user.uid)
+            async let likesFetch = LikeApiService.shared.fetchLikesReceivedCount(for: user.uid)
+
+            isFollowing = (try? await followCheck) ?? false
             isLoadingFollow = false
-            let followers = (try? await FollowApiService.shared.fetchFollowerIds(of: user.uid)) ?? []
-            followerCount = followers.count
-            let likes = (try? await LikeApiService.shared.fetchLikesReceived(for: user.uid)) ?? []
-            likesReceivedCount = likes.count
+            followerCount = (try? await countFetch) ?? 0
+            likesReceivedCount = (try? await likesFetch) ?? 0
         }
     }
 

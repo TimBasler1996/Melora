@@ -703,15 +703,11 @@ struct ProfileView: View {
     private func loadProfileStats() async {
         guard let uid = Auth.auth().currentUser?.uid else { return }
 
-        // Fetch follower count
-        if let followers = try? await FollowApiService.shared.fetchFollowerIds(of: uid) {
-            followerCount = followers.count
-        }
+        async let countFetch = FollowApiService.shared.fetchFollowerCount(of: uid)
+        async let likesFetch = LikeApiService.shared.fetchLikesReceivedCount(for: uid)
 
-        // Fetch likes received count
-        if let likes = try? await LikeApiService.shared.fetchLikesReceived(for: uid) {
-            likesReceivedCount = likes.count
-        }
+        followerCount = (try? await countFetch) ?? 0
+        likesReceivedCount = (try? await likesFetch) ?? 0
     }
 
     private var cardBackground: some View {

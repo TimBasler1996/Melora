@@ -104,7 +104,8 @@ struct DiscoverCardView: View {
                     .lineLimit(1)
 
                 if let distance = broadcast.distanceMeters {
-                    Text("\(Self.formatDistance(distance)) away")
+                    let distStr = Self.formatDistance(distance)
+                    Text(distStr == "nearby" ? "Nearby" : "\(distStr) away")
                         .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundColor(.white.opacity(0.5))
                 }

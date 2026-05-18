@@ -101,11 +101,21 @@ actor LikeApiService {
                 latitude: sessionLocation?.latitude,
                 longitude: sessionLocation?.longitude,
                 fromUserDisplayName: likerUser?.displayName,
-                fromUserAvatarURL: avatarURL, // ✅ Use smart fallback
+                fromUserAvatarURL: avatarURL,
                 message: message,
                 status: .pending
             )
         }
+
+        // Check if there's a previously accepted like between these two users.
+        // If so, auto-accept so the user doesn't need to re-accept.
+        let priorAccepted = try await receivedCollection
+            .whereField("fromUserId", isEqualTo: fromUserId)
+            .whereField("status", isEqualTo: TrackLike.Status.accepted.rawValue)
+            .limit(to: 1)
+            .getDocuments()
+        let autoAccept = !priorAccepted.documents.isEmpty
+        let initialStatus: TrackLike.Status = autoAccept ? .accepted : .pending
 
         let now = Date()
 
@@ -138,7 +148,7 @@ actor LikeApiService {
             "sessionId": NSNull(),
 
             "message": trimmedMessage as Any,
-            "status": TrackLike.Status.pending.rawValue
+            "status": initialStatus.rawValue
         ]
 
         // likesReceived
@@ -167,9 +177,9 @@ actor LikeApiService {
             latitude: sessionLocation?.latitude,
             longitude: sessionLocation?.longitude,
             fromUserDisplayName: likerUser?.displayName,
-            fromUserAvatarURL: avatarURL, // ✅ Use smart fallback
+            fromUserAvatarURL: avatarURL,
             message: trimmedMessage,
-            status: .pending
+            status: initialStatus
         )
     }
 
@@ -207,6 +217,14 @@ actor LikeApiService {
     }
 
     // MARK: - Fetching
+
+    func fetchLikesReceivedCount(for userId: String) async throws -> Int {
+        let query = db.collection(usersCollection)
+            .document(userId)
+            .collection("likesReceived")
+        let snapshot = try await query.count.getAggregation(source: .server)
+        return Int(truncating: snapshot.count)
+    }
 
     func fetchLikesReceived(for userId: String) async throws -> [TrackLike] {
         let snapshot = try await db.collection(usersCollection)

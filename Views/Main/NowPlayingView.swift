@@ -50,18 +50,7 @@ struct NowPlayingView: View {
         .overlay(alignment: .top) {
             // Custom navigation bar (only show chevron when music is playing)
             HStack {
-                if vm.currentTrack != nil {
-                    Button {
-                        openSpotifyLibrary()
-                    } label: {
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(width: 44, height: 44)
-                    }
-                } else {
-                    Color.clear.frame(width: 44, height: 44)
-                }
+                Color.clear.frame(width: 44, height: 44)
 
                 Spacer()
 
@@ -111,11 +100,11 @@ struct NowPlayingView: View {
     @ViewBuilder
     private var content: some View {
         if let track = vm.currentTrack {
-            // ✅ Playing state - full immersive view
+            // ✅ Playing state - compact Melora view
             VStack(spacing: 0) {
                 Spacer()
                     .frame(height: 60) // Space for custom nav bar
-                
+
                 // Compact Broadcast Toggle
                 CompactBroadcastToggle(hasTrack: true)
                     .padding(.horizontal, 20)
@@ -130,104 +119,139 @@ struct NowPlayingView: View {
                         .padding(.bottom, 8)
                 }
 
-                // Large artwork - MAIN focal point
-                SpotifyArtwork(track: track)
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 32)
+                Spacer()
 
-                // Track info
-                VStack(spacing: 6) {
-                    Text(track.title)
-                        .font(.system(size: 26, weight: .bold, design: .default))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    
-                    Text(track.artist)
-                        .font(.system(size: 16, weight: .semibold, design: .default))
-                        .foregroundColor(.white.opacity(0.7))
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 32)
-                .padding(.bottom, 28)
+                // Compact music card: artwork left, info + controls right
+                VStack(spacing: 20) {
+                    HStack(spacing: 16) {
+                        // Compact artwork
+                        CompactArtwork(track: track)
+                            .frame(width: 140, height: 140)
 
-                // Progress bar
-                if let durationMs = track.durationMs {
-                    SpotifyProgressBar(
-                        progressMs: vm.progressMs,
-                        durationMs: durationMs,
-                        isScrubbing: $vm.isScrubbing,
-                        onSeek: { newProgress in
-                            Task { await vm.seek(to: newProgress) }
-                        }
-                    )
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 16)
-                }
+                        // Track info
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(track.title)
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.8)
 
-                // Main playback controls - Spotify style
-                SpotifyControls(
-                    isPlaying: vm.isPlaying,
-                    isBusy: vm.isLoading,
-                    onPrevious: { Task { await vm.previous() } },
-                    onToggle: { Task { await vm.togglePlayPause() } },
-                    onNext: { Task { await vm.next() } }
-                )
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+                            Text(track.artist)
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.7))
+                                .lineLimit(1)
 
-                // Extra controls (shuffle, open Spotify, repeat)
-                HStack(spacing: 0) {
-                    Button(action: {
-                        Task { await vm.toggleShuffle() }
-                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    }) {
-                        Image(systemName: "shuffle")
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(vm.isShuffling ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.6))
-                            .frame(width: 50, height: 50)
-                    }
-                    
-                    Spacer()
-                    
-                    // Open in Spotify button (subtle)
-                    Button(action: {
-                        openSpotifyLibrary()
-                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    }) {
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.4))
-                            .frame(width: 36, height: 36)
-                            .background(
-                                Circle()
-                                    .fill(Color.white.opacity(0.06))
-                            )
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        Task { await vm.cycleRepeatMode() }
-                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    }) {
-                        let iconName: String = {
-                            switch vm.repeatMode {
-                            case .off: return "repeat"
-                            case .context: return "repeat"
-                            case .track: return "repeat.1"
+                            if let album = track.album, !album.isEmpty {
+                                Text(album)
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white.opacity(0.4))
+                                    .lineLimit(1)
                             }
-                        }()
-                        
-                        Image(systemName: iconName)
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundColor(vm.repeatMode != .off ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.6))
-                            .frame(width: 50, height: 50)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .padding(.horizontal, 24)
+
+                    // Thin progress bar
+                    if let durationMs = track.durationMs {
+                        SpotifyProgressBar(
+                            progressMs: vm.progressMs,
+                            durationMs: durationMs,
+                            isScrubbing: $vm.isScrubbing,
+                            onSeek: { newProgress in
+                                Task { await vm.seek(to: newProgress) }
+                            }
+                        )
+                        .padding(.horizontal, 24)
+                    }
+
+                    // Compact playback controls
+                    HStack(spacing: 0) {
+                        // Shuffle
+                        Button(action: {
+                            Task { await vm.toggleShuffle() }
+                            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                        }) {
+                            Image(systemName: "shuffle")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(vm.isShuffling ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.5))
+                                .frame(width: 40, height: 40)
+                        }
+
+                        Spacer()
+
+                        // Previous
+                        Button(action: {
+                            Task { await vm.previous() }
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }) {
+                            Image(systemName: "backward.fill")
+                                .font(.system(size: 24, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(width: 52, height: 52)
+                        }
+                        .disabled(vm.isLoading)
+
+                        // Play/Pause
+                        Button(action: {
+                            Task { await vm.togglePlayPause() }
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 48, height: 48)
+
+                                Image(systemName: vm.isPlaying ? "pause.fill" : "play.fill")
+                                    .font(.system(size: 20, weight: .black))
+                                    .foregroundColor(.black)
+                                    .offset(x: vm.isPlaying ? 0 : 2)
+                            }
+                        }
+                        .disabled(vm.isLoading)
+                        .padding(.horizontal, 8)
+
+                        // Next
+                        Button(action: {
+                            Task { await vm.next() }
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        }) {
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 24, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(width: 52, height: 52)
+                        }
+                        .disabled(vm.isLoading)
+
+                        Spacer()
+
+                        // Repeat
+                        Button(action: {
+                            Task { await vm.cycleRepeatMode() }
+                            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                        }) {
+                            let iconName: String = {
+                                switch vm.repeatMode {
+                                case .off: return "repeat"
+                                case .context: return "repeat"
+                                case .track: return "repeat.1"
+                                }
+                            }()
+
+                            Image(systemName: iconName)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(vm.repeatMode != .off ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.5))
+                                .frame(width: 40, height: 40)
+                        }
+                    }
+                    .padding(.horizontal, 24)
                 }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 24)
+                .padding(.vertical, 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color.white.opacity(0.06))
+                )
+                .padding(.horizontal, 16)
 
                 Spacer()
             }
@@ -283,17 +307,6 @@ struct NowPlayingView: View {
 
                 Spacer()
                 Spacer()
-            }
-        }
-    }
-
-    private func openSpotifyLibrary() {
-        let appURL = URL(string: "spotify:collection")!
-        let webURL = URL(string: "https://open.spotify.com/collection")!
-
-        openURL(appURL) { success in
-            if !success {
-                openURL(webURL)
             }
         }
     }
@@ -413,9 +426,9 @@ private struct CompactBroadcastToggle: View {
     }
 }
 
-// MARK: - Spotify Artwork
+// MARK: - Compact Artwork
 
-private struct SpotifyArtwork: View {
+private struct CompactArtwork: View {
     let track: Track
 
     var body: some View {
@@ -424,42 +437,36 @@ private struct SpotifyArtwork: View {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
-                        Rectangle()
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .fill(Color.white.opacity(0.08))
-                            .overlay(
-                                ProgressView()
-                                    .tint(.white)
-                                    .scaleEffect(1.2)
-                            )
+                            .overlay(ProgressView().tint(.white))
                     case .success(let image):
                         image
                             .resizable()
-                            .scaledToFit()
+                            .scaledToFill()
                     case .failure:
-                        Rectangle()
-                            .fill(Color.white.opacity(0.08))
-                            .overlay(
-                                Image(systemName: "music.note")
-                                    .font(.system(size: 60, weight: .thin))
-                                    .foregroundColor(.white.opacity(0.3))
-                            )
+                        artworkPlaceholder
                     @unknown default:
                         EmptyView()
                     }
                 }
             } else {
-                Rectangle()
-                    .fill(Color.white.opacity(0.08))
-                    .overlay(
-                        Image(systemName: "music.note")
-                            .font(.system(size: 60, weight: .thin))
-                            .foregroundColor(.white.opacity(0.3))
-                    )
+                artworkPlaceholder
             }
         }
         .aspectRatio(1, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .shadow(color: Color.black.opacity(0.6), radius: 30, x: 0, y: 15)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.3), radius: 12, x: 0, y: 6)
+    }
+
+    private var artworkPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(Color.white.opacity(0.08))
+            .overlay(
+                Image(systemName: "music.note")
+                    .font(.system(size: 36, weight: .thin))
+                    .foregroundColor(.white.opacity(0.3))
+            )
     }
 }
 
@@ -557,69 +564,6 @@ private struct SpotifyProgressBar: View {
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     }
             }
-        }
-    }
-}
-
-// MARK: - Spotify Controls
-
-private struct SpotifyControls: View {
-    let isPlaying: Bool
-    let isBusy: Bool
-    let onPrevious: () -> Void
-    let onToggle: () -> Void
-    let onNext: () -> Void
-
-    var body: some View {
-        HStack(spacing: 0) {
-            // Previous
-            Button(action: {
-                onPrevious()
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            }) {
-                Image(systemName: "backward.fill")
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 80, height: 80)
-            }
-            .disabled(isBusy)
-            .opacity(isBusy ? 0.4 : 1.0)
-
-            Spacer()
-
-            // Play/Pause - BIG white circle
-            Button(action: {
-                onToggle()
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            }) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 68, height: 68)
-
-                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 28, weight: .black))
-                        .foregroundColor(.black)
-                        .offset(x: isPlaying ? 0 : 2)
-                }
-            }
-            .disabled(isBusy)
-            .opacity(isBusy ? 0.6 : 1.0)
-
-            Spacer()
-
-            // Next
-            Button(action: {
-                onNext()
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            }) {
-                Image(systemName: "forward.fill")
-                    .font(.system(size: 32, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(width: 80, height: 80)
-            }
-            .disabled(isBusy)
-            .opacity(isBusy ? 0.4 : 1.0)
         }
     }
 }
