@@ -25,6 +25,26 @@ final class DiscoverViewModel: ObservableObject {
         didSet { updateVisibleBroadcasts() }
     }
 
+    // Search radius (km). Only broadcasts within this distance are shown when
+    // the user's location is available. Persisted in UserDefaults.
+    @Published var maxRadiusKm: Double = DiscoverViewModel.loadRadiusKm() {
+        didSet {
+            UserDefaults.standard.set(maxRadiusKm, forKey: Self.radiusKey)
+            updateVisibleBroadcasts()
+        }
+    }
+
+    static let radiusKey = "discover.maxRadiusKm"
+    static let minRadiusKm: Double = 1
+    static let maxRadiusKmAllowed: Double = 500
+    static let defaultRadiusKm: Double = 25
+
+    private static func loadRadiusKm() -> Double {
+        let stored = UserDefaults.standard.double(forKey: radiusKey)
+        guard stored > 0 else { return defaultRadiusKm }
+        return min(max(stored, minRadiusKm), maxRadiusKmAllowed)
+    }
+
     // Following state
     @Published private(set) var followingIds: Set<String> = []
 
@@ -361,6 +381,15 @@ final class DiscoverViewModel: ObservableObject {
                     mutable.distanceMeters = nil
                 }
                 return mutable
+            }
+
+            // Filter to broadcasts within the configured search radius.
+            // Broadcasts without a known location stay visible (we can't tell
+            // whether they're nearby, and excluding them silently would feel broken).
+            let maxMeters = maxRadiusKm * 1000
+            updated = updated.filter { broadcast in
+                guard let distance = broadcast.distanceMeters else { return true }
+                return Double(distance) <= maxMeters
             }
 
             updated.sort { lhs, rhs in

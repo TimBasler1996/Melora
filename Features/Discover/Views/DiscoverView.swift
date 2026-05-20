@@ -26,6 +26,7 @@ struct DiscoverView: View {
 
                 VStack(spacing: 0) {
                     modePickerBar
+                    radiusSlider
                     content
                 }
             }
@@ -100,6 +101,43 @@ struct DiscoverView: View {
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.top, 8)
         .padding(.bottom, 4)
+    }
+
+    private var radiusSlider: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 6) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.65))
+
+                Text("Within")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.65))
+
+                Spacer()
+
+                Text(formatRadius(viewModel.maxRadiusKm))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, AppLayout.screenPadding)
+
+            Slider(
+                value: $viewModel.maxRadiusKm,
+                in: DiscoverViewModel.minRadiusKm...DiscoverViewModel.maxRadiusKmAllowed,
+                step: 1
+            )
+            .tint(AppColors.primary)
+            .padding(.horizontal, AppLayout.screenPadding)
+        }
+        .padding(.top, 6)
+        .padding(.bottom, 6)
+    }
+
+    private func formatRadius(_ km: Double) -> String {
+        let rounded = Int(km.rounded())
+        return "\(rounded) km"
     }
 
     @ViewBuilder
