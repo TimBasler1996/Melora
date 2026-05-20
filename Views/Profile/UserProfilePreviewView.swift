@@ -12,34 +12,30 @@ struct UserProfilePreviewView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        GeometryReader { geo in
-            let contentWidth = geo.size.width - (AppLayout.screenPadding * 2)
+        ZStack {
+            AppColors.background.ignoresSafeArea()
 
-            ZStack {
-                AppColors.background.ignoresSafeArea()
-
-                if vm.isLoading {
-                    loadingState
-                } else if let error = vm.errorMessage {
-                    errorState(error)
-                } else if let user = vm.user {
-                    ScrollView(.vertical) {
-                        VStack(spacing: 16) {
-                            if !vm.isOwnProfile {
-                                followBar
-                            }
-
-                            let previewData = ProfilePreviewData.from(
-                                appUser: user,
-                                followerCount: vm.followerCount,
-                                likesReceivedCount: vm.likesReceivedCount
-                            )
-                            SharedProfilePreviewView(data: previewData)
+            if vm.isLoading {
+                loadingState
+            } else if let error = vm.errorMessage {
+                errorState(error)
+            } else if let user = vm.user {
+                ScrollView(.vertical) {
+                    VStack(spacing: 16) {
+                        if !vm.isOwnProfile {
+                            followBar
                         }
-                        .frame(width: contentWidth, alignment: .center)
-                        .padding(.bottom, 28)
-                        .frame(maxWidth: .infinity, alignment: .center)
+
+                        let previewData = ProfilePreviewData.from(
+                            appUser: user,
+                            followerCount: vm.followerCount,
+                            likesReceivedCount: vm.likesReceivedCount
+                        )
+                        SharedProfilePreviewView(data: previewData)
                     }
+                    .padding(.horizontal, AppLayout.screenPadding)
+                    .padding(.bottom, 28)
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -75,6 +71,7 @@ struct UserProfilePreviewView: View {
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
                     .fill(vm.isFollowing ? Color.white.opacity(0.15) : AppColors.primary)
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(vm.isFollowLoading)

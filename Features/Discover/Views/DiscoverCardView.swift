@@ -10,9 +10,11 @@ struct DiscoverCardView: View {
     let onLikeTrack: () -> Void
     let onMessage: (String) -> Void
     let onViewProfile: () -> Void
+    let onToggleFollow: () -> Void
 
     var hasLiked: Bool = false
     var hasMessaged: Bool = false
+    var isFollowing: Bool = false
 
     @Environment(\.openURL) private var openURL
 
@@ -134,7 +136,7 @@ struct DiscoverCardView: View {
             .padding(.horizontal, 14)
     }
 
-    // MARK: - 4 Action Buttons (Like, Message, Profile, X) + Spotify Link Card
+    // MARK: - Action Buttons (Like, Message, Follow, Profile, X) + Spotify Link Card
 
     private var actionButtonsRow: some View {
         HStack(spacing: 0) {
@@ -156,7 +158,16 @@ struct DiscoverCardView: View {
                 handleMessageAction()
             }
 
-            // 3. Profile
+            // 3. Follow
+            actionButton(
+                icon: isFollowing ? "person.fill.checkmark" : "person.fill.badge.plus",
+                label: isFollowing ? "Following" : "Follow",
+                color: isFollowing ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white
+            ) {
+                onToggleFollow()
+            }
+
+            // 4. Profile
             actionButton(
                 icon: "person.crop.circle",
                 label: "Profile",
@@ -165,7 +176,7 @@ struct DiscoverCardView: View {
                 onViewProfile()
             }
 
-            // 4. Dismiss (X)
+            // 5. Dismiss (X)
             actionButton(
                 icon: "xmark",
                 label: "",

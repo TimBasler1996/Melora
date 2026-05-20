@@ -63,7 +63,7 @@ struct ChatInboxView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .padding(.horizontal, AppLayout.screenPadding)
-        } else if vm.acceptedRows.isEmpty && vm.pendingRequestRows.isEmpty {
+        } else if vm.acceptedRows.isEmpty && vm.pendingRequestRows.isEmpty && vm.sentRequestRows.isEmpty {
             VStack(spacing: 10) {
                 Spacer()
                 Text("No chats yet")
@@ -86,6 +86,18 @@ struct ChatInboxView: View {
                             requestsBanner(count: vm.pendingRequestRows.count)
                         }
                         .buttonStyle(.plain)
+                    }
+
+                    if !vm.sentRequestRows.isEmpty {
+                        chatSectionHeader("Waiting for response")
+                        ForEach(vm.sentRequestRows) { row in
+                            NavigationLink {
+                                ChatView(conversationId: row.conversationId)
+                            } label: {
+                                ChatInboxRowView(row: row)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
 
                     if !vm.todayRows.isEmpty {

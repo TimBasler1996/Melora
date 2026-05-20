@@ -42,7 +42,15 @@ final class LikesInboxViewModel: ObservableObject {
         Task {
             do {
                 var likes = try await likeService.fetchLikesReceived(for: userId)
-                
+
+                // Likes that include a message text belong in the Chats tab
+                // (as message requests / accepted conversations), not in the
+                // Likes inbox. Keep this view focused on pure likes.
+                likes = likes.filter { like in
+                    let trimmed = (like.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                    return trimmed.isEmpty
+                }
+
                 // ✅ IMPORTANT: Enrich likes with missing user data
                 print("🔄 [Inbox] Fetched \(likes.count) likes, enriching with user data...")
                 

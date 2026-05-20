@@ -47,6 +47,16 @@ final class ChatInboxViewModel: ObservableObject {
         }
     }
 
+    /// Pending conversations where the *current user* sent the request
+    /// (waiting for the other side to accept). Shown so the sender can still
+    /// find the chat they just started from Discover.
+    var sentRequestRows: [ChatInboxRow] {
+        guard let myUid = Auth.auth().currentUser?.uid else { return [] }
+        return rows.filter { row in
+            row.status == .pending && row.initiatorId == myUid
+        }
+    }
+
     var todayRows: [ChatInboxRow] {
         acceptedRows.filter { row in
             guard let date = row.lastMessageAt ?? row.updatedAt else { return false }

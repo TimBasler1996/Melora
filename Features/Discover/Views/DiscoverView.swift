@@ -235,8 +235,12 @@ struct DiscoverView: View {
                             onViewProfile: {
                                 viewModel.selectBroadcast(broadcast)
                             },
+                            onToggleFollow: {
+                                Task { await viewModel.toggleFollow(broadcast) }
+                            },
                             hasLiked: viewModel.isLiked(broadcast),
-                            hasMessaged: viewModel.hasMessage(broadcast)
+                            hasMessaged: viewModel.hasMessage(broadcast),
+                            isFollowing: viewModel.isFollowing(broadcast)
                         )
                         .padding(.horizontal, max(AppLayout.screenPadding, 20))
                         .transition(.asymmetric(

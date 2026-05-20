@@ -65,6 +65,11 @@ final class LikesBadgeViewModel: ObservableObject {
             let seen = self.lastSeenDate
             let unread = docs.compactMap { doc -> Date? in
                 let data = doc.data()
+                // Likes with a message belong in the Chat tab; exclude them
+                // so the Likes badge only reflects pure likes.
+                let message = (data["message"] as? String)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                guard message.isEmpty else { return nil }
                 if let ts = data["createdAt"] as? Timestamp { return ts.dateValue() }
                 if let date = data["createdAt"] as? Date { return date }
                 return nil
