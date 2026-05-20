@@ -257,9 +257,39 @@ final class DiscoverViewModel: ObservableObject {
     func isLiked(_ broadcast: DiscoverBroadcast) -> Bool {
         likedBroadcastIds.contains(broadcast.id)
     }
-    
+
     func hasMessage(_ broadcast: DiscoverBroadcast) -> Bool {
         messagedBroadcastIds.contains(broadcast.id)
+    }
+
+    func isFollowing(_ broadcast: DiscoverBroadcast) -> Bool {
+        followingIds.contains(broadcast.user.id)
+    }
+
+    func toggleFollow(_ broadcast: DiscoverBroadcast) async {
+        let userId = broadcast.user.id
+        let wasFollowing = followingIds.contains(userId)
+        // Optimistic update so the button reacts instantly.
+        if wasFollowing {
+            followingIds.remove(userId)
+        } else {
+            followingIds.insert(userId)
+        }
+        do {
+            if wasFollowing {
+                try await followService.unfollow(userId: userId)
+            } else {
+                try await followService.follow(userId: userId)
+            }
+        } catch {
+            // Rollback on failure.
+            if wasFollowing {
+                followingIds.insert(userId)
+            } else {
+                followingIds.remove(userId)
+            }
+            print("Follow toggle failed: \(error)")
+        }
     }
     
     // MARK: - Cache Management
@@ -328,13 +358,19 @@ final class DiscoverViewModel: ObservableObject {
                 spotifyTrackURL: record.spotifyTrackURL
             )
 
+            let distanceMeters: Int? = {
+                guard let currentLocation, let location = record.location else { return nil }
+                let target = CLLocation(latitude: location.latitude, longitude: location.longitude)
+                return Int(currentLocation.distance(from: target))
+            }()
+
             return DiscoverBroadcast(
                 id: record.id,
                 user: user,
                 track: track,
                 broadcastedAt: record.broadcastedAt,
                 location: record.location,
-                distanceMeters: nil
+                distanceMeters: distanceMeters
             )
         }
 

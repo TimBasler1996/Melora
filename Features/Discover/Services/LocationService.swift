@@ -22,15 +22,22 @@ final class LocationService: NSObject, ObservableObject {
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
         authorizationStatus = manager.authorizationStatus
+        // If authorization was already granted in a previous session, the
+        // delegate's didChangeAuthorization callback won't fire, so we have
+        // to kick off location updates manually here.
+        startUpdatingIfAuthorized()
     }
 
     // MARK: - Public API
 
-    /// Requests "when in use" authorization if not determined yet.
+    /// Requests "when in use" authorization if not determined yet. If
+    /// authorization is already granted, ensures location updates are running.
     func requestAuthorizationIfNeeded() {
         switch manager.authorizationStatus {
         case .notDetermined:
             manager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse, .authorizedAlways:
+            startUpdatingIfAuthorized()
         default:
             break
         }
