@@ -63,7 +63,7 @@ struct ChatInboxView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .padding(.horizontal, AppLayout.screenPadding)
-        } else if vm.rows.isEmpty {
+        } else if vm.acceptedRows.isEmpty && vm.pendingRequestRows.isEmpty {
             VStack(spacing: 10) {
                 Spacer()
                 Text("No chats yet")
@@ -79,6 +79,15 @@ struct ChatInboxView: View {
         } else {
             ScrollView {
                 VStack(spacing: 12) {
+                    if !vm.pendingRequestRows.isEmpty {
+                        NavigationLink {
+                            ChatRequestsView(rows: vm.pendingRequestRows)
+                        } label: {
+                            requestsBanner(count: vm.pendingRequestRows.count)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     if !vm.todayRows.isEmpty {
                         chatSectionHeader("Today")
                         ForEach(vm.todayRows) { row in
@@ -107,6 +116,40 @@ struct ChatInboxView: View {
             }
             .scrollIndicators(.hidden)
         }
+    }
+
+    private func requestsBanner(count: Int) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(AppColors.primary.opacity(0.25))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "tray.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Message Requests")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                Text("\(count) new \(count == 1 ? "request" : "requests")")
+                    .font(AppFonts.footnote())
+                    .foregroundColor(.white.opacity(0.7))
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.5))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+        )
     }
 
     private func chatSectionHeader(_ title: String) -> some View {

@@ -14,6 +14,7 @@ struct ChatView: View {
     let conversationId: String
 
     @StateObject private var vm = ChatViewModel()
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
@@ -58,6 +59,10 @@ struct ChatView: View {
                     ScrollViewReader { proxy in
                         ScrollView {
                             VStack(spacing: 10) {
+                                if vm.needsAcceptance || vm.waitingForAcceptance {
+                                    requestBanner
+                                }
+
                                 ForEach(vm.messages) { msg in
                                     ChatBubble(message: msg)
                                         .id(msg.id)
@@ -75,7 +80,7 @@ struct ChatView: View {
                         }
                     }
 
-                    composer
+                    footer
                 }
             }
         }
@@ -86,6 +91,93 @@ struct ChatView: View {
             Task { await vm.markAsRead(conversationId: conversationId) }
             vm.stop()
         }
+    }
+
+    @ViewBuilder
+    private var footer: some View {
+        if vm.needsAcceptance {
+            acceptDeclineFooter
+        } else if vm.waitingForAcceptance {
+            waitingFooter
+        } else {
+            composer
+        }
+    }
+
+    private var requestBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "envelope.fill")
+                .font(.system(size: 12, weight: .bold))
+            Text(vm.needsAcceptance
+                 ? "Message request — accept to start chatting"
+                 : "Waiting for the other user to accept your request")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+        }
+        .foregroundColor(.white.opacity(0.85))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            Capsule().fill(Color.white.opacity(0.12))
+        )
+        .padding(.bottom, 4)
+    }
+
+    private var acceptDeclineFooter: some View {
+        HStack(spacing: 10) {
+            Button {
+                Task {
+                    await vm.declineRequest()
+                    dismiss()
+                }
+            } label: {
+                Text("Decline")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.white.opacity(0.14))
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(vm.isResponding)
+
+            Button {
+                Task { await vm.acceptRequest() }
+            } label: {
+                HStack(spacing: 6) {
+                    if vm.isResponding {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                    }
+                    Text("Accept")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(AppColors.primary)
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(vm.isResponding)
+        }
+        .padding(.horizontal, AppLayout.screenPadding)
+        .padding(.bottom, 12)
+    }
+
+    private var waitingFooter: some View {
+        Text("You can send more messages once your request is accepted.")
+            .font(AppFonts.footnote())
+            .foregroundColor(.white.opacity(0.6))
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, AppLayout.screenPadding)
+            .padding(.vertical, 14)
     }
 
     private var composer: some View {

@@ -10,6 +10,13 @@ import Foundation
 import FirebaseFirestore
 
 struct Conversation: Identifiable, Codable, Equatable {
+
+    enum Status: String, Codable {
+        case pending
+        case accepted
+        case rejected
+    }
+
     var id: String
 
     var participantIds: [String]
@@ -23,6 +30,15 @@ struct Conversation: Identifiable, Codable, Equatable {
     var lastMessageAt: Date?
     var lastMessageSenderId: String?
     var lastReadAt: [String: Date]?
+
+    /// `pending` if this conversation started as a message request that the
+    /// recipient hasn't accepted yet. Missing field is treated as `accepted`
+    /// for backwards compatibility with conversations created before requests.
+    var status: Status?
+
+    /// Who started the conversation (sent the first message / message-request).
+    /// Used to determine which side sees the Accept/Decline UI.
+    var initiatorId: String?
 
     static func fromFirestore(id: String, data: [String: Any]) -> Conversation? {
         guard let participantIds = data["participantIds"] as? [String] else { return nil }
@@ -47,6 +63,8 @@ struct Conversation: Identifiable, Codable, Equatable {
             return result.isEmpty ? nil : result
         }()
 
+        let status = (data["status"] as? String).flatMap(Status.init(rawValue:))
+
         return Conversation(
             id: id,
             participantIds: participantIds,
@@ -57,7 +75,14 @@ struct Conversation: Identifiable, Codable, Equatable {
             lastMessageText: data["lastMessageText"] as? String,
             lastMessageAt: date("lastMessageAt"),
             lastMessageSenderId: data["lastMessageSenderId"] as? String,
-            lastReadAt: lastReadAtDict
+            lastReadAt: lastReadAtDict,
+            status: status,
+            initiatorId: data["initiatorId"] as? String
         )
+    }
+
+    /// Conversations without an explicit status (legacy data) are treated as accepted.
+    var effectiveStatus: Status {
+        status ?? .accepted
     }
 }

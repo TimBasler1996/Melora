@@ -21,6 +21,9 @@ struct ChatInboxRow: Identifiable {
     var lastMessageAt: Date?
     var updatedAt: Date?
     var isUnread: Bool = false
+
+    var status: Conversation.Status = .accepted
+    var initiatorId: String?
 }
 
 @MainActor
@@ -30,15 +33,29 @@ final class ChatInboxViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
+    /// Accepted conversations only.
+    var acceptedRows: [ChatInboxRow] {
+        rows.filter { $0.status == .accepted }
+    }
+
+    /// Pending conversations where the *current user* is the recipient
+    /// (i.e. someone sent them a message request).
+    var pendingRequestRows: [ChatInboxRow] {
+        guard let myUid = Auth.auth().currentUser?.uid else { return [] }
+        return rows.filter { row in
+            row.status == .pending && row.initiatorId != myUid
+        }
+    }
+
     var todayRows: [ChatInboxRow] {
-        rows.filter { row in
+        acceptedRows.filter { row in
             guard let date = row.lastMessageAt ?? row.updatedAt else { return false }
             return Calendar.current.isDateInToday(date)
         }
     }
 
     var earlierRows: [ChatInboxRow] {
-        rows.filter { row in
+        acceptedRows.filter { row in
             guard let date = row.lastMessageAt ?? row.updatedAt else { return true }
             return !Calendar.current.isDateInToday(date)
         }
@@ -104,6 +121,11 @@ final class ChatInboxViewModel: ObservableObject {
                     return msgAt > readAt
                 }()
 
+                let status = (data["status"] as? String)
+                    .flatMap(Conversation.Status.init(rawValue:))
+                    ?? .accepted
+                let initiatorId = data["initiatorId"] as? String
+
                 return ChatInboxRow(
                     id: doc.documentID,
                     conversationId: doc.documentID,
@@ -113,7 +135,9 @@ final class ChatInboxViewModel: ObservableObject {
                     lastMessageText: lastText,
                     lastMessageAt: lastAt,
                     updatedAt: updatedAt,
-                    isUnread: isUnread
+                    isUnread: isUnread,
+                    status: status,
+                    initiatorId: initiatorId
                 )
             }
 
