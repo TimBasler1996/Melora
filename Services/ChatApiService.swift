@@ -66,13 +66,19 @@ actor ChatApiService {
                 "createdAt": now,
                 "updatedAt": now,
                 "createdFromLikeId": acceptedLike.id as Any,
-                "createdFromTrackId": acceptedLike.trackId as Any
+                "createdFromTrackId": acceptedLike.trackId as Any,
+                "status": Conversation.Status.accepted.rawValue,
+                "initiatorId": likerId
             ]
             try await convoRef.setData(convoPayload, merge: true)
             print("✅ [Chat] created conversation doc \(convoId)")
         } else {
-            try await convoRef.setData(["updatedAt": now], merge: true)
-            print("ℹ️ [Chat] conversation exists, updatedAt touched \(convoId)")
+            // Always mark as accepted when this path is reached (existing pending request being accepted)
+            try await convoRef.setData([
+                "updatedAt": now,
+                "status": Conversation.Status.accepted.rawValue
+            ], merge: true)
+            print("ℹ️ [Chat] conversation exists, marked accepted \(convoId)")
         }
 
         // 🔎 Debug check: make sure doc exists + has participantIds
@@ -133,6 +139,121 @@ actor ChatApiService {
             lastMessageAt: likeMessage.isEmpty ? nil : now,
             lastMessageSenderId: likeMessage.isEmpty ? nil : likerId
         )
+    }
+
+    // MARK: - Message Request (Discover Like-with-message Flow)
+
+    /// Creates a `pending` conversation with the first message taken from a like's
+    /// message text. Used when user A sends a like + message to user B for the
+    /// first time. The conversation appears in B's "Message Requests" inbox
+    /// until B accepts it.
+    ///
+    /// If the conversation already exists, this is a no-op except for touching
+    /// updatedAt — we never downgrade an accepted conversation back to pending.
+    @discardableResult
+    func createMessageRequestConversation(
+        like: TrackLike,
+        receiverUserId: String
+    ) async throws -> Conversation {
+
+        guard Auth.auth().currentUser != nil else {
+            throw NSError(
+                domain: "ChatApiService",
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Not authenticated"]
+            )
+        }
+
+        let likeMessage = (like.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !likeMessage.isEmpty else {
+            throw NSError(
+                domain: "ChatApiService",
+                code: 400,
+                userInfo: [NSLocalizedDescriptionKey: "Cannot create a request without a message"]
+            )
+        }
+
+        let likerId = like.fromUserId
+        let convoId = conversationId(for: receiverUserId, and: likerId)
+        let convoRef = db.collection(conversationsCollection).document(convoId)
+        let now = Date()
+
+        let snap = try await convoRef.getDocument()
+        if !snap.exists {
+            let payload: [String: Any] = [
+                "participantIds": [receiverUserId, likerId],
+                "createdAt": now,
+                "updatedAt": now,
+                "createdFromLikeId": like.id as Any,
+                "createdFromTrackId": like.trackId as Any,
+                "status": Conversation.Status.pending.rawValue,
+                "initiatorId": likerId,
+                "lastMessageText": likeMessage,
+                "lastMessageAt": now,
+                "lastMessageSenderId": likerId
+            ]
+            try await convoRef.setData(payload, merge: true)
+        } else {
+            // Don't change status if already accepted
+            try await convoRef.setData([
+                "updatedAt": now,
+                "lastMessageText": likeMessage,
+                "lastMessageAt": now,
+                "lastMessageSenderId": likerId
+            ], merge: true)
+        }
+
+        // Create the first message if no messages exist yet
+        let messagesRef = convoRef.collection("messages")
+        let existing = try await messagesRef.limit(to: 1).getDocuments()
+        if existing.documents.isEmpty {
+            let msgRef = messagesRef.document()
+            try await msgRef.setData([
+                "senderId": likerId,
+                "text": likeMessage,
+                "createdAt": now,
+                "type": ChatMessage.MessageType.text.rawValue
+            ])
+        }
+
+        let finalSnap = try await convoRef.getDocument()
+        let data = finalSnap.data() ?? [:]
+        if let convo = Conversation.fromFirestore(id: convoId, data: data) {
+            return convo
+        }
+        return Conversation(
+            id: convoId,
+            participantIds: [receiverUserId, likerId],
+            createdAt: now,
+            updatedAt: now,
+            createdFromLikeId: like.id,
+            createdFromTrackId: like.trackId,
+            lastMessageText: likeMessage,
+            lastMessageAt: now,
+            lastMessageSenderId: likerId,
+            status: .pending,
+            initiatorId: likerId
+        )
+    }
+
+    /// Marks an existing conversation as accepted. Used both when a like is
+    /// accepted from the Likes inbox and when the recipient accepts the
+    /// message request directly from the chat view.
+    func acceptConversation(conversationId: String) async throws {
+        let ref = db.collection(conversationsCollection).document(conversationId)
+        try await ref.setData([
+            "status": Conversation.Status.accepted.rawValue,
+            "updatedAt": Date()
+        ], merge: true)
+    }
+
+    /// Fetches a single conversation. Returns nil if it doesn't exist.
+    func fetchConversation(conversationId: String) async throws -> Conversation? {
+        let snap = try await db.collection(conversationsCollection)
+            .document(conversationId)
+            .getDocument()
+        guard snap.exists, let data = snap.data() else { return nil }
+        return Conversation.fromFirestore(id: conversationId, data: data)
     }
 
     // MARK: - Send Message (Discover Like Flow)

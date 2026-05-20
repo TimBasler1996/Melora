@@ -133,11 +133,30 @@ final class LikeNotificationService: ObservableObject {
                             displayName = await self.fetchDisplayName(uid: fromUserId)
                         }
 
+                        let messageText = (data["message"] as? String)?
+                            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                        let hasMessage = !messageText.isEmpty
+
+                        let title: String
+                        let body: String
+                        let type: String
+                        if hasMessage {
+                            title = "\(displayName) sent you a message"
+                            body = messageText.count > 140
+                                ? String(messageText.prefix(137)) + "…"
+                                : messageText
+                            type = "messageRequest"
+                        } else {
+                            title = "\(displayName) liked your track!"
+                            body = "\"\(trackTitle)\" got a new like."
+                            type = "likeReceived"
+                        }
+
                         await self.sendLocalNotification(
                             id: "like-received-\(likeId)",
-                            title: "\(displayName) liked your track!",
-                            body: "\"\(trackTitle)\" got a new like.",
-                            userInfo: ["likeId": likeId, "type": "likeReceived"]
+                            title: title,
+                            body: body,
+                            userInfo: ["likeId": likeId, "type": type]
                         )
                     }
                     self.notifiedReceivedIds.insert(likeId)

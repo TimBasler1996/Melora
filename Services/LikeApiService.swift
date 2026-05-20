@@ -207,12 +207,34 @@ actor LikeApiService {
 
         // Also update sender's likesGiven mirror so they can see the status change
         let receivedDoc = try await receivedRef.getDocument()
-        if let fromUserId = receivedDoc.data()?["fromUserId"] as? String {
-            let givenRef = db.collection(usersCollection)
-                .document(fromUserId)
-                .collection("likesGiven")
-                .document(likeId)
-            try? await givenRef.updateData(statusData)
+        guard let fromUserId = receivedDoc.data()?["fromUserId"] as? String else { return }
+
+        let givenRef = db.collection(usersCollection)
+            .document(fromUserId)
+            .collection("likesGiven")
+            .document(likeId)
+        try? await givenRef.updateData(statusData)
+
+        // Mirror to the linked conversation (if any) so it disappears from
+        // the recipient's Message Requests inbox or moves to accepted Chats.
+        let convoStatus: Conversation.Status? = {
+            switch status {
+            case .accepted: return .accepted
+            case .rejected: return .rejected
+            case .pending:  return nil
+            }
+        }()
+        if let convoStatus {
+            let convoId = [toUserId.lowercased(), fromUserId.lowercased()]
+                .sorted()
+                .joined(separator: "_")
+            let convoRef = db.collection("conversations").document(convoId)
+            if let convoSnap = try? await convoRef.getDocument(), convoSnap.exists {
+                try? await convoRef.setData([
+                    "status": convoStatus.rawValue,
+                    "updatedAt": Date()
+                ], merge: true)
+            }
         }
     }
 

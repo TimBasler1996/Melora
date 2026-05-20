@@ -208,18 +208,22 @@ final class DiscoverViewModel: ObservableObject {
             broadcastId: broadcast.id
         )
 
-        // If the like was auto-accepted (prior relationship exists), create conversation stub now
+        let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
         if like.status == .accepted {
+            // Prior relationship: create or touch the accepted conversation.
             _ = try? await chatService.createConversationStubIfNeeded(
                 acceptedLike: like,
                 receiverUserId: broadcast.user.id
             )
+        } else if !trimmedMessage.isEmpty {
+            // First-time message: create a pending conversation as a message request.
+            _ = try? await chatService.createMessageRequestConversation(
+                like: like,
+                receiverUserId: broadcast.user.id
+            )
         }
 
-        // Message is stored in the like document via likeBroadcastTrack(..., message:).
-        // The conversation + first message will be created when the like is accepted
-        // (in ChatApiService.createConversationStubIfNeeded).
-        let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedMessage.isEmpty {
             messagedBroadcastIds.insert(broadcast.id)
             saveMessagedBroadcastsToCache()

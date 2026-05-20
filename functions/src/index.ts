@@ -71,14 +71,29 @@ export const onLikeCreated = functions.firestore
       await getDisplayName(data.fromUserId ?? "");
     const trackTitle = data.trackTitle ?? "a track";
 
+    const messageText: string = (data.message ?? "").trim();
+    const hasMessage = messageText.length > 0;
+
+    // When a message is attached, surface it as a message request (Instagram-style).
+    // Otherwise fall back to the plain "liked your track" notification.
+    const notificationTitle = hasMessage
+      ? `${fromName} sent you a message`
+      : `${fromName} liked your track!`;
+
+    const notificationBody = hasMessage
+      ? messageText.length > 140
+        ? messageText.slice(0, 137) + "…"
+        : messageText
+      : `"${trackTitle}" got a new like.`;
+
     const message: admin.messaging.Message = {
       token,
       notification: {
-        title: `${fromName} liked your track!`,
-        body: `"${trackTitle}" got a new like.`,
+        title: notificationTitle,
+        body: notificationBody,
       },
       data: {
-        type: "likeReceived",
+        type: hasMessage ? "messageRequest" : "likeReceived",
         likeId: context.params.likeId,
       },
       apns: {
