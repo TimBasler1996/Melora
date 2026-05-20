@@ -49,7 +49,11 @@ struct ProfilePreviewData: Equatable {
         )
     }
 
-    static func from(appUser: AppUser) -> ProfilePreviewData {
+    static func from(
+        appUser: AppUser,
+        followerCount: Int? = nil,
+        likesReceivedCount: Int? = nil
+    ) -> ProfilePreviewData {
         let additionalPhotos = Array((appUser.photoURLs ?? []).dropFirst())
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
@@ -65,9 +69,9 @@ struct ProfilePreviewData: Equatable {
             spotifyId: appUser.spotifyId,
             musicTaste: appUser.musicTaste?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.musicTaste : nil,
             lookingFor: appUser.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.lookingFor : nil,
-            followerCount: nil,
+            followerCount: followerCount,
             broadcastMinutes: appUser.broadcastMinutesTotal,
-            likesReceivedCount: nil
+            likesReceivedCount: likesReceivedCount
         )
     }
 }
