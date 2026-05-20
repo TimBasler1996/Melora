@@ -16,11 +16,24 @@ struct ChatMessage: Identifiable, Codable, Equatable {
         case system
     }
 
+    /// Snapshot of the message being replied to, denormalized onto the new
+    /// message so the chat can render the quoted bubble without an extra fetch.
+    struct ReplyContext: Codable, Equatable {
+        var messageId: String
+        var senderId: String
+        var textPreview: String
+    }
+
     var id: String
     var senderId: String
     var text: String
     var createdAt: Date
     var type: MessageType
+
+    var replyTo: ReplyContext?
+
+    /// Reactions keyed by user id → emoji. One reaction per user per message.
+    var reactions: [String: String]?
 
     static func fromFirestore(id: String, data: [String: Any]) -> ChatMessage? {
         guard
@@ -37,12 +50,24 @@ struct ChatMessage: Identifiable, Codable, Equatable {
         let typeRaw = data["type"] as? String
         let type = typeRaw.flatMap(MessageType.init(rawValue:)) ?? .text
 
+        let replyTo: ReplyContext? = {
+            guard let dict = data["replyTo"] as? [String: Any],
+                  let messageId = dict["messageId"] as? String,
+                  let senderId = dict["senderId"] as? String,
+                  let textPreview = dict["textPreview"] as? String else { return nil }
+            return ReplyContext(messageId: messageId, senderId: senderId, textPreview: textPreview)
+        }()
+
+        let reactions = data["reactions"] as? [String: String]
+
         return ChatMessage(
             id: id,
             senderId: senderId,
             text: text,
             createdAt: createdAt,
-            type: type
+            type: type,
+            replyTo: replyTo,
+            reactions: reactions
         )
     }
 }

@@ -15,9 +15,26 @@ final class ChatViewModel: ObservableObject {
     @Published var conversation: Conversation?
     @Published var isResponding: Bool = false
 
+    /// Message the user is composing a reply to. When set, the composer shows
+    /// a quote bar and the next sent message carries the reply context.
+    @Published var replyingTo: ChatMessage?
+
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
     private var conversationListener: ListenerRegistration?
+
+    /// When the *other* user last opened this conversation. Used to render
+    /// a "Seen" label under the most recent message we sent.
+    var otherUserLastReadAt: Date? {
+        guard let convo = conversation else { return nil }
+        guard let myId = Auth.auth().currentUser?.uid else { return nil }
+        guard let otherId = convo.participantIds.first(where: { $0 != myId }) else { return nil }
+        return convo.lastReadAt?[otherId]
+    }
+
+    var currentUserId: String? {
+        Auth.auth().currentUser?.uid
+    }
 
     /// True when the conversation is a pending message request and the current
     /// user is the recipient (i.e. they need to Accept or Decline).
@@ -117,18 +134,31 @@ final class ChatViewModel: ObservableObject {
         isSending = true
         defer { isSending = false }
 
+        let replyContext = replyingTo
+        replyingTo = nil
+
         do {
             let now = Date()
 
             let convoRef = db.collection("conversations").document(conversationId)
             let msgRef = convoRef.collection("messages").document()
 
-            try await msgRef.setData([
+            var payload: [String: Any] = [
                 "senderId": myId,
                 "text": text,
                 "createdAt": now,
                 "type": ChatMessage.MessageType.text.rawValue
-            ])
+            ]
+
+            if let replyContext {
+                payload["replyTo"] = [
+                    "messageId": replyContext.id,
+                    "senderId": replyContext.senderId,
+                    "textPreview": String(replyContext.text.prefix(120))
+                ]
+            }
+
+            try await msgRef.setData(payload)
 
             try await convoRef.setData([
                 "lastMessageText": text,
@@ -143,6 +173,44 @@ final class ChatViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             print("❌ [Chat] send failed:", error.localizedDescription)
         }
+    }
+
+    // MARK: - Reactions
+
+    /// Toggle a heart reaction on a message. If the user already reacted
+    /// with the same emoji, removes it; otherwise overwrites their previous one.
+    func toggleReaction(_ emoji: String, on message: ChatMessage, conversationId: String) async {
+        guard let myId = Auth.auth().currentUser?.uid else { return }
+
+        let msgRef = db.collection("conversations")
+            .document(conversationId)
+            .collection("messages")
+            .document(message.id)
+
+        let existing = message.reactions?[myId]
+        let removing = existing == emoji
+
+        do {
+            if removing {
+                try await msgRef.updateData([
+                    "reactions.\(myId)": FieldValue.delete()
+                ])
+            } else {
+                try await msgRef.updateData([
+                    "reactions.\(myId)": emoji
+                ])
+            }
+        } catch {
+            print("❌ [Chat] reaction failed:", error.localizedDescription)
+        }
+    }
+
+    func startReply(to message: ChatMessage) {
+        replyingTo = message
+    }
+
+    func cancelReply() {
+        replyingTo = nil
     }
 
     /// Accept a pending message request: mark the underlying like as accepted
