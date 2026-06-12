@@ -42,6 +42,10 @@ final class FollowersInboxViewModel: ObservableObject {
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
 
+    deinit {
+        listener?.remove()
+    }
+
     init() {
         if let stored = UserDefaults.standard.object(forKey: lastSeenKey) as? Date {
             lastSeenDate = stored

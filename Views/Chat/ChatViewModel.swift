@@ -27,6 +27,11 @@ final class ChatViewModel: ObservableObject {
     private var listener: ListenerRegistration?
     private var conversationListener: ListenerRegistration?
 
+    deinit {
+        listener?.remove()
+        conversationListener?.remove()
+    }
+
     /// When the *other* user last opened this conversation. Used to render
     /// a "Seen" label under the most recent message we sent.
     var otherUserLastReadAt: Date? {
