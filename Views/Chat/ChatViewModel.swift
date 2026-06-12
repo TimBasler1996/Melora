@@ -9,6 +9,10 @@ final class ChatViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
 
+    /// Transient error from an action (send/accept/decline). Shown as an alert
+    /// instead of replacing the chat like `errorMessage` does.
+    @Published var actionError: String?
+
     @Published var draft: String = ""
     @Published var isSending: Bool = false
 
@@ -22,6 +26,11 @@ final class ChatViewModel: ObservableObject {
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
     private var conversationListener: ListenerRegistration?
+
+    deinit {
+        listener?.remove()
+        conversationListener?.remove()
+    }
 
     /// When the *other* user last opened this conversation. Used to render
     /// a "Seen" label under the most recent message we sent.
@@ -127,7 +136,7 @@ final class ChatViewModel: ObservableObject {
 
         // Block sending in pending conversations.
         if let convo = conversation, convo.effectiveStatus == .pending {
-            errorMessage = "Wait for the other user to accept your request before sending more messages."
+            actionError = "Wait for the other user to accept your request before sending more messages."
             return
         }
 
@@ -170,7 +179,9 @@ final class ChatViewModel: ObservableObject {
             draft = ""
             print("✅ [Chat] sent message \(msgRef.documentID)")
         } catch {
-            errorMessage = error.localizedDescription
+            // Keep the draft and reply context so the user can retry.
+            replyingTo = replyContext
+            actionError = "Couldn’t send your message. Please try again."
             print("❌ [Chat] send failed:", error.localizedDescription)
         }
     }
@@ -231,14 +242,16 @@ final class ChatViewModel: ObservableObject {
                 )
             }
             try await ChatApiService.shared.acceptConversation(conversationId: convo.id)
+            // Optimistic update; the snapshot listener will confirm shortly.
+            conversation?.status = .accepted
         } catch {
-            errorMessage = error.localizedDescription
+            actionError = "Couldn’t accept the request. Please try again."
             print("❌ [Chat] accept failed:", error.localizedDescription)
         }
     }
 
-    /// Decline a pending message request: mark the underlying like as rejected.
-    /// The conversation doc stays in the rejected state via its existing status.
+    /// Decline a pending message request: mark the underlying like and the
+    /// conversation as rejected so the request disappears from the inbox.
     func declineRequest() async {
         guard let convo = conversation, convo.effectiveStatus == .pending else { return }
         guard let myId = Auth.auth().currentUser?.uid, convo.initiatorId != myId else { return }
@@ -252,6 +265,13 @@ final class ChatViewModel: ObservableObject {
                 toUserId: myId,
                 status: .rejected
             )
+        }
+
+        do {
+            try await ChatApiService.shared.rejectConversation(conversationId: convo.id)
+        } catch {
+            actionError = "Couldn’t decline the request. Please try again."
+            print("❌ [Chat] decline failed:", error.localizedDescription)
         }
     }
 }

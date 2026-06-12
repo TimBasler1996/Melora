@@ -31,6 +31,10 @@ final class OnboardingViewModel: ObservableObject {
     @Published var spotifyConnected: Bool = false
     @Published var spotifyErrorMessage: String?
 
+    /// True when the user chose "Skip for now" on the Spotify step. They can
+    /// connect later from the Now Playing tab or profile settings.
+    @Published var spotifySkipped: Bool = false
+
     // MARK: - Finish
 
     @Published var isConnectingSpotify: Bool = false
@@ -78,7 +82,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     var canFinish: Bool {
-        spotifyConnected && !isFinishing
+        (spotifyConnected || spotifySkipped) && !isFinishing
     }
 
     private var minimumBirthday: Date {
@@ -164,7 +168,10 @@ final class OnboardingViewModel: ObservableObject {
         finishErrorMessage = nil
         guard canContinueStep1 else { finishErrorMessage = "Please complete your profile details."; return }
         guard canContinueStep2 else { finishErrorMessage = "Please add at least 2 photos."; return }
-        guard spotifyConnected else { finishErrorMessage = "Spotify is required."; return }
+        guard spotifyConnected || spotifySkipped else {
+            finishErrorMessage = "Connect Spotify or choose “Skip for now”."
+            return
+        }
 
         guard let uid = Auth.auth().currentUser?.uid else {
             finishErrorMessage = "Not authenticated."
@@ -191,7 +198,9 @@ final class OnboardingViewModel: ObservableObject {
             uploadedPhotoURLs = urls
             try await profileService.savePhotos(photoURLs: urls, uid: uid)
 
-            _ = try await spotifyAuth.getValidAccessToken()
+            if spotifyConnected {
+                _ = try await spotifyAuth.getValidAccessToken()
+            }
 
             try await profileService.markCompleted(uid: uid)
 

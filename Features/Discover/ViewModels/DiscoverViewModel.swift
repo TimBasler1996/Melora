@@ -17,6 +17,10 @@ final class DiscoverViewModel: ObservableObject {
     @Published var isSendingLike: Bool = false
     @Published var errorMessage: String?
 
+    /// Transient error from a user action (like/message/follow). Shown as an
+    /// alert instead of replacing the feed like `errorMessage` does.
+    @Published var actionError: String?
+
     @Published var selectedBroadcast: DiscoverBroadcast?
     @Published var dismissTarget: DiscoverBroadcast?
 
@@ -143,6 +147,18 @@ final class DiscoverViewModel: ObservableObject {
                 guard !Task.isCancelled else { break }
                 await self?.refreshBroadcasts()
             }
+        }
+    }
+
+    /// Manual refresh (pull-to-refresh). Unlike the polling fallback this
+    /// surfaces failures to the user.
+    func refresh() async {
+        do {
+            let records = try await service.fetchBroadcastsOnce()
+            await handleBroadcastRecords(records)
+            errorMessage = nil
+        } catch {
+            actionError = "Couldn’t refresh broadcasts. Please try again."
         }
     }
 
@@ -288,7 +304,9 @@ final class DiscoverViewModel: ObservableObject {
             } else {
                 followingIds.remove(userId)
             }
-            print("Follow toggle failed: \(error)")
+            actionError = wasFollowing
+                ? "Couldn’t unfollow \(broadcast.user.displayName). Please try again."
+                : "Couldn’t follow \(broadcast.user.displayName). Please try again."
         }
     }
     

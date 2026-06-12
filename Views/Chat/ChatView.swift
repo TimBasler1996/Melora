@@ -7,17 +7,11 @@ struct ChatView: View {
 
     @StateObject private var vm = ChatViewModel()
     @Environment(\.dismiss) private var dismiss
+    @FocusState private var composerFocused: Bool
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.15, green: 0.15, blue: 0.2),
-                    Color.black.opacity(0.95)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            AppGradients.darkBackground
             .ignoresSafeArea()
 
             VStack(spacing: 10) {
@@ -55,6 +49,17 @@ struct ChatView: View {
         }
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.inline)
+        .alert(
+            "Something went wrong",
+            isPresented: Binding(
+                get: { vm.actionError != nil },
+                set: { if !$0 { vm.actionError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { vm.actionError = nil }
+        } message: {
+            Text(vm.actionError ?? "")
+        }
         .onAppear { vm.start(conversationId: conversationId) }
         .onDisappear {
             Task { await vm.markAsRead(conversationId: conversationId) }
@@ -191,7 +196,13 @@ struct ChatView: View {
             .disabled(vm.isResponding)
 
             Button {
-                Task { await vm.acceptRequest() }
+                Task {
+                    await vm.acceptRequest()
+                    if vm.conversation?.effectiveStatus == .accepted {
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        composerFocused = true
+                    }
+                }
             } label: {
                 HStack(spacing: 6) {
                     if vm.isResponding {
@@ -218,7 +229,7 @@ struct ChatView: View {
     }
 
     private var waitingFooter: some View {
-        Text("You can send more messages once your request is accepted.")
+        Text("Your request was sent. You can write more once the other person accepts it.")
             .font(AppFonts.footnote())
             .foregroundColor(.white.opacity(0.6))
             .multilineTextAlignment(.center)
@@ -269,6 +280,7 @@ struct ChatView: View {
     private var composer: some View {
         HStack(spacing: 10) {
             TextField("Message…", text: $vm.draft, axis: .vertical)
+                .focused($composerFocused)
                 .lineLimit(1...5)
                 .textInputAutocapitalization(.sentences)
                 .autocorrectionDisabled(false)

@@ -20,14 +20,7 @@ struct TrackLikesDetailView: View {
     var body: some View {
         ZStack {
             // Dark gradient background similar to NowPlayingView
-            LinearGradient(
-                colors: [
-                    Color(red: 0.15, green: 0.15, blue: 0.2),
-                    Color.black.opacity(0.95)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            AppGradients.darkBackground
             .ignoresSafeArea()
 
             ScrollView {
@@ -414,7 +407,7 @@ private struct ModernLikeRow: View {
         let color: Color = {
             switch s {
             case .pending: return Color.white.opacity(0.12)
-            case .accepted: return Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.2)
+            case .accepted: return AppColors.accentGreen.opacity(0.2)
             case .rejected: return Color.white.opacity(0.08)
             }
         }()

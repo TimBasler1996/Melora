@@ -10,6 +10,10 @@ final class ChatBadgeViewModel: ObservableObject {
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
 
+    deinit {
+        listener?.remove()
+    }
+
     func startListening() {
         stopListening()
 

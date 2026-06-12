@@ -70,7 +70,9 @@ struct NowPlayingView: View {
             .padding(.top, 8)
         }
         .onAppear {
-            spotifyAuth.ensureAuthorized()
+            // Silent refresh only — the disconnected state below offers an
+            // explicit Connect button instead of auto-opening the login sheet.
+            spotifyAuth.refreshAuthorizationSilently()
             vm.start()
         }
         .onDisappear {
@@ -99,7 +101,9 @@ struct NowPlayingView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let track = vm.currentTrack {
+        if !spotifyAuth.isAuthorized && vm.currentTrack == nil {
+            spotifyDisconnectedState
+        } else if let track = vm.currentTrack {
             // ✅ Playing state - compact Melora view
             VStack(spacing: 0) {
                 Spacer()
@@ -174,7 +178,7 @@ struct NowPlayingView: View {
                         }) {
                             Image(systemName: "shuffle")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(vm.isShuffling ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.5))
+                                .foregroundColor(vm.isShuffling ? AppColors.accentGreen : .white.opacity(0.5))
                                 .frame(width: 40, height: 40)
                         }
 
@@ -240,7 +244,7 @@ struct NowPlayingView: View {
 
                             Image(systemName: iconName)
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(vm.repeatMode != .off ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.5))
+                                .foregroundColor(vm.repeatMode != .off ? AppColors.accentGreen : .white.opacity(0.5))
                                 .frame(width: 40, height: 40)
                         }
                     }
@@ -308,6 +312,59 @@ struct NowPlayingView: View {
                 Spacer()
                 Spacer()
             }
+        }
+    }
+
+    /// Shown when Spotify isn't connected (first run, token expired, or the
+    /// user disconnected in settings). Explains why nothing is playing and
+    /// offers an explicit reconnect instead of a silent dead end.
+    private var spotifyDisconnectedState: some View {
+        VStack(spacing: 0) {
+            Spacer()
+                .frame(height: 60) // Space for custom nav bar
+
+            Spacer()
+
+            VStack(spacing: 24) {
+                Image(systemName: "bolt.slash.fill")
+                    .font(.system(size: 56, weight: .thin))
+                    .foregroundColor(.white.opacity(0.4))
+
+                VStack(spacing: 12) {
+                    Text("Spotify Not Connected")
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+
+                    Text("Connect your Spotify account to see\nwhat's playing and go live nearby.")
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                }
+
+                Button(action: {
+                    spotifyAuth.ensureAuthorized()
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "link")
+                            .font(.system(size: 15, weight: .bold))
+
+                        Text("Connect Spotify")
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 36)
+                    .padding(.vertical, 16)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.accentGreen)
+                    )
+                }
+                .padding(.top, 8)
+            }
+
+            Spacer()
+            Spacer()
         }
     }
 
@@ -380,11 +437,11 @@ private struct CompactBroadcastToggle: View {
         HStack(spacing: 12) {
             // Indicator dot
             Circle()
-                .fill(broadcast.isBroadcasting ? Color(red: 0.2, green: 0.85, blue: 0.4) : Color.white.opacity(0.3))
+                .fill(broadcast.isBroadcasting ? AppColors.accentGreen : Color.white.opacity(0.3))
                 .frame(width: 8, height: 8)
                 .overlay(
                     Circle()
-                        .fill(broadcast.isBroadcasting ? Color(red: 0.2, green: 0.85, blue: 0.4) : Color.clear)
+                        .fill(broadcast.isBroadcasting ? AppColors.accentGreen : Color.clear)
                         .scaleEffect(broadcast.isBroadcasting ? 2.0 : 1.0)
                         .opacity(broadcast.isBroadcasting ? 0.3 : 0)
                         .animation(
@@ -413,7 +470,7 @@ private struct CompactBroadcastToggle: View {
                 }
             ))
             .labelsHidden()
-            .tint(Color(red: 0.2, green: 0.85, blue: 0.4))
+            .tint(AppColors.accentGreen)
             .disabled(!spotifyAuth.isAuthorized || (!hasTrack && !broadcast.isBroadcasting))
             .opacity(hasTrack ? 1.0 : 0.5)
         }
@@ -575,7 +632,7 @@ private struct EdgeGlowEffect: View {
         ZStack {
             // Top edge
             LinearGradient(
-                colors: [Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8), Color.clear],
+                colors: [AppColors.accentGreen.opacity(0.8), Color.clear],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -584,7 +641,7 @@ private struct EdgeGlowEffect: View {
 
             // Leading edge
             LinearGradient(
-                colors: [Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8), Color.clear],
+                colors: [AppColors.accentGreen.opacity(0.8), Color.clear],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -593,7 +650,7 @@ private struct EdgeGlowEffect: View {
 
             // Trailing edge
             LinearGradient(
-                colors: [Color.clear, Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8)],
+                colors: [Color.clear, AppColors.accentGreen.opacity(0.8)],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -602,7 +659,7 @@ private struct EdgeGlowEffect: View {
 
             // Bottom edge
             LinearGradient(
-                colors: [Color.clear, Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8)],
+                colors: [Color.clear, AppColors.accentGreen.opacity(0.8)],
                 startPoint: .top,
                 endPoint: .bottom
             )

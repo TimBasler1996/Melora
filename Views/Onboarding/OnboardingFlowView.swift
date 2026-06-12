@@ -10,14 +10,7 @@ struct OnboardingFlowView: View {
     var body: some View {
         ZStack {
             // Dark gradient background matching NowPlayingView and LikesInboxView
-            LinearGradient(
-                colors: [
-                    Color(red: 0.15, green: 0.15, blue: 0.2),
-                    Color.black.opacity(0.95)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            AppGradients.darkBackground
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -70,7 +63,7 @@ struct OnboardingFlowView: View {
                         .frame(height: 4)
 
                     Capsule()
-                        .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                        .fill(AppColors.accentGreen)
                         .frame(width: geo.size.width * viewModel.progressValue, height: 4)
                         .animation(.easeInOut(duration: 0.3), value: viewModel.progressValue)
                 }
@@ -107,7 +100,7 @@ struct OnboardingFlowView: View {
                         .frame(height: 54)
                         .background(
                             Capsule()
-                                .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                                .fill(AppColors.accentGreen)
                                 .opacity(isEnabled ? 1 : 0.4)
                         )
                 }
@@ -125,11 +118,23 @@ struct OnboardingFlowView: View {
                             .frame(height: 54)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                                    .fill(AppColors.accentGreen)
                             )
                     }
                     .disabled(viewModel.isConnectingSpotify)
                     .opacity(viewModel.isConnectingSpotify ? 0.6 : 1)
+
+                    Button {
+                        viewModel.spotifySkipped = true
+                        Task { await viewModel.finish(using: spotifyAuth) }
+                    } label: {
+                        Text(viewModel.isFinishing ? "Finishing…" : "Skip for now")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.7))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 36)
+                    }
+                    .disabled(viewModel.isConnectingSpotify || viewModel.isFinishing)
                 } else {
                     Button {
                         Task { await viewModel.finish(using: spotifyAuth) }
@@ -141,7 +146,7 @@ struct OnboardingFlowView: View {
                             .frame(height: 54)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                                    .fill(AppColors.accentGreen)
                                     .opacity(viewModel.canFinish ? 1 : 0.4)
                             )
                     }

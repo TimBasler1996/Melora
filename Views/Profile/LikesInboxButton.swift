@@ -34,7 +34,7 @@ struct LikesInboxButton: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
-                        .background(Capsule().fill(Color(red: 0.2, green: 0.85, blue: 0.4)))
+                        .background(Capsule().fill(AppColors.accentGreen))
                         .offset(x: 10, y: -8)
                 }
             }

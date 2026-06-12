@@ -69,12 +69,12 @@ struct OnboardingStepBasicsView: View {
                             .padding(.vertical, 12)
                             .background(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(viewModel.lookingFor == option ? Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.3) : Color.white.opacity(0.08))
+                                    .fill(viewModel.lookingFor == option ? AppColors.accentGreen.opacity(0.3) : Color.white.opacity(0.08))
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .stroke(
-                                        viewModel.lookingFor == option ? Color(red: 0.2, green: 0.85, blue: 0.4) : Color.white.opacity(0.15),
+                                        viewModel.lookingFor == option ? AppColors.accentGreen : Color.white.opacity(0.15),
                                         lineWidth: viewModel.lookingFor == option ? 2 : 1
                                     )
                             )
@@ -157,12 +157,12 @@ struct OnboardingStepBasicsView: View {
                             .padding(.vertical, 12)
                             .background(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(viewModel.gender == option ? Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.3) : Color.white.opacity(0.08))
+                                    .fill(viewModel.gender == option ? AppColors.accentGreen.opacity(0.3) : Color.white.opacity(0.08))
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .stroke(
-                                        viewModel.gender == option ? Color(red: 0.2, green: 0.85, blue: 0.4) : Color.white.opacity(0.15),
+                                        viewModel.gender == option ? AppColors.accentGreen : Color.white.opacity(0.15),
                                         lineWidth: viewModel.gender == option ? 2 : 1
                                     )
                             )

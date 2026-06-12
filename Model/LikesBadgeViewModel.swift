@@ -19,6 +19,11 @@ final class LikesBadgeViewModel: ObservableObject {
     private var likesListener: ListenerRegistration?
     private var followersListener: ListenerRegistration?
 
+    deinit {
+        likesListener?.remove()
+        followersListener?.remove()
+    }
+
     private let lastSeenKey = "LikesInboxView_lastSeenDate"
     private let lastSeenFollowersKey = "FollowersInboxView_lastSeenDate"
 
