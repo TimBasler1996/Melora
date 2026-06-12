@@ -70,7 +70,9 @@ struct NowPlayingView: View {
             .padding(.top, 8)
         }
         .onAppear {
-            spotifyAuth.ensureAuthorized()
+            // Silent refresh only — the disconnected state below offers an
+            // explicit Connect button instead of auto-opening the login sheet.
+            spotifyAuth.refreshAuthorizationSilently()
             vm.start()
         }
         .onDisappear {
@@ -99,7 +101,9 @@ struct NowPlayingView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let track = vm.currentTrack {
+        if !spotifyAuth.isAuthorized && vm.currentTrack == nil {
+            spotifyDisconnectedState
+        } else if let track = vm.currentTrack {
             // ✅ Playing state - compact Melora view
             VStack(spacing: 0) {
                 Spacer()
@@ -308,6 +312,59 @@ struct NowPlayingView: View {
                 Spacer()
                 Spacer()
             }
+        }
+    }
+
+    /// Shown when Spotify isn't connected (first run, token expired, or the
+    /// user disconnected in settings). Explains why nothing is playing and
+    /// offers an explicit reconnect instead of a silent dead end.
+    private var spotifyDisconnectedState: some View {
+        VStack(spacing: 0) {
+            Spacer()
+                .frame(height: 60) // Space for custom nav bar
+
+            Spacer()
+
+            VStack(spacing: 24) {
+                Image(systemName: "bolt.slash.fill")
+                    .font(.system(size: 56, weight: .thin))
+                    .foregroundColor(.white.opacity(0.4))
+
+                VStack(spacing: 12) {
+                    Text("Spotify Not Connected")
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+
+                    Text("Connect your Spotify account to see\nwhat's playing and go live nearby.")
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                }
+
+                Button(action: {
+                    spotifyAuth.ensureAuthorized()
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                }) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "link")
+                            .font(.system(size: 15, weight: .bold))
+
+                        Text("Connect Spotify")
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 36)
+                    .padding(.vertical, 16)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.accentGreen)
+                    )
+                }
+                .padding(.top, 8)
+            }
+
+            Spacer()
+            Spacer()
         }
     }
 

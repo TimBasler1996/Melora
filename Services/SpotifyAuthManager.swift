@@ -79,6 +79,29 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
         startAuthFlow()
     }
 
+    /// Like `ensureAuthorized()`, but never launches the interactive login
+    /// flow. Use from screens that should reflect the connection state
+    /// without surprising the user with a login sheet.
+    func refreshAuthorizationSilently() {
+        if let t = tokens, t.expiresAt > Date().addingTimeInterval(30) {
+            isAuthorized = true
+            return
+        }
+
+        guard tokens?.refreshToken != nil else {
+            isAuthorized = false
+            return
+        }
+
+        Task {
+            do {
+                _ = try await getValidAccessToken()
+            } catch {
+                // Stays unauthorized; the UI offers an explicit Connect button.
+            }
+        }
+    }
+
     func disconnect() {
         print("🔴 [Auth] Disconnect from Spotify")
         tokens = nil

@@ -70,6 +70,17 @@ struct DiscoverView: View {
                     viewModel.cancelDismiss()
                 }
             }
+            .alert(
+                "Something went wrong",
+                isPresented: Binding(
+                    get: { viewModel.actionError != nil },
+                    set: { if !$0 { viewModel.actionError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { viewModel.actionError = nil }
+            } message: {
+                Text(viewModel.actionError ?? "")
+            }
             .onAppear {
                 guard !isRunningInPreview else { return }
                 locationService.requestAuthorizationIfNeeded()
@@ -209,20 +220,28 @@ struct DiscoverView: View {
                             },
                             onLikeTrack: {
                                 Task {
-                                    try? await viewModel.sendLike(
-                                        for: broadcast,
-                                        from: currentUserStore.user,
-                                        message: nil
-                                    )
+                                    do {
+                                        try await viewModel.sendLike(
+                                            for: broadcast,
+                                            from: currentUserStore.user,
+                                            message: nil
+                                        )
+                                    } catch {
+                                        viewModel.actionError = "Couldn’t send your like. Please try again."
+                                    }
                                 }
                             },
                             onMessage: { message in
                                 Task {
-                                    try? await viewModel.sendLike(
-                                        for: broadcast,
-                                        from: currentUserStore.user,
-                                        message: message
-                                    )
+                                    do {
+                                        try await viewModel.sendLike(
+                                            for: broadcast,
+                                            from: currentUserStore.user,
+                                            message: message
+                                        )
+                                    } catch {
+                                        viewModel.actionError = "Couldn’t send your message. Please try again."
+                                    }
                                 }
                             },
                             onViewProfile: {
@@ -246,6 +265,9 @@ struct DiscoverView: View {
                 .frame(maxWidth: .infinity)
             }
             .scrollIndicators(.hidden)
+            .refreshable {
+                await viewModel.refresh()
+            }
             .animation(.easeInOut(duration: 0.3), value: viewModel.visibleBroadcasts.map(\.id))
         }
     }

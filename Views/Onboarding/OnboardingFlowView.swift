@@ -123,6 +123,18 @@ struct OnboardingFlowView: View {
                     }
                     .disabled(viewModel.isConnectingSpotify)
                     .opacity(viewModel.isConnectingSpotify ? 0.6 : 1)
+
+                    Button {
+                        viewModel.spotifySkipped = true
+                        Task { await viewModel.finish(using: spotifyAuth) }
+                    } label: {
+                        Text(viewModel.isFinishing ? "Finishing…" : "Skip for now")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.7))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 36)
+                    }
+                    .disabled(viewModel.isConnectingSpotify || viewModel.isFinishing)
                 } else {
                     Button {
                         Task { await viewModel.finish(using: spotifyAuth) }

@@ -51,7 +51,7 @@ struct OnboardingStepSpotifyView: View {
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                         
-                        Text("Connect your account to continue")
+                        Text("Connect now, or skip and do it later")
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.white.opacity(0.6))
                             .multilineTextAlignment(.center)

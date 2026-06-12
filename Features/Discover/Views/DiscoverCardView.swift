@@ -164,6 +164,7 @@ struct DiscoverCardView: View {
                 label: isFollowing ? "Following" : "Follow",
                 color: isFollowing ? AppColors.accentGreen : .white
             ) {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 onToggleFollow()
             }
 
@@ -180,6 +181,7 @@ struct DiscoverCardView: View {
             actionButton(
                 icon: "xmark",
                 label: "",
+                accessibilityLabel: "Not interested",
                 color: .white.opacity(0.6)
             ) {
                 onDismiss()
@@ -192,6 +194,7 @@ struct DiscoverCardView: View {
     private func actionButton(
         icon: String,
         label: String,
+        accessibilityLabel: String? = nil,
         color: Color,
         action: @escaping () -> Void
     ) -> some View {
@@ -212,6 +215,7 @@ struct DiscoverCardView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel ?? label)
     }
 
     // MARK: - Message Input
@@ -259,6 +263,8 @@ struct DiscoverCardView: View {
 
     private func handleLikeAction() {
         guard !isLiked else { return }
+
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             isLiked = true

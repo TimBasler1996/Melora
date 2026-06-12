@@ -247,6 +247,16 @@ actor ChatApiService {
         ], merge: true)
     }
 
+    /// Marks a pending message-request conversation as rejected so it no
+    /// longer shows up in the recipient's requests list.
+    func rejectConversation(conversationId: String) async throws {
+        let ref = db.collection(conversationsCollection).document(conversationId)
+        try await ref.setData([
+            "status": Conversation.Status.rejected.rawValue,
+            "updatedAt": Date()
+        ], merge: true)
+    }
+
     /// Fetches a single conversation. Returns nil if it doesn't exist.
     func fetchConversation(conversationId: String) async throws -> Conversation? {
         let snap = try await db.collection(conversationsCollection)
