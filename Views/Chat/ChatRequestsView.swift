@@ -8,14 +8,7 @@ struct ChatRequestsView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.15, green: 0.15, blue: 0.2),
-                    Color.black.opacity(0.95)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            AppGradients.darkBackground
             .ignoresSafeArea()
 
             if rows.isEmpty {

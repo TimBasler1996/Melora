@@ -20,13 +20,13 @@ struct OnboardingStepSpotifyView: View {
                 // Spotify icon/status
                 ZStack {
                     Circle()
-                        .fill(viewModel.spotifyConnected ? Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.15) : Color.white.opacity(0.08))
+                        .fill(viewModel.spotifyConnected ? AppColors.accentGreen.opacity(0.15) : Color.white.opacity(0.08))
                         .frame(width: 100, height: 100)
                     
                     if viewModel.spotifyConnected {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 50, weight: .semibold))
-                            .foregroundColor(Color(red: 0.2, green: 0.85, blue: 0.4))
+                            .foregroundColor(AppColors.accentGreen)
                     } else {
                         Image(systemName: "music.note")
                             .font(.system(size: 50, weight: .medium))
@@ -99,7 +99,7 @@ private struct FeatureRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(Color(red: 0.2, green: 0.85, blue: 0.4))
+                .foregroundColor(AppColors.accentGreen)
                 .frame(width: 28)
             
             VStack(alignment: .leading, spacing: 2) {

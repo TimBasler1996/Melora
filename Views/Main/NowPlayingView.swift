@@ -174,7 +174,7 @@ struct NowPlayingView: View {
                         }) {
                             Image(systemName: "shuffle")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(vm.isShuffling ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.5))
+                                .foregroundColor(vm.isShuffling ? AppColors.accentGreen : .white.opacity(0.5))
                                 .frame(width: 40, height: 40)
                         }
 
@@ -240,7 +240,7 @@ struct NowPlayingView: View {
 
                             Image(systemName: iconName)
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(vm.repeatMode != .off ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white.opacity(0.5))
+                                .foregroundColor(vm.repeatMode != .off ? AppColors.accentGreen : .white.opacity(0.5))
                                 .frame(width: 40, height: 40)
                         }
                     }
@@ -380,11 +380,11 @@ private struct CompactBroadcastToggle: View {
         HStack(spacing: 12) {
             // Indicator dot
             Circle()
-                .fill(broadcast.isBroadcasting ? Color(red: 0.2, green: 0.85, blue: 0.4) : Color.white.opacity(0.3))
+                .fill(broadcast.isBroadcasting ? AppColors.accentGreen : Color.white.opacity(0.3))
                 .frame(width: 8, height: 8)
                 .overlay(
                     Circle()
-                        .fill(broadcast.isBroadcasting ? Color(red: 0.2, green: 0.85, blue: 0.4) : Color.clear)
+                        .fill(broadcast.isBroadcasting ? AppColors.accentGreen : Color.clear)
                         .scaleEffect(broadcast.isBroadcasting ? 2.0 : 1.0)
                         .opacity(broadcast.isBroadcasting ? 0.3 : 0)
                         .animation(
@@ -413,7 +413,7 @@ private struct CompactBroadcastToggle: View {
                 }
             ))
             .labelsHidden()
-            .tint(Color(red: 0.2, green: 0.85, blue: 0.4))
+            .tint(AppColors.accentGreen)
             .disabled(!spotifyAuth.isAuthorized || (!hasTrack && !broadcast.isBroadcasting))
             .opacity(hasTrack ? 1.0 : 0.5)
         }
@@ -575,7 +575,7 @@ private struct EdgeGlowEffect: View {
         ZStack {
             // Top edge
             LinearGradient(
-                colors: [Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8), Color.clear],
+                colors: [AppColors.accentGreen.opacity(0.8), Color.clear],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -584,7 +584,7 @@ private struct EdgeGlowEffect: View {
 
             // Leading edge
             LinearGradient(
-                colors: [Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8), Color.clear],
+                colors: [AppColors.accentGreen.opacity(0.8), Color.clear],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -593,7 +593,7 @@ private struct EdgeGlowEffect: View {
 
             // Trailing edge
             LinearGradient(
-                colors: [Color.clear, Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8)],
+                colors: [Color.clear, AppColors.accentGreen.opacity(0.8)],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -602,7 +602,7 @@ private struct EdgeGlowEffect: View {
 
             // Bottom edge
             LinearGradient(
-                colors: [Color.clear, Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8)],
+                colors: [Color.clear, AppColors.accentGreen.opacity(0.8)],
                 startPoint: .top,
                 endPoint: .bottom
             )

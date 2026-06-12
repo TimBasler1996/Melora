@@ -14,14 +14,7 @@ struct DiscoverDetailSheetView: View {
     var body: some View {
         ZStack {
             // Dark gradient background
-            LinearGradient(
-                colors: [
-                    Color(red: 0.15, green: 0.15, blue: 0.2),
-                    Color.black.opacity(0.95)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            AppGradients.darkBackground
             .ignoresSafeArea()
             
             ScrollView {
@@ -70,7 +63,7 @@ struct DiscoverDetailSheetView: View {
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(Color(red: 0.2, green: 0.85, blue: 0.4))
+                    .foregroundColor(AppColors.accentGreen)
                 }
             }
 
@@ -131,7 +124,7 @@ struct DiscoverDetailSheetView: View {
                         .font(.system(size: 14, weight: .bold, design: .rounded))
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
-                        .background(Color(red: 0.2, green: 0.85, blue: 0.4))
+                        .background(AppColors.accentGreen)
                         .foregroundColor(.white)
                         .clipShape(Capsule())
                 }
@@ -165,7 +158,7 @@ struct DiscoverDetailSheetView: View {
                     Spacer()
                 }
                 .padding(.vertical, 12)
-                .background(Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.8))
+                .background(AppColors.accentGreen.opacity(0.8))
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }

@@ -10,14 +10,7 @@ struct OnboardingFlowView: View {
     var body: some View {
         ZStack {
             // Dark gradient background matching NowPlayingView and LikesInboxView
-            LinearGradient(
-                colors: [
-                    Color(red: 0.15, green: 0.15, blue: 0.2),
-                    Color.black.opacity(0.95)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            AppGradients.darkBackground
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -70,7 +63,7 @@ struct OnboardingFlowView: View {
                         .frame(height: 4)
 
                     Capsule()
-                        .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                        .fill(AppColors.accentGreen)
                         .frame(width: geo.size.width * viewModel.progressValue, height: 4)
                         .animation(.easeInOut(duration: 0.3), value: viewModel.progressValue)
                 }
@@ -107,7 +100,7 @@ struct OnboardingFlowView: View {
                         .frame(height: 54)
                         .background(
                             Capsule()
-                                .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                                .fill(AppColors.accentGreen)
                                 .opacity(isEnabled ? 1 : 0.4)
                         )
                 }
@@ -125,7 +118,7 @@ struct OnboardingFlowView: View {
                             .frame(height: 54)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                                    .fill(AppColors.accentGreen)
                             )
                     }
                     .disabled(viewModel.isConnectingSpotify)
@@ -141,7 +134,7 @@ struct OnboardingFlowView: View {
                             .frame(height: 54)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                                    .fill(AppColors.accentGreen)
                                     .opacity(viewModel.canFinish ? 1 : 0.4)
                             )
                     }

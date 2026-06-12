@@ -23,7 +23,10 @@ enum AppColors {
     
     /// Color used to indicate an active / live broadcast.
     static let live = Color(red: 0.10, green: 0.80, blue: 0.40)      // Green
-    
+
+    /// Bright green accent used for confirmations, selections and "live" badges.
+    static let accentGreen = Color(red: 0.2, green: 0.85, blue: 0.4)
+
     /// Color used for destructive actions (stop, errors).
     static let destructive = Color.red
     
@@ -43,6 +46,19 @@ enum AppColors {
     static let primaryText = Color.primary
     static let secondaryText = Color.secondary
     static let mutedText = Color.gray
+}
+
+/// Shared gradients used as screen backgrounds.
+enum AppGradients {
+    /// The standard dark background gradient used behind every main screen.
+    static let darkBackground = LinearGradient(
+        colors: [
+            Color(red: 0.15, green: 0.15, blue: 0.2),
+            Color.black.opacity(0.95)
+        ],
+        startPoint: .top,
+        endPoint: .bottom
+    )
 }
 
 /// Layout constants (spacing, corner radii, etc.).

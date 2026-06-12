@@ -153,7 +153,7 @@ struct DiscoverCardView: View {
             actionButton(
                 icon: hasMessaged ? "paperplane.fill" : "paperplane",
                 label: "Message",
-                color: hasMessaged ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white
+                color: hasMessaged ? AppColors.accentGreen : .white
             ) {
                 handleMessageAction()
             }
@@ -162,7 +162,7 @@ struct DiscoverCardView: View {
             actionButton(
                 icon: isFollowing ? "person.fill.checkmark" : "person.fill.badge.plus",
                 label: isFollowing ? "Following" : "Follow",
-                color: isFollowing ? Color(red: 0.2, green: 0.85, blue: 0.4) : .white
+                color: isFollowing ? AppColors.accentGreen : .white
             ) {
                 onToggleFollow()
             }
@@ -240,7 +240,7 @@ struct DiscoverCardView: View {
                     .foregroundColor(
                         messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                             ? .white.opacity(0.25)
-                            : Color(red: 0.2, green: 0.85, blue: 0.4)
+                            : AppColors.accentGreen
                     )
             }
             .buttonStyle(.plain)

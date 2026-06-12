@@ -15,14 +15,7 @@ struct LikesInboxView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.15, green: 0.15, blue: 0.2),
-                    Color.black.opacity(0.95)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            AppGradients.darkBackground
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -410,7 +403,7 @@ private struct ModernTrackLikesClusterRow: View {
                     Text("\(cluster.likes.count) like\(cluster.likes.count == 1 ? "" : "s")")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                 }
-                .foregroundColor(Color(red: 0.2, green: 0.85, blue: 0.4))
+                .foregroundColor(AppColors.accentGreen)
                 .padding(.top, 2)
             }
             
