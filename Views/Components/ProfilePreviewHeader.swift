@@ -51,10 +51,7 @@ struct ProfilePreviewHeader: View {
             Spacer(minLength: 0)
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                .fill(Color.white.opacity(0.06))
-        )
+        .melCard()
     }
 
     private var avatarPlaceholder: some View {
@@ -83,7 +80,7 @@ struct ProfilePreviewHeader: View {
         }
         .overlay(
             Circle()
-                .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                .stroke(AppColors.stroke, lineWidth: 1)
         )
     }
 

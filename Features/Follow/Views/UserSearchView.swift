@@ -8,14 +8,12 @@ struct UserSearchView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppGradients.darkBackground
-                .ignoresSafeArea()
-
                 VStack(spacing: 0) {
                     searchBar
                     content
                 }
             }
+            .melScreenBackground()
             .navigationTitle("Find People")
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -64,7 +62,7 @@ struct UserSearchView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(Color.white.opacity(0.1))
+        .background(AppColors.surfaceElevated)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.top, 8)

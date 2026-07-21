@@ -123,12 +123,12 @@ struct SharedProfilePreviewView: View {
                 }
             }
 
-            Divider().background(Color.white.opacity(0.1))
+            Divider().background(AppColors.stroke)
 
             statsRow
 
             if let spotifyURL = data.spotifyProfileURL {
-                Divider().background(Color.white.opacity(0.1))
+                Divider().background(AppColors.stroke)
                 spotifyLink(url: spotifyURL)
             }
         }
@@ -140,11 +140,11 @@ struct SharedProfilePreviewView: View {
         HStack(spacing: 0) {
             statItem(value: data.followerCount.map(String.init) ?? "0", label: "Followers")
             Spacer()
-            Rectangle().fill(Color.white.opacity(0.1)).frame(width: 1, height: 32)
+            Rectangle().fill(AppColors.stroke).frame(width: 1, height: 32)
             Spacer()
             statItem(value: formatBroadcastTime(data.broadcastMinutes), label: "Broadcast")
             Spacer()
-            Rectangle().fill(Color.white.opacity(0.1)).frame(width: 1, height: 32)
+            Rectangle().fill(AppColors.stroke).frame(width: 1, height: 32)
             Spacer()
             statItem(value: data.likesReceivedCount.map(String.init) ?? "0", label: "Likes")
         }
@@ -184,7 +184,7 @@ struct SharedProfilePreviewView: View {
             .foregroundColor(.white.opacity(0.5))
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Capsule().fill(Color.white.opacity(0.08)))
+            .background(Capsule().fill(AppColors.surface))
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -367,7 +367,7 @@ struct SharedProfilePreviewView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(AppColors.stroke, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
     }

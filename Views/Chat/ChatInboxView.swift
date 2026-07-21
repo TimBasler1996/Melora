@@ -49,7 +49,7 @@ struct ChatInboxView: View {
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.18))
+                    .background(AppColors.surfaceElevated)
                     .foregroundColor(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }

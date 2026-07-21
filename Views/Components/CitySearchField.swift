@@ -63,8 +63,8 @@ struct CitySearchFieldOnboarding: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             TextField("Search city...", text: $completer.query)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white)
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundColor(AppColors.primaryText)
                 .disableAutocorrection(true)
                 .focused($isFocused)
                 .onChange(of: completer.query) { _, newValue in
@@ -82,10 +82,10 @@ struct CitySearchFieldOnboarding: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "mappin.circle.fill")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.4))
+                                    .foregroundColor(AppColors.mutedText)
                                 Text(suggestion)
                                     .font(.system(size: 15, weight: .medium, design: .rounded))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppColors.primaryText)
                                     .lineLimit(1)
                                 Spacer()
                             }
@@ -95,7 +95,7 @@ struct CitySearchFieldOnboarding: View {
                         .buttonStyle(.plain)
 
                         if suggestion != completer.suggestions.last {
-                            Divider().background(Color.white.opacity(0.1))
+                            Divider().background(AppColors.stroke)
                         }
                     }
                 }
@@ -146,7 +146,7 @@ struct CitySearchFieldEdit: View {
                         .buttonStyle(.plain)
 
                         if suggestion != completer.suggestions.last {
-                            Divider().background(Color.white.opacity(0.1))
+                            Divider().background(AppColors.stroke)
                         }
                     }
                 }

@@ -19,10 +19,6 @@ struct TrackLikesDetailView: View {
 
     var body: some View {
         ZStack {
-            // Dark gradient background similar to NowPlayingView
-            AppGradients.darkBackground
-            .ignoresSafeArea()
-
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     SpotifyLinkCard(track: track)
@@ -31,13 +27,13 @@ struct TrackLikesDetailView: View {
                     if let toast {
                         Text(toast)
                             .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.primaryText)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .background(
                                 Capsule()
-                                    .fill(Color.white.opacity(0.12))
+                                    .fill(AppColors.surfaceElevated)
                             )
                             .transition(.opacity)
                     }
@@ -48,6 +44,7 @@ struct TrackLikesDetailView: View {
             }
             .scrollIndicators(.hidden)
         }
+        .melScreenBackground()
         .navigationTitle("Track Likes")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -58,12 +55,12 @@ struct TrackLikesDetailView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(track.title)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.primaryText)
                 .lineLimit(2)
 
             Text(track.artist)
                 .font(AppFonts.footnote())
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundColor(AppColors.secondaryText)
                 .lineLimit(1)
         }
     }
@@ -99,7 +96,7 @@ struct TrackLikesDetailView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.08))
+                .fill(AppColors.surface)
         )
     }
 
@@ -110,7 +107,7 @@ struct TrackLikesDetailView: View {
                     switch phase {
                     case .empty:
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(Color.white.opacity(0.08))
+                            .fill(AppColors.surface)
                             .overlay(
                                 ProgressView()
                                     .tint(.white)
@@ -133,11 +130,11 @@ struct TrackLikesDetailView: View {
 
     private var placeholderArtwork: some View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(Color.white.opacity(0.08))
+            .fill(AppColors.surface)
             .overlay(
                 Image(systemName: "music.note")
                     .font(.system(size: 32, weight: .thin))
-                    .foregroundColor(.white.opacity(0.3))
+                    .foregroundColor(AppColors.mutedText)
             )
     }
 
@@ -145,17 +142,17 @@ struct TrackLikesDetailView: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("People who liked this")
                 .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.primaryText)
 
             if localLikes.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "heart.slash")
                         .font(.system(size: 40, weight: .light))
-                        .foregroundColor(.white.opacity(0.3))
+                        .foregroundColor(AppColors.mutedText)
                     
                     Text("No likes yet")
                         .font(.system(size: 15, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(AppColors.mutedText)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
@@ -260,11 +257,11 @@ private struct ModernLikeRow: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(displayName(for: like))
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white)
+                                .foregroundColor(AppColors.primaryText)
 
                             Text(like.createdAt.formatted(date: .abbreviated, time: .shortened))
                                 .font(.system(size: 12, weight: .regular, design: .rounded))
-                                .foregroundColor(.white.opacity(0.7))
+                                .foregroundColor(AppColors.secondaryText)
                         }
                     }
                 }
@@ -278,7 +275,7 @@ private struct ModernLikeRow: View {
                !msg.isEmpty {
                 Text("“\(msg)”")
                     .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.92))
+                    .foregroundColor(AppColors.secondaryText)
             }
 
             switch (like.status ?? .pending) {
@@ -293,8 +290,8 @@ private struct ModernLikeRow: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .frame(maxWidth: .infinity)
-                        .background(Color.white.opacity(0.12))
-                        .foregroundColor(.white)
+                        .background(AppColors.surfaceElevated)
+                        .foregroundColor(AppColors.primaryText)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -309,8 +306,8 @@ private struct ModernLikeRow: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
                         .frame(maxWidth: .infinity)
-                        .background(Color.white.opacity(0.22))
-                        .foregroundColor(.white)
+                        .background(AppColors.surfaceElevated)
+                        .foregroundColor(AppColors.primaryText)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -328,10 +325,10 @@ private struct ModernLikeRow: View {
                         Spacer()
                         Image(systemName: "chevron.right")
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.primaryText)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.14))
+                    .background(AppColors.surfaceElevated)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -349,7 +346,7 @@ private struct ModernLikeRow: View {
                     switch phase {
                     case .empty:
                         Circle()
-                            .fill(Color.white.opacity(0.12))
+                            .fill(AppColors.surfaceElevated)
                             .overlay(
                                 ProgressView()
                                     .tint(.white)
@@ -371,7 +368,7 @@ private struct ModernLikeRow: View {
         .clipShape(Circle())
         .overlay(
             Circle()
-                .stroke(Color.white.opacity(0.2), lineWidth: 2)
+                .stroke(AppColors.stroke, lineWidth: 2)
         )
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
     }
@@ -391,7 +388,7 @@ private struct ModernLikeRow: View {
             .overlay(
                 Image(systemName: "person.fill")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(AppColors.secondaryText)
             )
     }
 
@@ -407,15 +404,15 @@ private struct ModernLikeRow: View {
         
         let color: Color = {
             switch s {
-            case .pending: return Color.white.opacity(0.12)
+            case .pending: return AppColors.surfaceElevated
             case .accepted: return AppColors.live.opacity(0.2)
-            case .rejected: return Color.white.opacity(0.08)
+            case .rejected: return AppColors.surface
             }
         }()
 
         return Text(text)
             .font(.system(size: 10, weight: .bold, design: .rounded))
-            .foregroundColor(.white.opacity(0.7))
+            .foregroundColor(AppColors.secondaryText)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(

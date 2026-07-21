@@ -39,7 +39,7 @@ struct PhotoCard: View {
                 if image != nil {
                     Text("Change photo")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.primaryText)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(.ultraThinMaterial, in: Capsule())
@@ -52,7 +52,7 @@ struct PhotoCard: View {
             .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                    .stroke(AppColors.stroke, lineWidth: 1)
             )
         }
         .accessibilityLabel(Text(title))

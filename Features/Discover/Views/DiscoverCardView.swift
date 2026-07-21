@@ -131,7 +131,7 @@ struct DiscoverCardView: View {
 
     private var dividerLine: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.1))
+            .fill(AppColors.surfaceElevated)
             .frame(height: 1)
             .padding(.horizontal, 14)
     }
@@ -230,11 +230,11 @@ struct DiscoverCardView: View {
                 .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(AppColors.surface)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(AppColors.stroke, lineWidth: 1)
                 )
                 .lineLimit(1...3)
 
@@ -332,7 +332,7 @@ struct DiscoverCardView: View {
         .clipShape(Circle())
         .overlay(
             Circle()
-                .stroke(Color.white.opacity(0.2), lineWidth: 1.5)
+                .stroke(AppColors.stroke, lineWidth: 1.5)
         )
     }
 
@@ -380,7 +380,7 @@ struct DiscoverCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                .stroke(AppColors.stroke, lineWidth: 1)
         )
     }
 

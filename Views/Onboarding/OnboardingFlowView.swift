@@ -9,10 +9,6 @@ struct OnboardingFlowView: View {
 
     var body: some View {
         ZStack {
-            // Dark gradient background matching NowPlayingView and LikesInboxView
-            AppGradients.darkBackground
-            .ignoresSafeArea()
-
             VStack(spacing: 0) {
                 topBar
                 contentArea
@@ -23,6 +19,7 @@ struct OnboardingFlowView: View {
             .padding(.top, 12)
             .padding(.bottom, 24)
         }
+        .melScreenBackground()
         .animation(.easeInOut(duration: 0.25), value: viewModel.stepIndex)
         .contentShape(Rectangle())
         .onTapGesture { hideKeyboard() }
@@ -43,7 +40,7 @@ struct OnboardingFlowView: View {
                         .frame(width: 32, height: 32)
                         .background(
                             Circle()
-                                .fill(Color.white.opacity(0.12))
+                                .fill(AppColors.surfaceElevated)
                         )
                 }
                 .opacity(viewModel.stepIndex == 1 ? 0 : 1)
@@ -52,14 +49,14 @@ struct OnboardingFlowView: View {
                 Spacer()
 
                 Text(viewModel.progressText)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(AppFonts.footnote())
+                    .foregroundColor(AppColors.secondaryText)
             }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.white.opacity(0.15))
+                        .fill(AppColors.surfaceElevated)
                         .frame(height: 4)
 
                     Capsule()

@@ -25,7 +25,7 @@ struct LikesInboxButton: View {
                     .foregroundColor(.white)
                     .frame(width: 36, height: 36)
                     .background(
-                        Circle().fill(Color.white.opacity(0.18))
+                        Circle().fill(AppColors.surfaceElevated)
                     )
 
                 if badgeVM.unreadCount > 0 {

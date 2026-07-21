@@ -24,7 +24,7 @@ struct SettingsContentView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Label("Notification radius", systemImage: "location.circle")
-                                .font(.system(size: 16, weight: .regular))
+                                .font(.system(size: 16, weight: .regular, design: .rounded))
                             Spacer()
                             Text(formatRadius(radiusMeters))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
@@ -38,16 +38,16 @@ struct SettingsContentView: View {
                         .tint(AppColors.primary)
                         HStack {
                             Text("100 m")
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
-                                .foregroundColor(.secondary)
+                                .font(AppFonts.caption())
+                                .foregroundColor(AppColors.secondaryText)
                             Spacer()
                             Text("50 km")
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
-                                .foregroundColor(.secondary)
+                                .font(AppFonts.caption())
+                                .foregroundColor(AppColors.secondaryText)
                         }
                         Text("You'll be notified when someone starts broadcasting within this distance.")
                             .font(.system(size: 12, weight: .regular, design: .rounded))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.secondaryText)
                     }
                 }
 
@@ -87,7 +87,7 @@ struct SettingsContentView: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .background(AppColors.background)
+        .melScreenBackground()
         .tint(AppColors.primary)
         .onChange(of: notifyBroadcast) { _, newValue in
             if newValue { requestNotificationPermission() }

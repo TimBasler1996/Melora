@@ -171,7 +171,7 @@ struct ChatView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
-            Capsule().fill(Color.white.opacity(0.12))
+            Capsule().fill(AppColors.surfaceElevated)
         )
         .padding(.bottom, 4)
     }
@@ -191,7 +191,7 @@ struct ChatView: View {
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.white.opacity(0.14))
+                            .fill(AppColors.surfaceElevated)
                     )
             }
             .buttonStyle(.plain)
@@ -266,7 +266,7 @@ struct ChatView: View {
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white.opacity(0.6))
                     .frame(width: 28, height: 28)
-                    .background(Circle().fill(Color.white.opacity(0.1)))
+                    .background(Circle().fill(AppColors.surfaceElevated))
             }
             .buttonStyle(.plain)
         }
@@ -274,7 +274,7 @@ struct ChatView: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.08))
+                .fill(AppColors.surface)
         )
         .padding(.horizontal, AppLayout.screenPadding)
     }
@@ -288,7 +288,7 @@ struct ChatView: View {
                 .autocorrectionDisabled(false)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(Color.white.opacity(0.16))
+                .background(AppColors.surfaceElevated)
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
@@ -298,7 +298,7 @@ struct ChatView: View {
                 Image(systemName: "paperplane.fill")
                     .foregroundColor(.white)
                     .frame(width: 44, height: 44)
-                    .background(Color.white.opacity(0.18))
+                    .background(AppColors.surfaceElevated)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
@@ -339,7 +339,7 @@ private struct DateSeparator: View {
 
     private var line: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.12))
+            .fill(AppColors.surfaceElevated)
             .frame(height: 1)
     }
 }
@@ -565,7 +565,7 @@ private struct ChatBubble: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.white.opacity(0.1))
+                .fill(AppColors.surfaceElevated)
         )
     }
 
@@ -588,7 +588,7 @@ private struct ChatBubble: View {
                 .padding(.vertical, 3)
                 .background(
                     Capsule().fill(Color.black.opacity(0.4))
-                        .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 0.5))
+                        .overlay(Capsule().stroke(AppColors.stroke, lineWidth: 0.5))
                 )
             }
         }

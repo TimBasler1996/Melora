@@ -19,13 +19,13 @@ struct BroadcastToggleCard: View {
             HStack {
                 Text("Broadcast")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.primaryText)
 
                 Spacer()
 
                 Text(broadcast.isBroadcasting ? "ON" : "OFF")
                     .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(broadcast.isBroadcasting ? .green : .white.opacity(0.75))
+                    .foregroundColor(broadcast.isBroadcasting ? AppColors.live : AppColors.secondaryText)
             }
 
             Toggle(isOn: Binding(
@@ -43,30 +43,27 @@ struct BroadcastToggleCard: View {
             )) {
                 Text(broadcast.isBroadcasting ? "You are live nearby" : "Go live nearby")
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.primaryText)
             }
-            .tint(.green)
+            .tint(AppColors.live)
             .disabled(!spotifyAuth.isAuthorized)
             .opacity(!spotifyAuth.isAuthorized ? 0.5 : 1)
 
             if !spotifyAuth.isAuthorized {
                 Text("Spotify connection required to broadcast.")
                     .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(AppColors.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if let err = broadcast.errorMessage, !err.isEmpty {
                 Text(err)
                     .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundColor(.red)
+                    .foregroundColor(AppColors.destructive)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(0.12))
-        )
+        .melCard(cornerRadius: 18)
     }
 }

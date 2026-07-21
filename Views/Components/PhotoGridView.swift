@@ -87,7 +87,7 @@ struct PhotoSlotView: View {
             .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                    .stroke(Color.white.opacity(isPrimary ? 0.25 : 0.16), lineWidth: 1)
+                    .stroke(isPrimary ? AppColors.primary.opacity(0.5) : AppColors.stroke, lineWidth: 1)
             )
         }
         .accessibilityLabel(Text(title))
@@ -114,7 +114,7 @@ struct PhotoSlotView: View {
     private var badgeView: some View {
         Text(badgeText)
             .font(.system(size: 12, weight: .semibold, design: .rounded))
-            .foregroundColor(.white)
+            .foregroundColor(AppColors.primaryText)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(

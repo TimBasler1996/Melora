@@ -29,14 +29,7 @@ struct AvatarPhotoCard: View {
                 Spacer(minLength: 0)
             }
             .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                    .fill(Color.white.opacity(0.06))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
-            )
+            .melCard(cornerRadius: AppLayout.cornerRadiusLarge)
         }
     }
 
@@ -66,7 +59,7 @@ struct AvatarPhotoCard: View {
         }
         .overlay(
             Circle()
-                .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                .stroke(AppColors.stroke, lineWidth: 1)
         )
     }
 }

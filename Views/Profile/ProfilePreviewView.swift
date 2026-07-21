@@ -336,7 +336,7 @@ struct ProfilePreviewView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(AppColors.stroke, lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 8)
     }

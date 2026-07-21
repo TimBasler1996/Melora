@@ -17,11 +17,11 @@ struct OnboardingStepPhotosView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Add photos")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.primaryText)
 
                 Text("Add 2-5 photos. Your first photo will be your profile picture.")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.secondaryText)
             }
             
             // Photo count indicator with proper status message
@@ -32,11 +32,11 @@ struct OnboardingStepPhotosView: View {
                 
                 Text("\(viewModel.selectedImagesCount)/5 photos")
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.primaryText)
                 
                 if !photoStatusMessage.isEmpty {
                     Text("• \(photoStatusMessage)")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundColor(photoStatusColor)
                 }
             }
@@ -44,7 +44,7 @@ struct OnboardingStepPhotosView: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(AppColors.surface)
             )
 
             ScrollView(showsIndicators: false) {
@@ -89,7 +89,7 @@ struct OnboardingStepPhotosView: View {
         if count >= 5 {
             return .orange
         } else if count >= 2 {
-            return .green
+            return AppColors.live
         } else {
             return AppColors.secondaryText
         }
@@ -155,7 +155,7 @@ private struct PhotoPickerCard: View {
                                     
                                     Text("Profile")
                                         .font(.system(size: 11, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppColors.primaryText)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 5)
                                         .background(
@@ -176,7 +176,7 @@ private struct PhotoPickerCard: View {
                                 Spacer()
                                 Image(systemName: "pencil.circle.fill")
                                     .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppColors.primaryText)
                                     .padding(10)
                                     .background(Color.black.opacity(0.3))
                                     .clipShape(Circle())
@@ -189,22 +189,22 @@ private struct PhotoPickerCard: View {
                         VStack(spacing: 12) {
                             Image(systemName: isFirst ? "person.crop.circle.badge.plus" : "photo.badge.plus")
                                 .font(.system(size: 32, weight: .medium))
-                                .foregroundColor(.white.opacity(0.4))
+                                .foregroundColor(AppColors.mutedText)
                             
                             if isFirst {
                                 VStack(spacing: 4) {
                                     Text("Profile Photo")
                                         .font(.system(size: 14, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppColors.primaryText)
                                     
                                     Text("Required")
-                                        .font(.system(size: 11, weight: .medium))
+                                        .font(.system(size: 11, weight: .medium, design: .rounded))
                                         .foregroundColor(AppColors.live)
                                 }
                             } else {
                                 Text("Add photo")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(.white.opacity(0.6))
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .foregroundColor(AppColors.secondaryText)
                             }
                         }
                         .frame(width: geometry.size.width, height: geometry.size.height)
@@ -212,14 +212,14 @@ private struct PhotoPickerCard: View {
                 }
             }
             .aspectRatio(3/4, contentMode: .fit)
-            .background(Color.white.opacity(0.08))
+            .background(AppColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .stroke(
                         isFirst && image == nil
                             ? AppColors.live.opacity(0.5)
-                            : Color.white.opacity(0.15),
+                            : AppColors.stroke,
                         lineWidth: isFirst && image == nil ? 2 : 1
                     )
             )

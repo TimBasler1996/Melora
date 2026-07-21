@@ -75,15 +75,6 @@ enum AppColors {
     static let mutedText = Color.white.opacity(0.40)
 }
 
-/// Shared gradients used as screen backgrounds.
-///
-/// Kept for backwards compatibility — everything now routes through
-/// `AppTheme.screenBackground` / `.melScreenBackground()`.
-enum AppGradients {
-    /// The standard dark background gradient used behind every main screen.
-    static let darkBackground = AppTheme.screenBackground
-}
-
 /// Layout constants (spacing, corner radii, etc.).
 enum AppLayout {
     static let cornerRadiusLarge: CGFloat = 24

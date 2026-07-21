@@ -228,12 +228,12 @@ struct ProfileView: View {
                         Text("Changes saved successfully")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
                     }
-                    .foregroundColor(.green)
+                    .foregroundColor(AppColors.live)
                     .padding(.vertical, 10)
                     .padding(.horizontal, 16)
                     .background(
                         Capsule()
-                            .fill(Color.green.opacity(0.15))
+                            .fill(AppColors.live.opacity(0.15))
                     )
                 }
             }
@@ -295,7 +295,7 @@ struct ProfileView: View {
                     .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            .stroke(AppColors.stroke, lineWidth: 1)
                     )
                     
                     // Edit button overlay
@@ -433,7 +433,7 @@ struct ProfileView: View {
             .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                    .stroke(hasAnyPhoto ? Color.clear : Color.white.opacity(0.12), lineWidth: 1.5)
+                    .stroke(hasAnyPhoto ? Color.clear : AppColors.stroke, lineWidth: 1.5)
             )
             .shadow(color: Color.black.opacity(hasAnyPhoto ? 0.1 : 0.05), radius: 8, x: 0, y: 4)
         }
@@ -671,7 +671,7 @@ struct ProfileView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(AppColors.stroke, lineWidth: 1)
             )
     }
 
@@ -804,7 +804,7 @@ struct ProfileAvatarView: View {
         .frame(width: size, height: size)
         .clipShape(Circle())
         .overlay(
-            Circle().stroke(Color.white.opacity(0.18), lineWidth: 1)
+            Circle().stroke(AppColors.stroke, lineWidth: 1)
         )
     }
 

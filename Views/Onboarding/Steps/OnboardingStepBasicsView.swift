@@ -10,11 +10,11 @@ struct OnboardingStepBasicsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Create your profile")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.primaryText)
 
                 Text("Tell us about yourself")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.secondaryText)
             }
 
             VStack(spacing: 16) {
@@ -35,7 +35,7 @@ struct OnboardingStepBasicsView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("City")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(AppColors.mutedText)
 
                     fieldContainer {
                         CitySearchFieldOnboarding(city: $viewModel.city)
@@ -55,7 +55,7 @@ struct OnboardingStepBasicsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Looking for")
                 .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(AppColors.mutedText)
 
             VStack(spacing: 10) {
                 ForEach(lookingForOptions, id: \.self) { option in
@@ -64,17 +64,17 @@ struct OnboardingStepBasicsView: View {
                     } label: {
                         Text(option)
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.primaryText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(viewModel.lookingFor == option ? AppColors.live.opacity(0.3) : Color.white.opacity(0.08))
+                                    .fill(viewModel.lookingFor == option ? AppColors.live.opacity(0.3) : AppColors.surface)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .stroke(
-                                        viewModel.lookingFor == option ? AppColors.live : Color.white.opacity(0.15),
+                                        viewModel.lookingFor == option ? AppColors.live : AppColors.stroke,
                                         lineWidth: viewModel.lookingFor == option ? 2 : 1
                                     )
                             )
@@ -92,12 +92,12 @@ struct OnboardingStepBasicsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(AppColors.mutedText)
 
             fieldContainer {
                 content()
-                    .font(isProminent ? .system(size: 18, weight: .semibold, design: .rounded) : .system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
+                    .font(isProminent ? .system(size: 18, weight: .semibold, design: .rounded) : .system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundColor(AppColors.primaryText)
                     .disableAutocorrection(true)
             }
         }
@@ -107,7 +107,7 @@ struct OnboardingStepBasicsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Birthday")
                 .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(AppColors.mutedText)
 
             fieldContainer {
                 HStack(spacing: 12) {
@@ -126,12 +126,12 @@ struct OnboardingStepBasicsView: View {
                     if let age = viewModel.birthday.age() {
                         Text("\(age)")
                             .font(.system(size: 15, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.primaryText)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
                                 Capsule()
-                                    .fill(Color.white.opacity(0.15))
+                                    .fill(AppColors.surfaceElevated)
                             )
                     }
                 }
@@ -143,7 +143,7 @@ struct OnboardingStepBasicsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Gender")
                 .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(AppColors.mutedText)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(genderOptions, id: \.self) { option in
@@ -152,17 +152,17 @@ struct OnboardingStepBasicsView: View {
                     } label: {
                         Text(option)
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.primaryText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(viewModel.gender == option ? AppColors.live.opacity(0.3) : Color.white.opacity(0.08))
+                                    .fill(viewModel.gender == option ? AppColors.live.opacity(0.3) : AppColors.surface)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .stroke(
-                                        viewModel.gender == option ? AppColors.live : Color.white.opacity(0.15),
+                                        viewModel.gender == option ? AppColors.live : AppColors.stroke,
                                         lineWidth: viewModel.gender == option ? 2 : 1
                                     )
                             )
@@ -179,7 +179,7 @@ struct OnboardingStepBasicsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(AppColors.surface)
             )
     }
 

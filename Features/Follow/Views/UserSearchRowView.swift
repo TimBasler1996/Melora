@@ -41,7 +41,7 @@ struct UserSearchRowView: View {
                 .padding(.vertical, 7)
                 .background(
                     isFollowing
-                        ? Color.white.opacity(0.15)
+                        ? AppColors.surfaceElevated
                         : AppColors.primary
                 )
                 .clipShape(Capsule())
@@ -58,7 +58,7 @@ struct UserSearchRowView: View {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
-                        Circle().fill(Color.white.opacity(0.1))
+                        Circle().fill(AppColors.surfaceElevated)
                             .overlay(ProgressView().tint(.white))
                     case .success(let image):
                         image.resizable().scaledToFill()
@@ -78,7 +78,7 @@ struct UserSearchRowView: View {
 
     private var initialsView: some View {
         ZStack {
-            Circle().fill(Color.white.opacity(0.15))
+            Circle().fill(AppColors.surfaceElevated)
             Text(user.initials)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundColor(.white)

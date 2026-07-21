@@ -54,7 +54,7 @@ struct LikesInboxView: View {
                         .frame(width: 32, height: 32)
                         .background(
                             Circle()
-                                .fill(Color.white.opacity(0.12))
+                                .fill(AppColors.surfaceElevated)
                         )
                 }
             }
@@ -270,7 +270,7 @@ private struct FollowerRowView: View {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .empty:
-                            Circle().fill(Color.white.opacity(0.08))
+                            Circle().fill(AppColors.surface)
                                 .overlay(ProgressView().tint(.white))
                         case .success(let image):
                             image.resizable().scaledToFill()
@@ -320,7 +320,7 @@ private struct FollowerRowView: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
                         .background(
-                            Capsule().fill(isFollowingBack ? Color.white.opacity(0.12) : AppColors.primary)
+                            Capsule().fill(isFollowingBack ? AppColors.surfaceElevated : AppColors.primary)
                         )
                 }
             }
@@ -335,7 +335,7 @@ private struct FollowerRowView: View {
 
     private var followerPlaceholder: some View {
         ZStack {
-            Circle().fill(Color.white.opacity(0.08))
+            Circle().fill(AppColors.surface)
             Image(systemName: "person.fill")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white.opacity(0.4))
@@ -358,7 +358,7 @@ private struct ModernTrackLikesClusterRow: View {
                         switch phase {
                         case .empty:
                             Rectangle()
-                                .fill(Color.white.opacity(0.08))
+                                .fill(AppColors.surface)
                                 .overlay(
                                     ProgressView()
                                         .tint(.white)
@@ -415,7 +415,7 @@ private struct ModernTrackLikesClusterRow: View {
 
     private var placeholderArtwork: some View {
         Rectangle()
-            .fill(Color.white.opacity(0.08))
+            .fill(AppColors.surface)
             .overlay(
                 Image(systemName: "music.note")
                     .font(.system(size: 24, weight: .thin))

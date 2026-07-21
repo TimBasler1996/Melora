@@ -423,7 +423,7 @@ private struct CompactBroadcastToggle: View {
         HStack(spacing: 12) {
             // Indicator dot
             Circle()
-                .fill(broadcast.isBroadcasting ? AppColors.live : Color.white.opacity(0.3))
+                .fill(broadcast.isBroadcasting ? AppColors.live : AppColors.mutedText)
                 .frame(width: 8, height: 8)
                 .overlay(
                     Circle()
@@ -481,7 +481,7 @@ private struct CompactArtwork: View {
                     switch phase {
                     case .empty:
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.white.opacity(0.08))
+                            .fill(AppColors.surface)
                             .overlay(ProgressView().tint(.white))
                     case .success(let image):
                         image
@@ -504,7 +504,7 @@ private struct CompactArtwork: View {
 
     private var artworkPlaceholder: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(Color.white.opacity(0.08))
+            .fill(AppColors.surface)
             .overlay(
                 Image(systemName: "music.note")
                     .font(.system(size: 36, weight: .thin))

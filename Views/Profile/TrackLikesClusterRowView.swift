@@ -43,11 +43,8 @@ struct TrackLikesClusterRowView: View {
                 .foregroundColor(AppColors.mutedText)
         }
         .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppColors.cardBackground.opacity(0.98))
-                .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 8)
-        )
+        .melCard()
+        .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 8)
     }
 
     private var artwork: some View {
@@ -63,7 +60,7 @@ struct TrackLikesClusterRowView: View {
                         img.resizable().scaledToFill()
                     default:
                         RoundedRectangle(cornerRadius: 12).fill(AppColors.tintedBackground)
-                            .overlay(Image(systemName: "music.note").foregroundColor(.white))
+                            .overlay(Image(systemName: "music.note").foregroundColor(AppColors.mutedText))
                     }
                 }
             } else {

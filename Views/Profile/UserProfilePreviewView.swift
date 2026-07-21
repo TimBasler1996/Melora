@@ -68,7 +68,7 @@ struct UserProfilePreviewView: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                    .fill(vm.isFollowing ? Color.white.opacity(0.15) : AppColors.primary)
+                    .fill(vm.isFollowing ? AppColors.surfaceElevated : AppColors.primary)
             )
             .contentShape(Rectangle())
         }

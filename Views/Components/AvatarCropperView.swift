@@ -48,7 +48,7 @@ struct AvatarCropperView: View {
                 .clipShape(Circle())
                 .overlay(
                     Circle()
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                        .stroke(AppColors.stroke, lineWidth: 1)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .gesture(dragGesture(in: cropSize))
