@@ -11,9 +11,6 @@ struct ChatView: View {
 
     var body: some View {
         ZStack {
-            AppGradients.darkBackground
-            .ignoresSafeArea()
-
             VStack(spacing: 10) {
 
                 if vm.isLoading && vm.messages.isEmpty {
@@ -24,20 +21,19 @@ struct ChatView: View {
                     Spacer()
                     VStack(spacing: 10) {
                         Text("Couldn’t load chat")
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+                            .font(AppFonts.headline())
+                            .foregroundColor(AppColors.primaryText)
                         Text(err)
                             .font(AppFonts.footnote())
-                            .foregroundColor(.white.opacity(0.85))
+                            .foregroundColor(AppColors.secondaryText)
                             .multilineTextAlignment(.center)
 
                         Button("Retry") { vm.start(conversationId: conversationId) }
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(AppFonts.subheadline())
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
-                            .background(Color.white.opacity(0.18))
-                            .foregroundColor(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .melCard(cornerRadius: 12)
+                            .foregroundColor(AppColors.primaryText)
                     }
                     .padding(.horizontal, AppLayout.screenPadding)
                     Spacer()
@@ -47,8 +43,14 @@ struct ChatView: View {
                 }
             }
         }
-        .navigationTitle("Chat")
+        .melScreenBackground()
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                ChatThreadHeader(peer: vm.peer)
+            }
+        }
         .alert(
             "Something went wrong",
             isPresented: Binding(
@@ -356,6 +358,96 @@ private struct SeenIndicator: View {
     }
 }
 
+// MARK: - Chat Thread Header
+
+/// Principal toolbar item for a chat thread: the match's avatar + name (+ age)
+/// with a live-status subtitle ("Broadcasting now" when live, else last-seen).
+/// Shows a placeholder avatar while the peer profile loads.
+private struct ChatThreadHeader: View {
+    let peer: AppUser?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            avatar
+                .frame(width: 34, height: 34)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(AppColors.stroke, lineWidth: 1))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(titleText)
+                    .font(AppFonts.headline())
+                    .foregroundColor(AppColors.primaryText)
+                    .lineLimit(1)
+
+                subtitle
+            }
+        }
+    }
+
+    private var titleText: String {
+        guard let peer else { return "Loading…" }
+        if let age = peer.age ?? peer.birthday?.age() {
+            return "\(peer.displayName), \(age)"
+        }
+        return peer.displayName
+    }
+
+    @ViewBuilder
+    private var subtitle: some View {
+        if let peer, peer.isBroadcasting == true {
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(AppColors.live)
+                    .frame(width: 6, height: 6)
+                Text("Broadcasting now")
+                    .font(AppFonts.caption())
+                    .foregroundColor(AppColors.live)
+            }
+        } else if let lastSeen = peer?.lastActiveAt {
+            Text("Active \(Self.relativeFormatter.localizedString(for: lastSeen, relativeTo: Date()))")
+                .font(AppFonts.caption())
+                .foregroundColor(AppColors.secondaryText)
+                .lineLimit(1)
+        } else if peer == nil {
+            Text("Loading…")
+                .font(AppFonts.caption())
+                .foregroundColor(AppColors.mutedText)
+        }
+    }
+
+    @ViewBuilder
+    private var avatar: some View {
+        if let urlString = peer?.avatarURL ?? peer?.photoURLs?.first,
+           let url = URL(string: urlString) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                default:
+                    avatarPlaceholder
+                }
+            }
+        } else {
+            avatarPlaceholder
+        }
+    }
+
+    private var avatarPlaceholder: some View {
+        ZStack {
+            AppColors.surfaceElevated
+            Image(systemName: "person.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(AppColors.mutedText)
+        }
+    }
+
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .short
+        return f
+    }()
+}
+
 // MARK: - Chat Bubble
 
 private struct ChatBubble: View {
@@ -391,8 +483,17 @@ private struct ChatBubble: View {
             VStack(alignment: isMine ? .trailing : .leading, spacing: 4) {
                 bubbleContent
                     .padding(12)
-                    .background(Color.white.opacity(isMine ? 0.24 : 0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .background(isMine ? AppColors.primary : AppColors.surfaceElevated)
+                    .clipShape(
+                        // Sent: 18/18/5/18 · Received: 18/18/18/5 (tail on the sender's side)
+                        UnevenRoundedRectangle(
+                            topLeadingRadius: 18,
+                            bottomLeadingRadius: isMine ? 18 : 5,
+                            bottomTrailingRadius: isMine ? 5 : 18,
+                            topTrailingRadius: 18,
+                            style: .continuous
+                        )
+                    )
                     .onTapGesture(count: 2) { onDoubleTap() }
                     .contextMenu {
                         Section("React") {
@@ -431,14 +532,8 @@ private struct ChatBubble: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             if let trackId = spotifyTrackId {
-                SpotifyLinkCard(
-                    trackId: trackId,
-                    title: "Spotify Track",
-                    artist: "Tap to open",
-                    album: String?.none,
-                    artworkURL: URL?.none
-                )
-                .padding(.top, 4)
+                SpotifyLinkCard(fetchingTrackId: trackId)
+                    .padding(.top, 4)
             }
 
             Text(message.createdAt.formatted(date: .omitted, time: .shortened))

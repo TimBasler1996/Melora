@@ -46,8 +46,6 @@ struct ProfileView: View {
             let contentWidth = geo.size.width - (AppLayout.screenPadding * 2)
 
             ZStack {
-                AppColors.background.ignoresSafeArea()
-
                 VStack(spacing: 14) {
                     header
 
@@ -79,6 +77,7 @@ struct ProfileView: View {
                     }
                 }
             }
+            .melScreenBackground()
         }
         .sheet(isPresented: $showSettings) { settingsSheet }
         .alert("Discard changes?", isPresented: $showDiscardAlert) {

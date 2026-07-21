@@ -63,7 +63,7 @@ struct DiscoverDetailSheetView: View {
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(AppColors.accentGreen)
+                    .foregroundColor(AppColors.live)
                 }
             }
 
@@ -124,7 +124,7 @@ struct DiscoverDetailSheetView: View {
                         .font(.system(size: 14, weight: .bold, design: .rounded))
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
-                        .background(AppColors.accentGreen)
+                        .background(AppColors.live)
                         .foregroundColor(.white)
                         .clipShape(Capsule())
                 }
@@ -158,7 +158,7 @@ struct DiscoverDetailSheetView: View {
                     Spacer()
                 }
                 .padding(.vertical, 12)
-                .background(AppColors.accentGreen.opacity(0.8))
+                .background(AppColors.live.opacity(0.8))
                 .foregroundColor(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }

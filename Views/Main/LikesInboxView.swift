@@ -15,9 +15,6 @@ struct LikesInboxView: View {
 
     var body: some View {
         ZStack {
-            AppGradients.darkBackground
-            .ignoresSafeArea()
-
             VStack(spacing: 0) {
                 // Segmented control
                 Picker("", selection: $selectedTab) {
@@ -38,6 +35,7 @@ struct LikesInboxView: View {
                 }
             }
         }
+        .melScreenBackground()
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -328,10 +326,7 @@ private struct FollowerRowView: View {
             }
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.08))
-        )
+        .melCard(cornerRadius: 12)
         .task {
             isFollowingBack = (try? await FollowApiService.shared.isFollowing(userId: follower.userId)) ?? false
             checkedFollow = true
@@ -388,13 +383,13 @@ private struct ModernTrackLikesClusterRow: View {
             // Track info
             VStack(alignment: .leading, spacing: 4) {
                 Text(cluster.trackTitle)
-                    .font(.system(size: 16, weight: .semibold, design: .default))
-                    .foregroundColor(.white)
+                    .font(AppFonts.headline())
+                    .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
-                
+
                 Text(cluster.trackArtist)
-                    .font(.system(size: 14, weight: .medium, design: .default))
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(AppFonts.subheadline())
+                    .foregroundColor(AppColors.secondaryText)
                     .lineLimit(1)
                 
                 HStack(spacing: 6) {
@@ -403,7 +398,7 @@ private struct ModernTrackLikesClusterRow: View {
                     Text("\(cluster.likes.count) like\(cluster.likes.count == 1 ? "" : "s")")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                 }
-                .foregroundColor(AppColors.accentGreen)
+                .foregroundColor(AppColors.live)
                 .padding(.top, 2)
             }
             
@@ -415,12 +410,9 @@ private struct ModernTrackLikesClusterRow: View {
                 .foregroundColor(.white.opacity(0.3))
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.white.opacity(0.08))
-        )
+        .melCard(cornerRadius: 12)
     }
-    
+
     private var placeholderArtwork: some View {
         Rectangle()
             .fill(Color.white.opacity(0.08))

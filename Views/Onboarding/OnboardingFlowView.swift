@@ -63,7 +63,7 @@ struct OnboardingFlowView: View {
                         .frame(height: 4)
 
                     Capsule()
-                        .fill(AppColors.accentGreen)
+                        .fill(AppColors.live)
                         .frame(width: geo.size.width * viewModel.progressValue, height: 4)
                         .animation(.easeInOut(duration: 0.3), value: viewModel.progressValue)
                 }
@@ -100,7 +100,7 @@ struct OnboardingFlowView: View {
                         .frame(height: 54)
                         .background(
                             Capsule()
-                                .fill(AppColors.accentGreen)
+                                .fill(AppColors.live)
                                 .opacity(isEnabled ? 1 : 0.4)
                         )
                 }
@@ -118,7 +118,7 @@ struct OnboardingFlowView: View {
                             .frame(height: 54)
                             .background(
                                 Capsule()
-                                    .fill(AppColors.accentGreen)
+                                    .fill(AppColors.live)
                             )
                     }
                     .disabled(viewModel.isConnectingSpotify)
@@ -146,7 +146,7 @@ struct OnboardingFlowView: View {
                             .frame(height: 54)
                             .background(
                                 Capsule()
-                                    .fill(AppColors.accentGreen)
+                                    .fill(AppColors.live)
                                     .opacity(viewModel.canFinish ? 1 : 0.4)
                             )
                     }

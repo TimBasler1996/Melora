@@ -39,6 +39,7 @@ struct SocialSoundApp: App {
                         .transition(.opacity)
                 }
             }
+            .preferredColorScheme(.dark) // Dark-first: lock the whole app to dark.
             .animation(.easeInOut(duration: 0.25), value: onboardingState.isLoading)
             .animation(.easeInOut(duration: 0.25), value: onboardingState.needsOnboarding)
             .onAppear {

@@ -61,13 +61,13 @@ struct DiscoverCardView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(0.09))
+                    .fill(AppColors.surfaceElevated)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    .stroke(AppColors.stroke, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 4)
 
             // Heart animation overlay
             if showHeartAnimation {
@@ -153,7 +153,7 @@ struct DiscoverCardView: View {
             actionButton(
                 icon: hasMessaged ? "paperplane.fill" : "paperplane",
                 label: "Message",
-                color: hasMessaged ? AppColors.accentGreen : .white
+                color: hasMessaged ? AppColors.live : .white
             ) {
                 handleMessageAction()
             }
@@ -162,7 +162,7 @@ struct DiscoverCardView: View {
             actionButton(
                 icon: isFollowing ? "person.fill.checkmark" : "person.fill.badge.plus",
                 label: isFollowing ? "Following" : "Follow",
-                color: isFollowing ? AppColors.accentGreen : .white
+                color: isFollowing ? AppColors.live : .white
             ) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 onToggleFollow()
@@ -244,7 +244,7 @@ struct DiscoverCardView: View {
                     .foregroundColor(
                         messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                             ? .white.opacity(0.25)
-                            : AppColors.accentGreen
+                            : AppColors.live
                     )
             }
             .buttonStyle(.plain)

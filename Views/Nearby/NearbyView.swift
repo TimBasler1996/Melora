@@ -3,47 +3,17 @@ import SwiftUI
 /// Shows a list of active sessions around the user.
 /// Uses NearbyViewModel which talks to SessionApiService and LocationService.
 struct NearbyView: View {
-    
+
     @EnvironmentObject private var locationService: LocationService
     @StateObject private var viewModel = NearbyViewModel()
     @State private var expandedSessionId: String?
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                LinearGradient(
-                    colors: [AppColors.primary.opacity(0.2), AppColors.secondary.opacity(0.35)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                
                 VStack(spacing: 0) {
-                    // Header
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Nearby Broadcasts")
-                            .font(AppFonts.sectionTitle())
-                            .foregroundColor(AppColors.primaryText)
-                        
-                        if let loc = locationService.currentLocationPoint {
-                            HStack(spacing: 6) {
-                                Image(systemName: "location.fill")
-                                    .font(.system(size: 11))
-                                Text(String(format: "Lat %.3f, Lon %.3f", loc.latitude, loc.longitude))
-                                    .font(.system(size: 11, weight: .regular, design: .rounded))
-                                    .foregroundColor(AppColors.secondaryText)
-                            }
-                        } else {
-                            Text("Waiting for your location…")
-                                .font(.system(size: 11, weight: .regular, design: .rounded))
-                                .foregroundColor(AppColors.secondaryText)
-                        }
-                    }
-                    .padding(.horizontal, AppLayout.screenPadding)
-                    .padding(.top, 20)
-                    .padding(.bottom, 10)
-                    
+                    header
+
                     // Content
                     Group {
                         if viewModel.isLoading {
@@ -71,6 +41,10 @@ struct NearbyView: View {
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 14) {
+                                    sortHeader
+                                        .padding(.horizontal, AppLayout.screenPadding)
+                                        .padding(.top, 6)
+
                                     ForEach(viewModel.sessions.indices, id: \.self) { index in
                                         let sessionId = viewModel.sessions[index].id
                                         SessionRowView(
@@ -87,7 +61,6 @@ struct NearbyView: View {
                                         )
                                         .padding(.horizontal, AppLayout.screenPadding)
                                     }
-                                    .padding(.top, 6)
                                     .padding(.bottom, 16)
                                 }
                             }
@@ -95,11 +68,14 @@ struct NearbyView: View {
                     }
                 }
             }
+            .melScreenBackground()
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("Nearby")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(AppFonts.headline())
+                        .foregroundColor(AppColors.primaryText)
                 }
             }
         }
@@ -109,6 +85,58 @@ struct NearbyView: View {
         }
         .onChange(of: locationService.currentLocationPoint) { newLocation in
             viewModel.loadNearbySessions(location: newLocation)
+        }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Nearby Broadcasts")
+                .font(AppFonts.sectionTitle())
+                .foregroundColor(AppColors.primaryText)
+
+            HStack(spacing: 6) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 11))
+                    .foregroundColor(AppColors.secondaryText)
+                Text(placeLine)
+                    .font(AppFonts.footnote())
+                    .foregroundColor(AppColors.secondaryText)
+            }
+
+            Text(broadcastingCountLine)
+                .font(AppFonts.footnote())
+                .foregroundColor(AppColors.mutedText)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, AppLayout.screenPadding)
+        .padding(.top, 20)
+        .padding(.bottom, 10)
+    }
+
+    /// Human-readable location — never raw coordinates.
+    private var placeLine: String {
+        if let label = viewModel.locationLabel { return label }
+        if locationService.currentLocationPoint == nil { return "Waiting for your location…" }
+        return "Nearby"
+    }
+
+    private var broadcastingCountLine: String {
+        let count = viewModel.sessions.count
+        return "\(count) \(count == 1 ? "person" : "people") broadcasting"
+    }
+
+    // MARK: - Sort header
+
+    private var sortHeader: some View {
+        HStack {
+            Text("Closest to you · Distance")
+                .font(AppFonts.caption())
+                .foregroundColor(AppColors.mutedText)
+                .textCase(.uppercase)
+                .kerning(0.5)
+            Spacer()
         }
     }
 }

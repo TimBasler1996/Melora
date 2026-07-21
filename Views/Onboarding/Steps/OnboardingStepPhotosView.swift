@@ -160,7 +160,7 @@ private struct PhotoPickerCard: View {
                                         .padding(.vertical, 5)
                                         .background(
                                             Capsule()
-                                                .fill(AppColors.accentGreen)
+                                                .fill(AppColors.live)
                                         )
                                         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                                         .padding(10)
@@ -199,7 +199,7 @@ private struct PhotoPickerCard: View {
                                     
                                     Text("Required")
                                         .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(AppColors.accentGreen)
+                                        .foregroundColor(AppColors.live)
                                 }
                             } else {
                                 Text("Add photo")
@@ -218,7 +218,7 @@ private struct PhotoPickerCard: View {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .stroke(
                         isFirst && image == nil
-                            ? AppColors.accentGreen.opacity(0.5)
+                            ? AppColors.live.opacity(0.5)
                             : Color.white.opacity(0.15),
                         lineWidth: isFirst && image == nil ? 2 : 1
                     )

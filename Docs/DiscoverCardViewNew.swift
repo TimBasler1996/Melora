@@ -65,11 +65,11 @@ struct DiscoverCardViewNew: View {
                 .padding(.leading, 20)
                 .background(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(Color.white.opacity(0.09))
+                        .fill(AppColors.surfaceElevated)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(AppColors.stroke, lineWidth: 1)
                 )
                 .shadow(color: Color.black.opacity(0.25), radius: 16, x: 0, y: 8)
 

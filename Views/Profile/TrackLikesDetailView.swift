@@ -75,19 +75,20 @@ struct TrackLikesDetailView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(track.title)
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .foregroundColor(.white)
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.primaryText)
                         .lineLimit(2)
 
                     Text(track.artist)
-                        .font(.system(size: 15, weight: .semibold, design: .default))
-                        .foregroundColor(.white.opacity(0.6))
+                        .font(AppFonts.body())
+                        .fontWeight(.semibold)
+                        .foregroundColor(AppColors.secondaryText)
                         .lineLimit(1)
 
                     if let album = track.album, !album.isEmpty {
                         Text(album)
-                            .font(.system(size: 13, weight: .medium, design: .default))
-                            .foregroundColor(.white.opacity(0.4))
+                            .font(AppFonts.footnote())
+                            .foregroundColor(AppColors.mutedText)
                             .lineLimit(1)
                     }
                 }
@@ -407,7 +408,7 @@ private struct ModernLikeRow: View {
         let color: Color = {
             switch s {
             case .pending: return Color.white.opacity(0.12)
-            case .accepted: return AppColors.accentGreen.opacity(0.2)
+            case .accepted: return AppColors.live.opacity(0.2)
             case .rejected: return Color.white.opacity(0.08)
             }
         }()

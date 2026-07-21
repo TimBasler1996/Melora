@@ -14,11 +14,9 @@ struct ChatInboxView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppGradients.darkBackground
-                .ignoresSafeArea()
-
                 content
             }
+            .melScreenBackground()
             .navigationTitle("Chats")
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -151,10 +149,7 @@ struct ChatInboxView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.08))
-        )
+        .melCard(cornerRadius: 14)
     }
 
     private func chatSectionHeader(_ title: String) -> some View {

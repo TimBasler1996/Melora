@@ -20,54 +20,49 @@ struct NowPlayingView: View {
     @State private var showBroadcastGlow: Bool = false
 
     var body: some View {
-        ZStack {
-            // Dynamic gradient background based on album artwork
+        NavigationStack {
             ZStack {
-                dominantColor
+                // Dynamic gradient background based on album artwork (intended hero treatment)
+                ZStack {
+                    dominantColor
+                        .ignoresSafeArea()
+
+                    LinearGradient(
+                        colors: [
+                            dominantColor.opacity(0.8),
+                            AppColors.background
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
                     .ignoresSafeArea()
-                
-                LinearGradient(
-                    colors: [
-                        dominantColor.opacity(0.8),
-                        Color.black.opacity(0.95)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            }
-            .animation(.easeInOut(duration: 1.0), value: dominantColor)
+                }
+                .animation(.easeInOut(duration: 1.0), value: dominantColor)
 
-            content
+                content
 
-            // ✨ Broadcast edge glow effect
-            if showBroadcastGlow {
-                EdgeGlowEffect()
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-            }
-        }
-        .overlay(alignment: .top) {
-            // Custom navigation bar (only show chevron when music is playing)
-            HStack {
-                Color.clear.frame(width: 44, height: 44)
-
-                Spacer()
-
-                Text("Now Playing")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-
-                Spacer()
-
-                if let user = currentUserStore.user {
-                    LikesInboxButton(user: user)
-                } else {
-                    Color.clear.frame(width: 44, height: 44)
+                // ✨ Broadcast edge glow effect
+                if showBroadcastGlow {
+                    EdgeGlowEffect()
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Now Playing")
+                        .font(AppFonts.headline())
+                        .foregroundColor(AppColors.primaryText)
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let user = currentUserStore.user {
+                        LikesInboxButton(user: user)
+                    }
+                }
+            }
         }
         .onAppear {
             // Silent refresh only — the disconnected state below offers an
@@ -106,9 +101,6 @@ struct NowPlayingView: View {
         } else if let track = vm.currentTrack {
             // ✅ Playing state - compact Melora view
             VStack(spacing: 0) {
-                Spacer()
-                    .frame(height: 60) // Space for custom nav bar
-
                 // Compact Broadcast Toggle
                 CompactBroadcastToggle(hasTrack: true)
                     .padding(.horizontal, 20)
@@ -178,7 +170,7 @@ struct NowPlayingView: View {
                         }) {
                             Image(systemName: "shuffle")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(vm.isShuffling ? AppColors.accentGreen : .white.opacity(0.5))
+                                .foregroundColor(vm.isShuffling ? AppColors.live : .white.opacity(0.5))
                                 .frame(width: 40, height: 40)
                         }
 
@@ -244,7 +236,7 @@ struct NowPlayingView: View {
 
                             Image(systemName: iconName)
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(vm.repeatMode != .off ? AppColors.accentGreen : .white.opacity(0.5))
+                                .foregroundColor(vm.repeatMode != .off ? AppColors.live : .white.opacity(0.5))
                                 .frame(width: 40, height: 40)
                         }
                     }
@@ -253,7 +245,7 @@ struct NowPlayingView: View {
                 .padding(.vertical, 20)
                 .background(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(AppColors.surface)
                 )
                 .padding(.horizontal, 16)
 
@@ -262,9 +254,6 @@ struct NowPlayingView: View {
         } else {
             // ✅ Empty state - nothing playing
             VStack(spacing: 0) {
-                Spacer()
-                    .frame(height: 60) // Space for custom nav bar
-                
                 CompactBroadcastToggle(hasTrack: false)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 32)
@@ -321,9 +310,6 @@ struct NowPlayingView: View {
     private var spotifyDisconnectedState: some View {
         VStack(spacing: 0) {
             Spacer()
-                .frame(height: 60) // Space for custom nav bar
-
-            Spacer()
 
             VStack(spacing: 24) {
                 Image(systemName: "bolt.slash.fill")
@@ -357,7 +343,7 @@ struct NowPlayingView: View {
                     .padding(.vertical, 16)
                     .background(
                         Capsule()
-                            .fill(AppColors.accentGreen)
+                            .fill(AppColors.live)
                     )
                 }
                 .padding(.top, 8)
@@ -437,11 +423,11 @@ private struct CompactBroadcastToggle: View {
         HStack(spacing: 12) {
             // Indicator dot
             Circle()
-                .fill(broadcast.isBroadcasting ? AppColors.accentGreen : Color.white.opacity(0.3))
+                .fill(broadcast.isBroadcasting ? AppColors.live : Color.white.opacity(0.3))
                 .frame(width: 8, height: 8)
                 .overlay(
                     Circle()
-                        .fill(broadcast.isBroadcasting ? AppColors.accentGreen : Color.clear)
+                        .fill(broadcast.isBroadcasting ? AppColors.live : Color.clear)
                         .scaleEffect(broadcast.isBroadcasting ? 2.0 : 1.0)
                         .opacity(broadcast.isBroadcasting ? 0.3 : 0)
                         .animation(
@@ -470,7 +456,7 @@ private struct CompactBroadcastToggle: View {
                 }
             ))
             .labelsHidden()
-            .tint(AppColors.accentGreen)
+            .tint(AppColors.live)
             .disabled(!spotifyAuth.isAuthorized || (!hasTrack && !broadcast.isBroadcasting))
             .opacity(hasTrack ? 1.0 : 0.5)
         }
@@ -478,7 +464,7 @@ private struct CompactBroadcastToggle: View {
         .padding(.vertical, 12)
         .background(
             Capsule()
-                .fill(Color.white.opacity(0.08))
+                .fill(AppColors.surface)
         )
     }
 }
@@ -632,7 +618,7 @@ private struct EdgeGlowEffect: View {
         ZStack {
             // Top edge
             LinearGradient(
-                colors: [AppColors.accentGreen.opacity(0.8), Color.clear],
+                colors: [AppColors.live.opacity(0.8), Color.clear],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -641,7 +627,7 @@ private struct EdgeGlowEffect: View {
 
             // Leading edge
             LinearGradient(
-                colors: [AppColors.accentGreen.opacity(0.8), Color.clear],
+                colors: [AppColors.live.opacity(0.8), Color.clear],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -650,7 +636,7 @@ private struct EdgeGlowEffect: View {
 
             // Trailing edge
             LinearGradient(
-                colors: [Color.clear, AppColors.accentGreen.opacity(0.8)],
+                colors: [Color.clear, AppColors.live.opacity(0.8)],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -659,7 +645,7 @@ private struct EdgeGlowEffect: View {
 
             // Bottom edge
             LinearGradient(
-                colors: [Color.clear, AppColors.accentGreen.opacity(0.8)],
+                colors: [Color.clear, AppColors.live.opacity(0.8)],
                 startPoint: .top,
                 endPoint: .bottom
             )

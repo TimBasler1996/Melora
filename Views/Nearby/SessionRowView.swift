@@ -29,11 +29,8 @@ struct SessionRowView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppColors.cardBackground.opacity(0.98))
-                .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 8)
-        )
+        .melCard()
+        .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 8)
     }
 
     // MARK: - Collapsed Row
@@ -93,7 +90,7 @@ struct SessionRowView: View {
         VStack(spacing: 16) {
             // Divider
             Rectangle()
-                .fill(Color.white.opacity(0.1))
+                .fill(AppColors.stroke)
                 .frame(height: 1)
                 .padding(.horizontal, 14)
 
@@ -161,7 +158,7 @@ struct SessionRowView: View {
                     .foregroundColor(AppColors.primaryText)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
-                    .background(Capsule().fill(Color.white.opacity(0.12)))
+                    .background(Capsule().fill(AppColors.surfaceElevated))
                 }
                 .buttonStyle(.plain)
             }

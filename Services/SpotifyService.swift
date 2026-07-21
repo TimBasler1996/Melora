@@ -205,6 +205,46 @@ final class SpotifyService {
         return track
     }
 
+    // MARK: - Track Metadata
+
+    /// Fetches full metadata (title, artist, album, artwork, duration) for a
+    /// single track by its Spotify id. Used to render rich shared-song cards.
+    func fetchTrack(id: String) async throws -> Track {
+        let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
+        let url = apiBaseURL.appendingPathComponent("tracks/\(id)")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw SpotifyAPIError.invalidResponse
+        }
+
+        guard (200..<300).contains(http.statusCode) else {
+            print("❌ Spotify /tracks/\(id) HTTP \(http.statusCode): \(String(data: data, encoding: .utf8) ?? "")")
+            throw SpotifyAPIError.invalidResponse
+        }
+
+        let item = try JSONDecoder().decode(SpotifyTrackItem.self, from: data)
+
+        let artworkURL: URL? = {
+            guard let first = item.album.images.first?.url else { return nil }
+            return URL(string: first)
+        }()
+
+        return Track(
+            id: item.id ?? id,
+            title: item.name,
+            artist: item.artists.first?.name ?? "Unknown Artist",
+            album: item.album.name,
+            artworkURL: artworkURL,
+            durationMs: item.durationMs
+        )
+    }
+
     // MARK: - Profile
 
     /// Fetches the Spotify user profile (/me).

@@ -19,6 +19,10 @@ final class ChatViewModel: ObservableObject {
     @Published var conversation: Conversation?
     @Published var isResponding: Bool = false
 
+    /// The other participant's profile, loaded off the conversation's participant
+    /// ids. Drives the chat thread header (avatar, name, live / last-seen status).
+    @Published var peer: AppUser?
+
     /// Message the user is composing a reply to. When set, the composer shows
     /// a quote bar and the next sent message carries the reply context.
     @Published var replyingTo: ChatMessage?
@@ -26,10 +30,12 @@ final class ChatViewModel: ObservableObject {
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
     private var conversationListener: ListenerRegistration?
+    private var peerListener: ListenerRegistration?
 
     deinit {
         listener?.remove()
         conversationListener?.remove()
+        peerListener?.remove()
     }
 
     /// When the *other* user last opened this conversation. Used to render
@@ -82,7 +88,9 @@ final class ChatViewModel: ObservableObject {
                     self.errorMessage = "Conversation not found."
                     return
                 }
-                self.conversation = Conversation.fromFirestore(id: conversationId, data: data)
+                let convo = Conversation.fromFirestore(id: conversationId, data: data)
+                self.conversation = convo
+                if let convo { self.startPeerListenerIfNeeded(participantIds: convo.participantIds) }
             }
 
         // Listen to messages
@@ -116,6 +124,27 @@ final class ChatViewModel: ObservableObject {
         listener = nil
         conversationListener?.remove()
         conversationListener = nil
+        peerListener?.remove()
+        peerListener = nil
+    }
+
+    /// Live-listen to the other participant's user doc so the header can show
+    /// their avatar, name and up-to-date broadcasting / last-seen status.
+    private func startPeerListenerIfNeeded(participantIds: [String]) {
+        guard peerListener == nil else { return }
+        guard let myId = Auth.auth().currentUser?.uid,
+              let otherId = participantIds.first(where: { $0 != myId }) else { return }
+
+        peerListener = db.collection("users").document(otherId)
+            .addSnapshotListener { [weak self] snap, err in
+                guard let self else { return }
+                if let err {
+                    print("❌ [Chat] peer listen failed:", err.localizedDescription)
+                    return
+                }
+                guard let data = snap?.data() else { return }
+                self.peer = AppUser.fromFirestore(uid: otherId, data: data)
+            }
     }
 
     func markAsRead(conversationId: String) async {

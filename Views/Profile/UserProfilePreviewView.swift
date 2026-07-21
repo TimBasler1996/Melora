@@ -13,8 +13,6 @@ struct UserProfilePreviewView: View {
 
     var body: some View {
         ZStack {
-            AppColors.background.ignoresSafeArea()
-
             if vm.isLoading {
                 loadingState
             } else if let error = vm.errorMessage {
@@ -39,6 +37,7 @@ struct UserProfilePreviewView: View {
                 }
             }
         }
+        .melScreenBackground()
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
         .task {

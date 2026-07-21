@@ -13,16 +13,13 @@ struct DiscoverView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Dark gradient background matching other views
-                AppGradients.darkBackground
-                .ignoresSafeArea()
-
                 VStack(spacing: 0) {
                     modePickerBar
                     radiusSlider
                     content
                 }
             }
+            .melScreenBackground()
             .navigationTitle("Discover")
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)

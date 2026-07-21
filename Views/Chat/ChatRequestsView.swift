@@ -8,9 +8,6 @@ struct ChatRequestsView: View {
 
     var body: some View {
         ZStack {
-            AppGradients.darkBackground
-            .ignoresSafeArea()
-
             if rows.isEmpty {
                 VStack(spacing: 10) {
                     Spacer()
@@ -47,6 +44,7 @@ struct ChatRequestsView: View {
                 .scrollIndicators(.hidden)
             }
         }
+        .melScreenBackground()
         .navigationTitle("Message Requests")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)

@@ -268,11 +268,11 @@ struct BroadcastProfileView: View {
                     Link(destination: url) {
                         Image(systemName: "music.note")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(Color(red: 0.2, green: 0.85, blue: 0.4))
+                            .foregroundColor(AppColors.live)
                             .frame(width: 40, height: 40)
                             .background(
                                 Circle()
-                                    .fill(Color(red: 0.2, green: 0.85, blue: 0.4).opacity(0.15))
+                                    .fill(AppColors.live.opacity(0.15))
                             )
                     }
                 }
@@ -298,7 +298,7 @@ struct BroadcastProfileView: View {
                         InteractionBadge(
                             icon: "message.fill",
                             text: "You messaged about this",
-                            color: Color(red: 0.2, green: 0.85, blue: 0.4)
+                            color: AppColors.live
                         )
                     }
                     
@@ -437,7 +437,7 @@ struct BroadcastProfileView: View {
                 .padding(.horizontal, 20)
                 .background(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color(red: 0.2, green: 0.85, blue: 0.4).opacity(hasAlreadyMessaged ? 0.4 : 0.85))
+                        .fill(AppColors.live.opacity(hasAlreadyMessaged ? 0.4 : 0.85))
                 )
             }
         }
@@ -481,7 +481,7 @@ struct BroadcastProfileView: View {
                 .padding(.vertical, 14)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(red: 0.2, green: 0.85, blue: 0.4))
+                        .fill(AppColors.live)
                 )
             }
             .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
