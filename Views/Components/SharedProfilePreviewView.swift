@@ -19,6 +19,10 @@ struct ProfilePreviewData: Equatable {
     let broadcastMinutes: Int?
     let likesReceivedCount: Int?
 
+    /// The profile owner's uid — enables tapping the follower count to open
+    /// their followers list. `nil` disables that interaction.
+    var userId: String? = nil
+
     var spotifyProfileURL: URL? {
         guard let id = spotifyId?.trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty else {
             return nil
@@ -45,7 +49,8 @@ struct ProfilePreviewData: Equatable {
             lookingFor: userProfile.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? userProfile.lookingFor : nil,
             followerCount: nil,
             broadcastMinutes: nil,
-            likesReceivedCount: nil
+            likesReceivedCount: nil,
+            userId: userProfile.uid
         )
     }
 
@@ -71,7 +76,8 @@ struct ProfilePreviewData: Equatable {
             lookingFor: appUser.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.lookingFor : nil,
             followerCount: followerCount,
             broadcastMinutes: appUser.broadcastMinutesTotal,
-            likesReceivedCount: likesReceivedCount
+            likesReceivedCount: likesReceivedCount,
+            userId: appUser.uid
         )
     }
 }
@@ -136,11 +142,27 @@ struct SharedProfilePreviewView: View {
     }
 
     /// Three evenly-weighted stats, no divider bars.
+    /// The follower count is tappable when a userId is available.
     private var statsStrip: some View {
         HStack(spacing: 0) {
-            statItem(value: data.followerCount.map(String.init) ?? "0", label: "Followers")
+            followersStat
             statItem(value: formatBroadcastTime(data.broadcastMinutes), label: "Broadcast")
             statItem(value: data.likesReceivedCount.map(String.init) ?? "0", label: "Likes")
+        }
+    }
+
+    @ViewBuilder
+    private var followersStat: some View {
+        let value = data.followerCount.map(String.init) ?? "0"
+        if let uid = data.userId {
+            NavigationLink {
+                FollowersListView(userId: uid)
+            } label: {
+                statItem(value: value, label: "Followers")
+            }
+            .buttonStyle(.plain)
+        } else {
+            statItem(value: value, label: "Followers")
         }
     }
 
@@ -344,4 +366,157 @@ struct DetailRow: Identifiable {
     let id = UUID()
     let title: String
     let value: String
+}
+
+// MARK: - Followers List
+
+/// A simple, tappable list of the users who follow a given profile.
+/// Opened by tapping the "Followers" stat on a profile.
+struct FollowersListView: View {
+
+    let userId: String
+    @StateObject private var vm = FollowersListViewModel()
+
+    var body: some View {
+        ZStack {
+            if vm.isLoading {
+                ProgressView().tint(AppColors.primary)
+            } else if vm.followers.isEmpty {
+                VStack(spacing: 10) {
+                    Image(systemName: "person.2")
+                        .font(.system(size: 44, weight: .thin))
+                        .foregroundColor(AppColors.mutedText)
+                    Text("No followers yet")
+                        .font(AppFonts.body())
+                        .foregroundColor(AppColors.secondaryText)
+                }
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(vm.followers) { user in
+                            NavigationLink {
+                                UserProfilePreviewView(userId: user.uid)
+                            } label: {
+                                FollowerListRow(user: user)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, AppLayout.screenPadding)
+                    .padding(.vertical, 12)
+                }
+                .scrollIndicators(.hidden)
+            }
+        }
+        .melScreenBackground()
+        .navigationTitle("Followers")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .task { await vm.load(userId: userId) }
+    }
+}
+
+private struct FollowerListRow: View {
+    let user: AppUser
+
+    var body: some View {
+        HStack(spacing: 14) {
+            avatar
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(user.displayName)
+                    .font(AppFonts.headline())
+                    .foregroundColor(AppColors.primaryText)
+                    .lineLimit(1)
+
+                if let city = (user.city ?? user.hometown)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !city.isEmpty {
+                    Text(city)
+                        .font(AppFonts.footnote())
+                        .foregroundColor(AppColors.secondaryText)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(AppColors.mutedText)
+        }
+        .padding(12)
+        .melCard()
+    }
+
+    private var avatar: some View {
+        Group {
+            if let s = user.avatarURL ?? user.photoURLs?.first, let url = URL(string: s) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let img): img.resizable().scaledToFill()
+                    default: avatarPlaceholder
+                    }
+                }
+            } else {
+                avatarPlaceholder
+            }
+        }
+        .frame(width: 48, height: 48)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(AppColors.stroke, lineWidth: 1))
+    }
+
+    private var avatarPlaceholder: some View {
+        ZStack {
+            AppColors.surfaceElevated
+            Image(systemName: "person.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(AppColors.mutedText)
+        }
+    }
+}
+
+@MainActor
+final class FollowersListViewModel: ObservableObject {
+
+    @Published var followers: [AppUser] = []
+    @Published var isLoading: Bool = true
+
+    private var isRunningInPreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+
+    func load(userId: String) async {
+        guard !isRunningInPreview else { isLoading = false; return }
+        guard followers.isEmpty else { return }
+        isLoading = true
+        defer { isLoading = false }
+
+        let ids: [String]
+        do {
+            ids = Array(try await FollowApiService.shared.fetchFollowerIds(of: userId))
+        } catch {
+            print("❌ [Followers] fetch ids failed:", error.localizedDescription)
+            return
+        }
+
+        var loaded: [AppUser] = []
+        for id in ids {
+            if let user = try? await fetchUser(uid: id) {
+                loaded.append(user)
+            }
+        }
+
+        followers = loaded.sorted {
+            $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+        }
+    }
+
+    private func fetchUser(uid: String) async throws -> AppUser {
+        try await withCheckedThrowingContinuation { continuation in
+            UserApiService.shared.fetchUser(uid: uid) { result in
+                continuation.resume(with: result)
+            }
+        }
+    }
 }

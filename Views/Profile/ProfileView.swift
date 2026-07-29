@@ -151,7 +151,8 @@ struct ProfileView: View {
                     lookingFor: profile.lookingFor?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? profile.lookingFor : nil,
                     followerCount: followerCount,
                     broadcastMinutes: currentUserStore.user?.broadcastMinutesTotal,
-                    likesReceivedCount: likesReceivedCount
+                    likesReceivedCount: likesReceivedCount,
+                    userId: profile.uid
                 )
                 SharedProfilePreviewView(data: previewData)
             } else {
@@ -533,8 +534,6 @@ struct ProfileView: View {
                         .keyboardType(.namePhonePad)
                 }
 
-                birthdayPicker
-
                 labeledField(title: "City") {
                     CitySearchFieldEdit(city: draftBinding(\.city))
                 }
@@ -582,37 +581,6 @@ struct ProfileView: View {
         }
     }
 
-    private var birthdayPicker: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Birthday")
-                .font(AppFonts.footnote())
-                .foregroundColor(AppColors.mutedText)
-
-            fieldContainer {
-                HStack(spacing: 12) {
-                    DatePicker(
-                        "",
-                        selection: draftDateBinding(\.birthday),
-                        in: minimumDate...Date(),
-                        displayedComponents: .date
-                    )
-                    .labelsHidden()
-                    .datePickerStyle(.compact)
-
-                    Spacer(minLength: 0)
-
-                    if let age = viewModel.draft?.birthday.age() {
-                        Text("\(age)")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundColor(AppColors.primaryText)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(Capsule().fill(AppColors.tintedBackground.opacity(0.6)))
-                    }
-                }
-            }
-        }
-    }
 
     private func genderSelector(currentGender: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -682,19 +650,6 @@ struct ProfileView: View {
                 viewModel.updateDraft { $0[keyPath: keyPath] = newValue }
             }
         )
-    }
-
-    private func draftDateBinding(_ keyPath: WritableKeyPath<ProfileViewModel.ProfileDraft, Date>) -> Binding<Date> {
-        Binding(
-            get: { viewModel.draft?[keyPath: keyPath] ?? Date() },
-            set: { newValue in
-                viewModel.updateDraft { $0[keyPath: keyPath] = newValue }
-            }
-        )
-    }
-
-    private var minimumDate: Date {
-        Calendar.current.date(from: DateComponents(year: 1900, month: 1, day: 1)) ?? .distantPast
     }
 
     // MARK: - Stats Loading
