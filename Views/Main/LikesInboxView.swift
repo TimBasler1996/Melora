@@ -71,6 +71,8 @@ struct LikesInboxView: View {
         .refreshable {
             if selectedTab == .likes {
                 vm.loadLikes(for: user.uid)
+            } else {
+                followersVM.startListening()
             }
         }
     }
@@ -208,6 +210,34 @@ struct LikesInboxView: View {
                     .padding(.top, 12)
                 Spacer()
             }
+        } else if let err = followersVM.errorMessage, followersVM.followers.isEmpty {
+            VStack(spacing: 16) {
+                Spacer()
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 48, weight: .thin))
+                    .foregroundColor(.white.opacity(0.4))
+                Text("Couldn't load followers")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                Text(err)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+                Button {
+                    followersVM.startListening()
+                } label: {
+                    Text("Retry")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 14)
+                        .background(Capsule().fill(Color.white))
+                }
+                .padding(.top, 8)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
         } else if followersVM.newFollowers.isEmpty {
             VStack(spacing: 20) {
                 Spacer()

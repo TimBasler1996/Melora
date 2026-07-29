@@ -295,8 +295,12 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
         let expiresAt = Date().addingTimeInterval(TimeInterval(decoded.expiresIn))
 
         let newTokens = SpotifyTokens(
+            // Spotify's PKCE flow may rotate the refresh token. If the response
+            // includes a new one we MUST persist it — reusing the old (now
+            // invalidated) token would silently break every future refresh and
+            // force the user to reconnect Spotify.
             accessToken: decoded.accessToken,
-            refreshToken: refreshToken,
+            refreshToken: decoded.refreshToken ?? refreshToken,
             expiresAt: expiresAt
         )
 

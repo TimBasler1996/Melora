@@ -192,7 +192,13 @@ final class BroadcastManager: ObservableObject {
         if trackSyncTask == nil {
             trackSyncTask = Task { [weak self] in
                 guard let self else { return }
-                guard let uid = Auth.auth().currentUser?.uid else { return }
+                guard let uid = Auth.auth().currentUser?.uid else {
+                    // Don't leave a completed task parked in the slot, or the
+                    // `trackSyncTask == nil` guard below would block every future
+                    // restart of the periodic sync.
+                    self.trackSyncTask = nil
+                    return
+                }
 
                 if immediate {
                     await self.syncTrack(uid: uid)

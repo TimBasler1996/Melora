@@ -68,7 +68,8 @@ final class NowPlayingViewModel: ObservableObject {
             progressMs = state.progressMs ?? 0
             restartProgressTickerIfNeeded(durationMs: currentTrack?.durationMs)
             errorMessage = nil
-            await refreshPlayerState()
+            // Note: shuffle/repeat state is fetched on start() and on foreground,
+            // and updated locally on user action — no need to poll it every tick.
         } catch SpotifyAPIError.noActiveDevice {
             currentTrack = nil
             isPlaying = false
@@ -103,7 +104,10 @@ final class NowPlayingViewModel: ObservableObject {
     }
 
     func handleWillEnterForeground() {
-        Task { await refreshNowPlaying() }
+        Task {
+            await refreshNowPlaying()
+            await refreshPlayerState()
+        }
     }
 
     // MARK: - Controls
@@ -172,17 +176,21 @@ final class NowPlayingViewModel: ObservableObject {
         }
     }
     func toggleShuffle() async {
+        let previous = isShuffling
+        isShuffling.toggle()
         do {
-            isShuffling.toggle()
             try await SpotifyPlaybackService.shared.setShuffle(enabled: isShuffling)
         } catch SpotifyPlaybackError.noActiveDevice {
+            isShuffling = previous // device didn't accept it
             errorMessage = "No active Spotify device."
         } catch {
+            isShuffling = previous
             errorMessage = error.localizedDescription
         }
     }
 
     func cycleRepeatMode() async {
+        let previous = repeatMode
         let next: RepeatMode
         switch repeatMode {
         case .off: next = .context
@@ -193,8 +201,10 @@ final class NowPlayingViewModel: ObservableObject {
         do {
             try await SpotifyService.shared.setRepeat(mode: next.rawValue)
         } catch SpotifyAPIError.noActiveDevice {
+            repeatMode = previous
             errorMessage = "No active Spotify device."
         } catch {
+            repeatMode = previous
             errorMessage = error.localizedDescription
         }
     }

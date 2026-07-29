@@ -16,6 +16,13 @@ struct SocialSoundApp: App {
     @StateObject private var likeNotificationService = LikeNotificationService()
 
     init() {
+        // Give URLSession.shared (used by AsyncImage) a real memory + disk cache
+        // so album art and profile photos aren't re-downloaded on every scroll.
+        URLCache.shared = URLCache(
+            memoryCapacity: 32 * 1024 * 1024,   // 32 MB
+            diskCapacity: 256 * 1024 * 1024     // 256 MB
+        )
+
         // Firebase is configured here (before AppDelegate's didFinishLaunching)
         // so that all @StateObject services can use Firestore immediately.
         if FirebaseApp.app() == nil {

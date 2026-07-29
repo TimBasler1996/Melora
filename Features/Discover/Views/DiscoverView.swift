@@ -31,7 +31,10 @@ struct DiscoverView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
+                    .accessibilityLabel("Find people")
                 }
             }
             .sheet(isPresented: $showUserSearch) {
@@ -40,6 +43,12 @@ struct DiscoverView: View {
             .sheet(item: $viewModel.selectedBroadcast) { broadcast in
                 NavigationStack {
                     UserProfilePreviewView(userId: broadcast.user.id)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Close") { viewModel.selectedBroadcast = nil }
+                                    .foregroundColor(.white)
+                            }
+                        }
                 }
                 .presentationDetents([.large])
             }

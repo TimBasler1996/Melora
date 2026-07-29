@@ -124,8 +124,10 @@ final class DiscoverViewModel: ObservableObject {
                 }
             }
         }
-        
-        // Start polling timer for refresh every 5 seconds
+
+        // The snapshot listener above is the real-time source of truth. Keep a
+        // slow safety fallback only (not active polling) so we don't hammer
+        // Firestore with a full-collection read every few seconds.
         startPolling()
     }
 
@@ -143,7 +145,8 @@ final class DiscoverViewModel: ObservableObject {
         pollTimer?.cancel()
         pollTimer = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
+                // Slow safety net only — the snapshot listener handles live updates.
+                try? await Task.sleep(nanoseconds: 60_000_000_000) // 60 seconds
                 guard !Task.isCancelled else { break }
                 await self?.refreshBroadcasts()
             }

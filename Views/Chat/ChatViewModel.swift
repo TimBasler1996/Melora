@@ -184,7 +184,10 @@ final class ChatViewModel: ObservableObject {
             var payload: [String: Any] = [
                 "senderId": myId,
                 "text": text,
-                "createdAt": now,
+                // Server timestamp so messages order correctly regardless of
+                // device clock skew. The local echo falls back to "now" until
+                // the server value arrives (ChatMessage.fromFirestore handles nil).
+                "createdAt": FieldValue.serverTimestamp(),
                 "type": ChatMessage.MessageType.text.rawValue
             ]
 

@@ -28,18 +28,22 @@ final class LikesInboxViewModel: ObservableObject {
     
     private let likeService = LikeApiService.shared
     private let lastSeenKey = "LikesInboxView_lastSeenDate"
-    
+    private var loadTask: Task<Void, Never>?
+
     init() {
         loadLastSeenDate()
     }
-    
+
     // MARK: - Public API
-    
+
     func loadLikes(for userId: String) {
         isLoading = true
         errorMessage = nil
-        
-        Task {
+
+        // Cancel any in-flight load so overlapping calls (repeated onAppear /
+        // pull-to-refresh) can't race and overwrite fresh data with stale.
+        loadTask?.cancel()
+        loadTask = Task {
             do {
                 var likes = try await likeService.fetchLikesReceived(for: userId)
 
@@ -68,10 +72,13 @@ final class LikesInboxViewModel: ObservableObject {
                 }
                 
                 let newClusters = buildClusters(from: likes)
-                
+
+                // A newer load may have superseded this one.
+                if Task.isCancelled { return }
                 self.clusters = newClusters
                 self.isLoading = false
             } catch {
+                if Task.isCancelled { return }
                 print("❌ Failed to load likes: \(error)")
                 self.errorMessage = "Could not load your likes. Please try again later."
                 self.isLoading = false

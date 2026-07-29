@@ -36,6 +36,11 @@ final class ChatBadgeViewModel: ObservableObject {
 
             for doc in docs {
                 let data = doc.data()
+
+                // Rejected/declined requests are never opened again, so they'd
+                // keep the badge lit forever. Don't count them.
+                if (data["status"] as? String) == "rejected" { continue }
+
                 let lastSender = data["lastMessageSenderId"] as? String
                 guard lastSender != myUid else { continue }
 

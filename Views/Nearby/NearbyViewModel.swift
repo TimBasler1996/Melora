@@ -18,6 +18,10 @@ final class NearbyViewModel: ObservableObject {
     private let sessionService = SessionApiService.shared
     private let geocoder = CLGeocoder()
 
+    /// The coordinate we last reverse-geocoded, so we don't re-hit CLGeocoder
+    /// (which is strictly rate-limited) on every minor location update.
+    private var lastGeocodedLocation: LocationPoint?
+
     private var isRunningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     }
@@ -63,6 +67,16 @@ final class NearbyViewModel: ObservableObject {
             locationLabel = nil // still waiting for a fix
             return
         }
+
+        // Throttle: only geocode the first fix, or after the user has moved a
+        // meaningful distance (>500 m). CLGeocoder rate-limits aggressively and
+        // starts failing if called on every location update.
+        if let last = lastGeocodedLocation, locationLabel != nil {
+            let moved = CLLocation(latitude: last.latitude, longitude: last.longitude)
+                .distance(from: CLLocation(latitude: location.latitude, longitude: location.longitude))
+            if moved < 500 { return }
+        }
+        lastGeocodedLocation = location
 
         let clLocation = CLLocation(latitude: location.latitude, longitude: location.longitude)
 

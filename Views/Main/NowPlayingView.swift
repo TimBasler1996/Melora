@@ -74,7 +74,13 @@ struct NowPlayingView: View {
             vm.stop()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            // Resume polling and refresh when returning to the foreground.
+            vm.start()
             vm.handleWillEnterForeground()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+            // Stop hitting the Spotify API while the app is backgrounded.
+            vm.stop()
         }
         .onChange(of: vm.currentTrack) { _, newTrack in
             broadcast.updateCurrentTrack(newTrack)
@@ -173,6 +179,7 @@ struct NowPlayingView: View {
                                 .foregroundColor(vm.isShuffling ? AppColors.live : .white.opacity(0.5))
                                 .frame(width: 40, height: 40)
                         }
+                        .accessibilityLabel(vm.isShuffling ? "Shuffle on" : "Shuffle off")
 
                         Spacer()
 
@@ -187,6 +194,7 @@ struct NowPlayingView: View {
                                 .frame(width: 52, height: 52)
                         }
                         .disabled(vm.isLoading)
+                        .accessibilityLabel("Previous track")
 
                         // Play/Pause
                         Button(action: {
@@ -206,6 +214,7 @@ struct NowPlayingView: View {
                         }
                         .disabled(vm.isLoading)
                         .padding(.horizontal, 8)
+                        .accessibilityLabel(vm.isPlaying ? "Pause" : "Play")
 
                         // Next
                         Button(action: {
@@ -218,6 +227,7 @@ struct NowPlayingView: View {
                                 .frame(width: 52, height: 52)
                         }
                         .disabled(vm.isLoading)
+                        .accessibilityLabel("Next track")
 
                         Spacer()
 
@@ -239,6 +249,7 @@ struct NowPlayingView: View {
                                 .foregroundColor(vm.repeatMode != .off ? AppColors.live : .white.opacity(0.5))
                                 .frame(width: 40, height: 40)
                         }
+                        .accessibilityLabel(repeatAccessibilityLabel)
                     }
                     .padding(.horizontal, 24)
                 }
@@ -351,6 +362,14 @@ struct NowPlayingView: View {
 
             Spacer()
             Spacer()
+        }
+    }
+
+    private var repeatAccessibilityLabel: String {
+        switch vm.repeatMode {
+        case .off: return "Repeat off"
+        case .context: return "Repeat all"
+        case .track: return "Repeat one"
         }
     }
 
