@@ -26,7 +26,7 @@ struct TrackLikesDetailView: View {
 
                     if let toast {
                         Text(toast)
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .font(AppFonts.footnote())
                             .foregroundColor(AppColors.primaryText)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 12)
@@ -151,7 +151,7 @@ struct TrackLikesDetailView: View {
                         .foregroundColor(AppColors.mutedText)
                     
                     Text("No likes yet")
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .font(AppFonts.body())
                         .foregroundColor(AppColors.mutedText)
                 }
                 .frame(maxWidth: .infinity)
@@ -256,7 +256,7 @@ private struct ModernLikeRow: View {
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(displayName(for: like))
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .font(AppFonts.subheadline())
                                 .foregroundColor(AppColors.primaryText)
 
                             Text(like.createdAt.formatted(date: .abbreviated, time: .shortened))

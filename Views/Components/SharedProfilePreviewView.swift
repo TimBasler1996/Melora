@@ -256,7 +256,7 @@ struct SharedProfilePreviewView: View {
                     // Name and info overlay
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(data.fullName)\(ageText)")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(AppFonts.largeTitle())
                             .foregroundColor(.white)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
@@ -267,7 +267,7 @@ struct SharedProfilePreviewView: View {
                                 Image(systemName: "location.fill")
                                     .font(.system(size: 12, weight: .semibold))
                                 Text(city)
-                                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                                    .font(AppFonts.body())
                                     .lineLimit(1)
                             }
                             .foregroundColor(.white.opacity(0.95))

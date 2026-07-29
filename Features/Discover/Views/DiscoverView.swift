@@ -166,7 +166,7 @@ struct DiscoverView: View {
         } else if let error = viewModel.errorMessage {
             VStack(spacing: 12) {
                 Text("Couldn’t load broadcasts")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(AppFonts.headline())
                     .foregroundColor(.white)
 
                 Text(error)
@@ -177,7 +177,7 @@ struct DiscoverView: View {
                 Button("Retry") {
                     viewModel.startListening()
                 }
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(AppFonts.subheadline())
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(AppColors.surfaceElevated)

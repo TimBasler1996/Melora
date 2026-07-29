@@ -34,7 +34,7 @@ struct OnboardingStepBasicsView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("City")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(AppFonts.footnote())
                         .foregroundColor(AppColors.mutedText)
 
                     fieldContainer {
@@ -54,7 +54,7 @@ struct OnboardingStepBasicsView: View {
     private var lookingForSelector: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Looking for")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(AppFonts.footnote())
                 .foregroundColor(AppColors.mutedText)
 
             VStack(spacing: 10) {
@@ -91,7 +91,7 @@ struct OnboardingStepBasicsView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(AppFonts.footnote())
                 .foregroundColor(AppColors.mutedText)
 
             fieldContainer {
@@ -106,7 +106,7 @@ struct OnboardingStepBasicsView: View {
     private var birthdayPicker: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Birthday")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(AppFonts.footnote())
                 .foregroundColor(AppColors.mutedText)
 
             fieldContainer {
@@ -142,7 +142,7 @@ struct OnboardingStepBasicsView: View {
     private var genderSelector: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Gender")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(AppFonts.footnote())
                 .foregroundColor(AppColors.mutedText)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {

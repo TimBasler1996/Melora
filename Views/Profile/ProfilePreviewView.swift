@@ -148,7 +148,7 @@ struct ProfilePreviewView: View {
                         .minimumScaleFactor(0.9)
 
                     Text(model.subtitleLine)
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(AppFonts.subheadline())
                         .foregroundColor(.white.opacity(0.88))
                         .lineLimit(1)
                 }

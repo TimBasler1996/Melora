@@ -36,7 +36,7 @@ struct OnboardingStepPhotosView: View {
                 
                 if !photoStatusMessage.isEmpty {
                     Text("• \(photoStatusMessage)")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(AppFonts.footnote())
                         .foregroundColor(photoStatusColor)
                 }
             }
@@ -198,7 +198,7 @@ private struct PhotoPickerCard: View {
                                         .foregroundColor(AppColors.primaryText)
                                     
                                     Text("Required")
-                                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                                        .font(AppFonts.caption())
                                         .foregroundColor(AppColors.live)
                                 }
                             } else {

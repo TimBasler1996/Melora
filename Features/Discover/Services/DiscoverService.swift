@@ -8,7 +8,6 @@ final class DiscoverService {
     private let db = Firestore.firestore()
     private let broadcastsCollection = "broadcasts"
     private let usersCollection = "users"
-    private let likesCollection = "likes"
 
     struct BroadcastRecord: Identifiable, Equatable {
         let id: String
@@ -116,30 +115,6 @@ final class DiscoverService {
         )
     }
 
-    func writeLikeEvent(
-        senderId: String,
-        receiverId: String,
-        track: DiscoverTrack,
-        message: String?,
-        broadcastId: String?
-    ) async throws {
-        let trimmedMessage: String? = {
-            let trimmed = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            return trimmed.isEmpty ? nil : String(trimmed.prefix(160))
-        }()
-
-        let payload: [String: Any] = [
-            "senderId": senderId,
-            "receiverId": receiverId,
-            "trackId": track.id,
-            "trackTitle": track.title,
-            "message": trimmedMessage as Any,
-            "createdAt": Timestamp(date: Date()),
-            "broadcastId": broadcastId as Any
-        ]
-
-        _ = try await db.collection(likesCollection).addDocument(data: payload)
-    }
 
     static func broadcastRecord(from doc: QueryDocumentSnapshot) -> BroadcastRecord? {
         let data = doc.data()

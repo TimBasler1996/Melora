@@ -66,7 +66,7 @@ struct AvatarCropperView: View {
             HStack(spacing: 12) {
                 Button(action: onCancel) {
                     Text("Cancel")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(AppFonts.headline())
                         .foregroundColor(AppColors.primaryText)
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
@@ -85,7 +85,7 @@ struct AvatarCropperView: View {
                     }
                 } label: {
                     Text("Use Photo")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(AppFonts.headline())
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)

@@ -527,7 +527,7 @@ private struct ChatBubble: View {
             }
 
             Text(message.text)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(AppFonts.subheadline())
                 .foregroundColor(.white)
                 .fixedSize(horizontal: false, vertical: true)
 

@@ -139,7 +139,7 @@ struct NowPlayingView: View {
                                 .minimumScaleFactor(0.8)
 
                             Text(track.artist)
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .font(AppFonts.subheadline())
                                 .foregroundColor(.white.opacity(0.7))
                                 .lineLimit(1)
 
@@ -278,7 +278,7 @@ struct NowPlayingView: View {
 
                     VStack(spacing: 12) {
                         Text("Nothing Playing")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(AppFonts.largeTitle())
                             .foregroundColor(.white)
 
                         Text("Start playing music on Spotify\nto see it here")
@@ -457,7 +457,7 @@ private struct CompactBroadcastToggle: View {
                 )
 
             Text(broadcast.isBroadcasting ? "Broadcasting nearby" : "Go live nearby")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(AppFonts.subheadline())
                 .foregroundColor(.white.opacity(hasTrack ? 0.9 : 0.5))
 
             Spacer()

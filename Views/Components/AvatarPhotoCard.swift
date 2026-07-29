@@ -22,7 +22,7 @@ struct AvatarPhotoCard: View {
                         .foregroundColor(AppColors.secondaryText)
 
                     Text(image == nil ? "Choose profile photo" : "Change photo")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(AppFonts.subheadline())
                         .foregroundColor(AppColors.primary)
                 }
 

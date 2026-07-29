@@ -168,7 +168,7 @@ struct DiscoverDetailSheetView: View {
     private var profileSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Profile")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(AppFonts.subheadline())
                 .foregroundColor(.white.opacity(0.6))
 
             ProfilePreviewView(

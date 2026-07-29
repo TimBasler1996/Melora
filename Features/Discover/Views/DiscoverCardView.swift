@@ -101,7 +101,7 @@ struct DiscoverCardView: View {
                     .lineLimit(1)
 
                 Text("\(trackTitle) · \(trackArtist)")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.7))
                     .lineLimit(1)
 

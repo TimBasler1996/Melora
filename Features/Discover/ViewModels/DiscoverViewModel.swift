@@ -211,7 +211,7 @@ final class DiscoverViewModel: ObservableObject {
     ) async throws {
         isSendingLike = true
         defer { isSendingLike = false }
-        guard let senderId = service.currentUserId() else {
+        guard service.currentUserId() != nil else {
             throw NSError(domain: "Discover", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
         }
 
@@ -237,14 +237,6 @@ final class DiscoverViewModel: ObservableObject {
             sessionLocation: nil,
             placeLabel: nil,
             message: message
-        )
-
-        try await service.writeLikeEvent(
-            senderId: senderId,
-            receiverId: broadcast.user.id,
-            track: broadcast.track,
-            message: message,
-            broadcastId: broadcast.id
         )
 
         let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)

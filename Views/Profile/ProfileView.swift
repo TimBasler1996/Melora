@@ -189,7 +189,7 @@ struct ProfileView: View {
                                     .scaleEffect(0.9)
                             }
                             Text(viewModel.isSaving ? "Saving..." : "Save Changes")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                .font(AppFonts.headline())
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
@@ -304,7 +304,7 @@ struct ProfileView: View {
                         Image(systemName: "pencil.circle.fill")
                             .font(.system(size: 20, weight: .semibold))
                         Text("Tap to change")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(AppFonts.subheadline())
                     }
                     .foregroundColor(.white)
                     .padding(.horizontal, 16)
@@ -349,7 +349,7 @@ struct ProfileView: View {
                     .font(.system(size: 56, weight: .semibold))
                     .foregroundColor(AppColors.secondaryText.opacity(0.6))
                 Text("Add your main photo")
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .font(AppFonts.body())
                     .foregroundColor(AppColors.secondaryText)
             }
         }
@@ -564,7 +564,7 @@ struct ProfileView: View {
                                 viewModel.updateDraft { $0.lookingFor = option }
                             } label: {
                                 Text(option)
-                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .font(AppFonts.subheadline())
                                     .foregroundColor(currentValue == option ? .white : AppColors.primaryText)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
@@ -597,7 +597,7 @@ struct ProfileView: View {
                                 viewModel.updateDraft { $0.gender = option }
                             } label: {
                                 Text(option)
-                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .font(AppFonts.subheadline())
                                     .foregroundColor(currentGender == option ? .white : AppColors.primaryText)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)

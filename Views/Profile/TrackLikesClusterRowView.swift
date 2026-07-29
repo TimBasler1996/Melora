@@ -23,7 +23,7 @@ struct TrackLikesClusterRowView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(cluster.trackTitle)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(AppFonts.headline())
                     .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
 

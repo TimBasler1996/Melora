@@ -126,7 +126,7 @@ struct OnboardingFlowView: View {
                         Task { await viewModel.finish(using: spotifyAuth) }
                     } label: {
                         Text(viewModel.isFinishing ? "Finishing…" : "Skip for now")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(AppFonts.subheadline())
                             .foregroundColor(.white.opacity(0.7))
                             .frame(maxWidth: .infinity)
                             .frame(height: 36)
@@ -153,14 +153,14 @@ struct OnboardingFlowView: View {
 
             if let msg = viewModel.spotifyErrorMessage, !msg.isEmpty {
                 Text(msg)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
             }
 
             if let msg = viewModel.finishErrorMessage, !msg.isEmpty {
                 Text(msg)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
             }

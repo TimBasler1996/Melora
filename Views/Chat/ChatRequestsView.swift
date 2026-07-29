@@ -15,7 +15,7 @@ struct ChatRequestsView: View {
                         .font(.system(size: 36))
                         .foregroundColor(.white.opacity(0.3))
                     Text("No requests")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(AppFonts.headline())
                         .foregroundColor(.white.opacity(0.7))
                     Spacer()
                 }

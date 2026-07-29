@@ -37,7 +37,7 @@ struct ChatInboxView: View {
         } else if let err = vm.errorMessage {
             VStack(spacing: 10) {
                 Text("Couldn’t load chats")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(AppFonts.headline())
                     .foregroundColor(.white)
 
                 Text(err)
@@ -46,7 +46,7 @@ struct ChatInboxView: View {
                     .multilineTextAlignment(.center)
 
                 Button("Retry") { vm.startListening() }
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(AppFonts.subheadline())
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(AppColors.surfaceElevated)

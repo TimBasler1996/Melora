@@ -12,7 +12,7 @@ struct UserSearchRowView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(user.displayName)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(AppFonts.headline())
                     .foregroundColor(.white)
                     .lineLimit(1)
 
@@ -35,7 +35,7 @@ struct UserSearchRowView: View {
     private var followButton: some View {
         Button(action: onToggleFollow) {
             Text(isFollowing ? "Following" : "Follow")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(AppFonts.subheadline())
                 .foregroundColor(isFollowing ? .white.opacity(0.8) : .white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 7)

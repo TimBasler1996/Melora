@@ -40,7 +40,7 @@ struct LikesInboxView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text(selectedTab.rawValue)
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .font(AppFonts.headline())
                     .foregroundColor(.white)
             }
 
@@ -136,11 +136,11 @@ struct LikesInboxView: View {
 
                 VStack(spacing: 8) {
                     Text("No Likes Yet")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .font(AppFonts.title())
                         .foregroundColor(.white)
 
                     Text("When someone likes a track you\nbroadcast, it will show up here")
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .font(AppFonts.body())
                         .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
                 }
@@ -248,11 +248,11 @@ struct LikesInboxView: View {
 
                 VStack(spacing: 8) {
                     Text("No New Followers")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .font(AppFonts.title())
                         .foregroundColor(.white)
 
                     Text("When someone new follows you,\nthey'll appear here")
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .font(AppFonts.body())
                         .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
                 }
@@ -317,12 +317,12 @@ private struct FollowerRowView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(follower.displayName ?? "Loading…")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(AppFonts.headline())
                     .foregroundColor(.white)
                     .lineLimit(1)
 
                 Text("started following you")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.5))
 
                 Text(follower.followedAt.formatted(date: .abbreviated, time: .omitted))
