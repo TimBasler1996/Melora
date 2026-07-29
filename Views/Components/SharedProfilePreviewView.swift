@@ -81,85 +81,79 @@ struct ProfilePreviewData: Equatable {
 /// ✅ Single shared component for profile preview display
 /// Used in both ProfileView (your own) and UserProfilePreviewView (others)
 struct SharedProfilePreviewView: View {
-    
+
     let data: ProfilePreviewData
     @Environment(\.openURL) private var openURL
-    
+
     var body: some View {
         VStack(spacing: 16) {
             heroSection
-            aboutSection
+            infoCard
 
             if !data.additionalPhotoURLs.isEmpty {
-                photosSection
+                photosStack
             }
         }
     }
 
-    // MARK: - About Section (unified: city, interests, stats, Spotify)
+    // MARK: - Info Card (chips + stats + Spotify)
 
-    private var aboutSection: some View {
+    private var hasChips: Bool {
+        [data.gender, data.lookingFor, data.musicTaste].contains { ($0?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) }
+    }
+
+    private var infoCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if let taste = data.musicTaste, !taste.isEmpty {
-                HStack(alignment: .top, spacing: 6) {
-                    Image(systemName: "music.note")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(AppColors.primary)
-                    Text(taste)
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
-                        .foregroundColor(AppColors.primaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            if hasChips {
+                chipsRow
             }
 
-            if let lookingFor = data.lookingFor, !lookingFor.isEmpty {
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(AppColors.primary)
-                    Text(lookingFor)
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
-                        .foregroundColor(AppColors.primaryText)
-                }
-            }
-
-            Divider().background(AppColors.stroke)
-
-            statsRow
+            statsStrip
 
             if let spotifyURL = data.spotifyProfileURL {
-                Divider().background(AppColors.stroke)
                 spotifyLink(url: spotifyURL)
             }
         }
         .padding(AppLayout.cardPadding)
-        .background(cardBackground)
+        .melCard(cornerRadius: AppLayout.cornerRadiusLarge)
     }
 
-    private var statsRow: some View {
+    /// A tidy, horizontally-scrollable row of the profile's defining chips.
+    private var chipsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                if let g = data.gender, !g.isEmpty {
+                    ProfileChip(text: g, icon: "person.fill")
+                }
+                if let lf = data.lookingFor, !lf.isEmpty {
+                    ProfileChip(text: lf, icon: "sparkles")
+                }
+                if let mt = data.musicTaste, !mt.isEmpty {
+                    ProfileChip(text: mt, icon: "music.note")
+                }
+            }
+        }
+    }
+
+    /// Three evenly-weighted stats, no divider bars.
+    private var statsStrip: some View {
         HStack(spacing: 0) {
             statItem(value: data.followerCount.map(String.init) ?? "0", label: "Followers")
-            Spacer()
-            Rectangle().fill(AppColors.stroke).frame(width: 1, height: 32)
-            Spacer()
             statItem(value: formatBroadcastTime(data.broadcastMinutes), label: "Broadcast")
-            Spacer()
-            Rectangle().fill(AppColors.stroke).frame(width: 1, height: 32)
-            Spacer()
             statItem(value: data.likesReceivedCount.map(String.init) ?? "0", label: "Likes")
         }
     }
 
     private func statItem(value: String, label: String) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 3) {
             Text(value)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundColor(AppColors.primaryText)
             Text(label)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(AppFonts.caption())
                 .foregroundColor(AppColors.mutedText)
         }
-        .frame(minWidth: 60)
+        .frame(maxWidth: .infinity)
     }
 
     private func formatBroadcastTime(_ minutes: Int?) -> String {
@@ -181,15 +175,15 @@ struct SharedProfilePreviewView: View {
                 Text("Spotify Profile")
                     .font(.system(size: 13, weight: .semibold, design: .rounded))
             }
-            .foregroundColor(.white.opacity(0.5))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(AppColors.surface))
+            .foregroundColor(AppColors.live)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(AppColors.live.opacity(0.12)))
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-    
+
     // MARK: - Hero Section
     
     private var heroSection: some View {
@@ -293,105 +287,54 @@ struct SharedProfilePreviewView: View {
         }
     }
     
-    // MARK: - Photos Section
-    
-    private var photosSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // ✅ Changed "More Photos" to "Photos"
-            Text("Photos")
-                .font(AppFonts.sectionTitle())
-                .foregroundColor(AppColors.primaryText)
-            
-            // ✅ Vertical fullscreen photos with consistent sizing (no count, no numbering)
-            LazyVStack(spacing: 16) {
-                ForEach(Array(data.additionalPhotoURLs.enumerated()), id: \.offset) { index, url in
-                    photoTile(urlString: url, index: index)
-                }
+    // MARK: - Photos (clean edge-to-edge 3:4 stack, no card / no heading)
+
+    private var photosStack: some View {
+        LazyVStack(spacing: 12) {
+            ForEach(Array(data.additionalPhotoURLs.enumerated()), id: \.offset) { _, url in
+                photoTile(urlString: url)
             }
         }
-        .padding(AppLayout.cardPadding)
-        .background(cardBackground)
     }
-    
-    private func photoTile(urlString: String, index: Int) -> some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            
-            // ✅ Removed photo number badge - just the photo
-            ZStack {
-                // ✅ Force explicit frame constraints
-                Group {
-                    if let url = URL(string: urlString) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .empty:
-                                ZStack {
-                                    photoPlaceholder
-                                    ProgressView()
-                                        .tint(AppColors.primary)
-                                }
-                            case .success(let image):
-                                // ✅ Force frame INSIDE the image modifier
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: width, height: 480)
-                                    .clipped()
-                                    .transaction { t in t.animation = nil }
-                            case .failure:
-                                ZStack {
-                                    photoPlaceholder
-                                    VStack(spacing: 6) {
-                                        Image(systemName: "exclamationmark.triangle.fill")
-                                            .font(.system(size: 20, weight: .semibold))
-                                            .foregroundColor(AppColors.secondaryText.opacity(0.6))
-                                        Text("Failed to load")
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundColor(AppColors.secondaryText.opacity(0.6))
-                                    }
-                                }
-                            @unknown default:
-                                photoPlaceholder
-                            }
+
+    private func photoTile(urlString: String) -> some View {
+        Color.clear
+            .aspectRatio(3.0 / 4.0, contentMode: .fit)
+            .overlay {
+                if let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ZStack { photoPlaceholder; ProgressView().tint(AppColors.primary) }
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .transaction { t in t.animation = nil }
+                        case .failure:
+                            photoPlaceholder
+                        @unknown default:
+                            photoPlaceholder
                         }
-                    } else {
-                        photoPlaceholder
                     }
+                } else {
+                    photoPlaceholder
                 }
-                .frame(width: width, height: 480)
-                .clipped()
             }
-            .frame(width: width, height: 480)
-        }
-        .frame(height: 480) // ✅ Fixed vertical height - consistent across all photos
-        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                .stroke(AppColors.stroke, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+            .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
+                    .stroke(AppColors.stroke, lineWidth: 1)
+            )
     }
-    
+
     private var photoPlaceholder: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [AppColors.tintedBackground.opacity(0.5), AppColors.tintedBackground.opacity(0.3)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+            AppColors.surface
             Image(systemName: "photo")
                 .font(.system(size: 28, weight: .semibold))
-                .foregroundColor(AppColors.secondaryText.opacity(0.6))
+                .foregroundColor(AppColors.mutedText)
         }
-    }
-    
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-            .fill(AppColors.cardBackground)
-            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 8)
     }
 }
 

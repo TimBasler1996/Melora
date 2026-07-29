@@ -333,7 +333,7 @@ struct ProfileView: View {
             }
         }
         .padding(AppLayout.cardPadding)
-        .background(cardBackground)
+        .melCard(cornerRadius: AppLayout.cornerRadiusLarge)
     }
     
     private var heroEditPlaceholder: some View {
@@ -380,7 +380,7 @@ struct ProfileView: View {
             }
         }
         .padding(AppLayout.cardPadding)
-        .background(cardBackground)
+        .melCard(cornerRadius: AppLayout.cornerRadiusLarge)
     }
 
     private func photoEditorTile(index: Int, draft: ProfileViewModel.ProfileDraft) -> some View {
@@ -545,7 +545,7 @@ struct ProfileView: View {
             }
         }
         .padding(AppLayout.cardPadding)
-        .background(cardBackground)
+        .melCard(cornerRadius: AppLayout.cornerRadiusLarge)
     }
 
     private let lookingForOptions = ["New Music", "Friends", "Open for all"]
@@ -709,11 +709,6 @@ struct ProfileView: View {
         likesReceivedCount = (try? await likesFetch) ?? 0
     }
 
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
-            .fill(AppColors.cardBackground)
-            .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 8)
-    }
 
     // MARK: Loading / error
 
