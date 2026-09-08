@@ -42,7 +42,9 @@ final class OnboardingViewModel: ObservableObject {
     @Published var finishErrorMessage: String?
     @Published var didFinish: Bool = false
 
-    private let profileService = OnboardingProfileService()
+    /// Lazy so SwiftUI previews can construct the view model without a
+    /// configured Firebase app (the service touches Firestore/Storage on init).
+    private lazy var profileService = OnboardingProfileService()
 
     // MARK: - Validation
 

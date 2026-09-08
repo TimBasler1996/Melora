@@ -51,6 +51,40 @@ final class ChatViewModel: ObservableObject {
         Auth.auth().currentUser?.uid
     }
 
+    /// The other participant's uid, once the conversation has loaded.
+    var otherUserId: String? {
+        guard let convo = conversation, let myId = currentUserId else { return nil }
+        return convo.participantIds.first { $0 != myId }
+    }
+
+    // MARK: - Delete / Block
+
+    /// Deletes the conversation. Returns `true` on success so the view can pop.
+    func deleteConversation(conversationId: String) async -> Bool {
+        do {
+            stop()
+            try await ChatApiService.shared.deleteConversation(conversationId: conversationId)
+            return true
+        } catch {
+            actionError = "Couldn’t delete the chat. Please try again."
+            print("❌ [Chat] delete failed:", error.localizedDescription)
+            return false
+        }
+    }
+
+    /// Blocks the other participant and removes this chat. Returns `true` on success.
+    func blockOtherUser(conversationId: String) async -> Bool {
+        guard let otherId = otherUserId else { return false }
+        do {
+            try await BlockService.shared.blockUser(userId: otherId)
+        } catch {
+            actionError = "Couldn’t block this user. Please try again."
+            print("❌ [Chat] block failed:", error.localizedDescription)
+            return false
+        }
+        return await deleteConversation(conversationId: conversationId)
+    }
+
     /// True when the conversation is a pending message request and the current
     /// user is the recipient (i.e. they need to Accept or Decline).
     var needsAcceptance: Bool {
@@ -150,8 +184,10 @@ final class ChatViewModel: ObservableObject {
     func markAsRead(conversationId: String) async {
         guard let myId = Auth.auth().currentUser?.uid else { return }
         do {
+            // Server time, like `lastMessageAt`, so unread / "Seen" comparisons
+            // never mix two devices' clocks.
             try await db.collection("conversations").document(conversationId).updateData([
-                "lastReadAt.\(myId)": Timestamp(date: Date())
+                "lastReadAt.\(myId)": FieldValue.serverTimestamp()
             ])
         } catch {
             print("❌ [Chat] markAsRead failed:", error.localizedDescription)
@@ -161,7 +197,7 @@ final class ChatViewModel: ObservableObject {
     func send(conversationId: String) async {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        guard let myId = Auth.auth().currentUser?.uid else { return }
+        guard Auth.auth().currentUser != nil else { return }
 
         // Block sending in pending conversations.
         if let convo = conversation, convo.effectiveStatus == .pending {
@@ -176,40 +212,12 @@ final class ChatViewModel: ObservableObject {
         replyingTo = nil
 
         do {
-            let now = Date()
-
-            let convoRef = db.collection("conversations").document(conversationId)
-            let msgRef = convoRef.collection("messages").document()
-
-            var payload: [String: Any] = [
-                "senderId": myId,
-                "text": text,
-                // Server timestamp so messages order correctly regardless of
-                // device clock skew. The local echo falls back to "now" until
-                // the server value arrives (ChatMessage.fromFirestore handles nil).
-                "createdAt": FieldValue.serverTimestamp(),
-                "type": ChatMessage.MessageType.text.rawValue
-            ]
-
-            if let replyContext {
-                payload["replyTo"] = [
-                    "messageId": replyContext.id,
-                    "senderId": replyContext.senderId,
-                    "textPreview": String(replyContext.text.prefix(120))
-                ]
-            }
-
-            try await msgRef.setData(payload)
-
-            try await convoRef.setData([
-                "lastMessageText": text,
-                "lastMessageAt": now,
-                "lastMessageSenderId": myId,
-                "updatedAt": now
-            ], merge: true)
-
+            try await ChatApiService.shared.sendMessage(
+                conversationId: conversationId,
+                text: text,
+                replyTo: replyContext
+            )
             draft = ""
-            print("✅ [Chat] sent message \(msgRef.documentID)")
         } catch {
             // Keep the draft and reply context so the user can retry.
             replyingTo = replyContext
@@ -267,7 +275,7 @@ final class ChatViewModel: ObservableObject {
 
         do {
             if let likeId = convo.createdFromLikeId {
-                try? await LikeApiService.shared.setLikeStatusReceivedOnly(
+                try? await LikeApiService.shared.setLikeStatus(
                     likeId: likeId,
                     toUserId: myId,
                     status: .accepted
@@ -284,15 +292,18 @@ final class ChatViewModel: ObservableObject {
 
     /// Decline a pending message request: mark the underlying like and the
     /// conversation as rejected so the request disappears from the inbox.
-    func declineRequest() async {
-        guard let convo = conversation, convo.effectiveStatus == .pending else { return }
-        guard let myId = Auth.auth().currentUser?.uid, convo.initiatorId != myId else { return }
+    /// Returns `true` when the conversation was rejected so the caller can
+    /// dismiss; on failure the error is shown in place instead.
+    @discardableResult
+    func declineRequest() async -> Bool {
+        guard let convo = conversation, convo.effectiveStatus == .pending else { return false }
+        guard let myId = Auth.auth().currentUser?.uid, convo.initiatorId != myId else { return false }
 
         isResponding = true
         defer { isResponding = false }
 
         if let likeId = convo.createdFromLikeId {
-            try? await LikeApiService.shared.setLikeStatusReceivedOnly(
+            try? await LikeApiService.shared.setLikeStatus(
                 likeId: likeId,
                 toUserId: myId,
                 status: .rejected
@@ -301,9 +312,12 @@ final class ChatViewModel: ObservableObject {
 
         do {
             try await ChatApiService.shared.rejectConversation(conversationId: convo.id)
+            conversation?.status = .rejected
+            return true
         } catch {
             actionError = "Couldn’t decline the request. Please try again."
             print("❌ [Chat] decline failed:", error.localizedDescription)
+            return false
         }
     }
 }

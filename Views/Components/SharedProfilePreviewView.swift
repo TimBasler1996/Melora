@@ -67,8 +67,11 @@ struct ProfilePreviewData: Equatable {
             heroPhotoURL: appUser.photoURLs?.first,
             additionalPhotoURLs: additionalPhotos,
             fullName: appUser.displayName,
-            age: appUser.age,
-            city: appUser.hometown?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.hometown : nil,
+            // Profiles store `birthday` and `city`; `age` / `hometown` are legacy fallbacks.
+            age: appUser.birthday?.age() ?? appUser.age,
+            city: [appUser.city, appUser.hometown]
+                .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .first { !$0.isEmpty },
             gender: appUser.gender?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? appUser.gender : nil,
             birthday: appUser.birthday,
             spotifyId: appUser.spotifyId,

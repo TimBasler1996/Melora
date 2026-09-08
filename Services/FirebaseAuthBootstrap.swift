@@ -1,29 +1,47 @@
 import Foundation
 import FirebaseAuth
 
+/// Owns the Firebase session lifecycle: anonymous sign-in on first launch and
+/// sign-out. Everything that reacts to the session (profile store, listeners)
+/// observes `Auth.auth()` state instead of calling this directly.
+@MainActor
 enum FirebaseAuthBootstrap {
-    
-    /// Stellt sicher, dass es einen eingeloggten Firebase-User gibt.
-    /// Falls noch keiner vorhanden ist, wird anonym eingeloggt.
+
+    /// In-flight anonymous sign-in. Two callers on first launch (app root and
+    /// onboarding state) must not each create their own anonymous account.
+    private static var signInTask: Task<Void, Never>?
+
+    /// Makes sure a Firebase user exists, signing in anonymously if needed.
+    /// Safe to call repeatedly; concurrent calls share one request.
     static func ensureFirebaseUser() {
-        // Wenn schon ein User existiert → nichts tun
         if let user = Auth.auth().currentUser {
             print("✅ Firebase user already signed in: \(user.uid)")
             return
         }
-        
-        // Anonym einloggen
-        Auth.auth().signInAnonymously { result, error in
-            if let error = error {
+        guard signInTask == nil else { return }
+
+        signInTask = Task {
+            defer { signInTask = nil }
+            do {
+                let result = try await Auth.auth().signInAnonymously()
+                print("✅ Firebase anonymous user signed in: \(result.user.uid)")
+            } catch {
                 print("❌ Firebase anonymous auth failed: \(error)")
-                return
-            }
-            
-            if let user = result?.user {
-                print("✅ Firebase anonymous user signed in: \(user.uid)")
-            } else {
-                print("⚠️ Firebase anonymous auth returned no user")
             }
         }
+    }
+
+    /// Signs the current user out and immediately provisions a fresh anonymous
+    /// session so the app never sits in a "no user" state. Third-party
+    /// connections tied to the old account are disconnected as well.
+    static func signOut() {
+        SpotifyAuthManager.shared.disconnect()
+        do {
+            try Auth.auth().signOut()
+            print("👋 Firebase user signed out")
+        } catch {
+            print("❌ Firebase sign-out failed: \(error)")
+        }
+        ensureFirebaseUser()
     }
 }

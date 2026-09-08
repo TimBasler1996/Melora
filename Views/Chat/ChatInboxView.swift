@@ -10,6 +10,7 @@ import SwiftUI
 struct ChatInboxView: View {
 
     @StateObject private var vm = ChatInboxViewModel()
+    @State private var chatToDelete: ChatInboxRow?
 
     var body: some View {
         NavigationStack {
@@ -94,23 +95,13 @@ struct ChatInboxView: View {
                     if !vm.todayRows.isEmpty {
                         chatSectionHeader("Today")
                         ForEach(vm.todayRows) { row in
-                            NavigationLink {
-                                ChatView(conversationId: row.conversationId)
-                            } label: {
-                                ChatInboxRowView(row: row)
-                            }
-                            .buttonStyle(.plain)
+                            chatRow(row)
                         }
                     }
                     if !vm.earlierRows.isEmpty {
                         chatSectionHeader("Earlier")
                         ForEach(vm.earlierRows) { row in
-                            NavigationLink {
-                                ChatView(conversationId: row.conversationId)
-                            } label: {
-                                ChatInboxRowView(row: row)
-                            }
-                            .buttonStyle(.plain)
+                            chatRow(row)
                         }
                     }
                 }
@@ -118,6 +109,42 @@ struct ChatInboxView: View {
                 .padding(.vertical, 12)
             }
             .scrollIndicators(.hidden)
+            .confirmationDialog(
+                "Delete this chat?",
+                isPresented: Binding(
+                    get: { chatToDelete != nil },
+                    set: { if !$0 { chatToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                if let row = chatToDelete {
+                    Button("Delete Chat", role: .destructive) {
+                        vm.deleteChat(row)
+                        chatToDelete = nil
+                    }
+                }
+                Button("Cancel", role: .cancel) { chatToDelete = nil }
+            } message: {
+                Text("The conversation is removed for both of you.")
+            }
+        }
+    }
+
+    /// A chat row with a long-press menu. (Swipe actions only work inside
+    /// `List`, and this screen is a custom `ScrollView`.)
+    private func chatRow(_ row: ChatInboxRow) -> some View {
+        NavigationLink {
+            ChatView(conversationId: row.conversationId)
+        } label: {
+            ChatInboxRowView(row: row)
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                chatToDelete = row
+            } label: {
+                Label("Delete Chat", systemImage: "trash")
+            }
         }
     }
 

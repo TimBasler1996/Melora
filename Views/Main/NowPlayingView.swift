@@ -74,9 +74,9 @@ struct NowPlayingView: View {
             vm.stop()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-            // Resume polling and refresh when returning to the foreground.
+            // Resume polling when returning to the foreground. `start()` already
+            // refreshes now-playing and player state once.
             vm.start()
-            vm.handleWillEnterForeground()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
             // Stop hitting the Spotify API while the app is backgrounded.

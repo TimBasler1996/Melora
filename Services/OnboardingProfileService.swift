@@ -15,8 +15,9 @@ import UIKit
 @MainActor
 final class OnboardingProfileService {
 
-    private let db = Firestore.firestore()
-    private let storage = Storage.storage()
+    // Lazy: keeps previews that build this service from hitting Firebase.
+    private lazy var db = Firestore.firestore()
+    private lazy var storage = Storage.storage()
 
     // MARK: - Basics model
 
@@ -24,7 +25,8 @@ final class OnboardingProfileService {
         let firstName: String
         let lastName: String
         let city: String
-        let birthday: Date
+        /// `nil` leaves the stored birthday untouched.
+        let birthday: Date?
         let gender: String
         let lookingFor: String?
     }
@@ -32,14 +34,30 @@ final class OnboardingProfileService {
     // MARK: - Step 1: Save basics
 
     func saveBasics(_ basics: Basics, uid: String) async throws {
+        let displayName = [basics.firstName, basics.lastName]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+
         var data: [String: Any] = [
             "firstName": basics.firstName,
             "lastName": basics.lastName,
             "city": basics.city,
-            "birthday": Timestamp(date: basics.birthday),
             "gender": basics.gender,
             "updatedAt": FieldValue.serverTimestamp()
         ]
+        if !displayName.isEmpty {
+            // Keep the denormalised name (likes, chats, notifications) and the
+            // lowercase prefix-search fields in sync with the edited name.
+            data["displayName"] = displayName
+            data["displayNameLower"] = displayName.lowercased()
+            data["firstNameLower"] = basics.firstName
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+        }
+        if let birthday = basics.birthday {
+            data["birthday"] = Timestamp(date: birthday)
+        }
         if let lookingFor = basics.lookingFor {
             data["lookingFor"] = lookingFor
         }
@@ -83,9 +101,16 @@ final class OnboardingProfileService {
             .child(uid)
             .child("photo_\(index).jpg")
 
-        _ = try await ref.putDataAsync(data)
+        _ = try await ref.putDataAsync(data, metadata: Self.jpegMetadata())
         let url = try await ref.downloadURL()
         return url.absoluteString
+    }
+
+    /// Storage rules only accept `image/*` uploads, so always declare the type.
+    private static func jpegMetadata() -> StorageMetadata {
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+        return metadata
     }
 
     func savePhotos(photoURLs: [String], uid: String) async throws {
@@ -110,7 +135,7 @@ final class OnboardingProfileService {
             .child(uid)
             .child("hero_photo.jpg")
 
-        _ = try await ref.putDataAsync(data)
+        _ = try await ref.putDataAsync(data, metadata: Self.jpegMetadata())
         let url = try await ref.downloadURL()
         return url.absoluteString
     }

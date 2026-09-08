@@ -80,14 +80,10 @@ final class NowPlayingViewModel: ObservableObject {
             progressTask = nil
             errorMessage = "No active Spotify device."
         } catch {
-            currentTrack = nil
-            isPlaying = false
-            progressMs = 0
-            isShuffling = false
-            repeatMode = .off
-            progressTask?.cancel()
-            progressTask = nil
-            errorMessage = error.localizedDescription
+            // Transient failure (network blip, token refresh in flight): keep
+            // the last known track so the UI and the live broadcast don't flap
+            // to "nothing playing" every few seconds. The next poll recovers.
+            errorMessage = "Couldn’t reach Spotify. Retrying…"
         }
     }
 
@@ -100,13 +96,6 @@ final class NowPlayingViewModel: ObservableObject {
             // Keep defaults when no device
         } catch {
             // silent fail to avoid noisy UI
-        }
-    }
-
-    func handleWillEnterForeground() {
-        Task {
-            await refreshNowPlaying()
-            await refreshPlayerState()
         }
     }
 
@@ -179,8 +168,8 @@ final class NowPlayingViewModel: ObservableObject {
         let previous = isShuffling
         isShuffling.toggle()
         do {
-            try await SpotifyPlaybackService.shared.setShuffle(enabled: isShuffling)
-        } catch SpotifyPlaybackError.noActiveDevice {
+            try await SpotifyService.shared.setShuffle(enabled: isShuffling)
+        } catch SpotifyAPIError.noActiveDevice {
             isShuffling = previous // device didn't accept it
             errorMessage = "No active Spotify device."
         } catch {

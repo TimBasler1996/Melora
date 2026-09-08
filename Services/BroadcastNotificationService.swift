@@ -3,6 +3,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import CoreLocation
 import UserNotifications
+import UIKit
 
 // MARK: - Broadcast Notification Service
 
@@ -85,22 +86,29 @@ final class BroadcastNotificationService: ObservableObject {
 
     // MARK: - Permission
 
+    /// Asks for notification permission if the user hasn't decided yet and,
+    /// when granted, registers with APNs so Cloud Functions can push to this
+    /// device. Call this in context (after onboarding, from settings), never
+    /// blindly at launch.
+    @discardableResult
     static func requestPermissionIfNeeded() async -> Bool {
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
 
+        let granted: Bool
         switch settings.authorizationStatus {
         case .notDetermined:
-            do {
-                return try await center.requestAuthorization(options: [.alert, .sound, .badge])
-            } catch {
-                return false
-            }
+            granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
         case .authorized, .provisional:
-            return true
+            granted = true
         default:
-            return false
+            granted = false
         }
+
+        if granted {
+            UIApplication.shared.registerForRemoteNotifications()
+        }
+        return granted
     }
 
     // MARK: - Private

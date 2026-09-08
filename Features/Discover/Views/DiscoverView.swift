@@ -71,6 +71,9 @@ struct DiscoverView: View {
                     Button("Not interested in this user", role: .destructive) {
                         viewModel.muteUser(for: target)
                     }
+                    Button("Block \(target.user.displayName)", role: .destructive) {
+                        viewModel.blockUser(for: target)
+                    }
                 }
                 Button("Cancel", role: .cancel) {
                     viewModel.cancelDismiss()
@@ -175,7 +178,7 @@ struct DiscoverView: View {
                     .multilineTextAlignment(.center)
 
                 Button("Retry") {
-                    viewModel.startListening()
+                    viewModel.retry()
                 }
                 .font(AppFonts.subheadline())
                 .padding(.horizontal, 14)

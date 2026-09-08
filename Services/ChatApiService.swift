@@ -16,6 +16,20 @@ actor ChatApiService {
     private let db = Firestore.firestore()
     private let conversationsCollection = "conversations"
 
+    enum ChatError: LocalizedError {
+        case notAuthenticated
+        case emptyMessage
+        case requestDeclined
+
+        var errorDescription: String? {
+            switch self {
+            case .notAuthenticated: return "Not authenticated"
+            case .emptyMessage: return "Cannot send an empty message"
+            case .requestDeclined: return "This person declined your message request."
+            }
+        }
+    }
+
     // MARK: - Conversation ID
 
     /// Deterministic conversation id for two users (order independent).
@@ -28,288 +42,214 @@ actor ChatApiService {
 
     // MARK: - Create Stub (from accepted like)
 
-    /// Creates a conversation stub when a like is accepted.
+    /// Ensures an *accepted* conversation exists between the receiver of a like
+    /// and the liker. Called when a like is accepted (by the receiver) or when
+    /// a like auto-accepts because of a prior relationship (by the liker).
     ///
-    /// Behavior:
-    /// 1) Creates conversation doc if missing (with participantIds)
-    /// 2) If the acceptedLike contains a non-empty `message`, it creates the first chat message
-    ///    (only if there are no messages yet)
-    /// 3) Updates "lastMessage*" fields on the conversation doc
-    ///
-    /// MVP note:
-    /// - We write the first message with senderId = likerId (acceptedLike.fromUserId).
-    ///   If you want stricter integrity later, we can instead create a "system" message.
+    /// The like's message, if any, is appended as a chat message only when the
+    /// caller *is* the liker: security rules only allow writing messages with
+    /// your own `senderId`. In the normal flow the message was already written
+    /// at like time via `deliverLikeMessage`, so nothing is lost.
     func createConversationStubIfNeeded(
         acceptedLike: TrackLike,
         receiverUserId: String
     ) async throws -> Conversation {
 
-        guard Auth.auth().currentUser != nil else {
-            throw NSError(
-                domain: "ChatApiService",
-                code: 401,
-                userInfo: [NSLocalizedDescriptionKey: "Not authenticated"]
-            )
+        guard let callerId = Auth.auth().currentUser?.uid else {
+            throw ChatError.notAuthenticated
         }
 
         let likerId = acceptedLike.fromUserId
         let convoId = conversationId(for: receiverUserId, and: likerId)
         let convoRef = db.collection(conversationsCollection).document(convoId)
 
-        let now = Date()
-
-        // 1) Create or touch conversation
         let snap = try await convoRef.getDocument()
         if !snap.exists {
-            let convoPayload: [String: Any] = [
+            try await convoRef.setData([
                 "participantIds": [receiverUserId, likerId],
-                "createdAt": now,
-                "updatedAt": now,
+                "createdAt": FieldValue.serverTimestamp(),
+                "updatedAt": FieldValue.serverTimestamp(),
                 "createdFromLikeId": acceptedLike.id as Any,
                 "createdFromTrackId": acceptedLike.trackId as Any,
                 "status": Conversation.Status.accepted.rawValue,
                 "initiatorId": likerId
-            ]
-            try await convoRef.setData(convoPayload, merge: true)
-            print("✅ [Chat] created conversation doc \(convoId)")
+            ], merge: true)
         } else {
-            // Always mark as accepted when this path is reached (existing pending request being accepted)
             try await convoRef.setData([
-                "updatedAt": now,
+                "updatedAt": FieldValue.serverTimestamp(),
                 "status": Conversation.Status.accepted.rawValue
             ], merge: true)
-            print("ℹ️ [Chat] conversation exists, marked accepted \(convoId)")
         }
 
-        // 🔎 Debug check: make sure doc exists + has participantIds
-        do {
-            let check = try await convoRef.getDocument()
-            print("🟦 [Chat] convo exists after setData=\(check.exists) data=\(check.data() ?? [:])")
-        } catch {
-            print("❌ [Chat] convo readback failed after setData:", error.localizedDescription)
-        }
-
-        // 2) Create first message from like comment (if present and if no messages yet)
         let likeMessage = (acceptedLike.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        if !likeMessage.isEmpty {
-            let messagesRef = convoRef.collection("messages")
-
-            let existing = try await messagesRef.limit(to: 1).getDocuments()
+        if !likeMessage.isEmpty, callerId == likerId {
+            let existing = try await convoRef.collection("messages").limit(to: 1).getDocuments()
             if existing.documents.isEmpty {
-                let msgRef = messagesRef.document()
-                let msgPayload: [String: Any] = [
-                    "senderId": likerId,
-                    "text": likeMessage,
-                    "createdAt": now,
-                    "type": ChatMessage.MessageType.text.rawValue
-                ]
-                try await msgRef.setData(msgPayload)
-
-                // Update last message info on conversation
-                try await convoRef.setData([
-                    "lastMessageText": likeMessage,
-                    "lastMessageAt": now,
-                    "lastMessageSenderId": likerId,
-                    "updatedAt": now
-                ], merge: true)
-
-                print("✅ [Chat] created first message \(msgRef.documentID) for convo \(convoId)")
-            } else {
-                print("ℹ️ [Chat] messages already exist, not creating first message for convo \(convoId)")
+                try await appendMessage(to: convoRef, senderId: likerId, text: likeMessage)
             }
         }
 
-        // 3) Return model
-        let finalSnap = try await convoRef.getDocument()
-        let data = finalSnap.data() ?? [:]
-
-        if let convo = Conversation.fromFirestore(id: convoId, data: data) {
-            return convo
-        }
-
-        // Fallback (should rarely happen)
-        return Conversation(
-            id: convoId,
-            participantIds: [receiverUserId, likerId],
-            createdAt: now,
-            updatedAt: now,
-            createdFromLikeId: acceptedLike.id,
-            createdFromTrackId: acceptedLike.trackId,
-            lastMessageText: likeMessage.isEmpty ? nil : likeMessage,
-            lastMessageAt: likeMessage.isEmpty ? nil : now,
-            lastMessageSenderId: likeMessage.isEmpty ? nil : likerId
-        )
+        return try await loadConversation(ref: convoRef, id: convoId, fallbackParticipants: [receiverUserId, likerId])
     }
 
-    // MARK: - Message Request (Discover Like-with-message Flow)
+    // MARK: - Deliver a Discover message
 
-    /// Creates a `pending` conversation with the first message taken from a like's
-    /// message text. Used when user A sends a like + message to user B for the
-    /// first time. The conversation appears in B's "Message Requests" inbox
-    /// until B accepts it.
+    /// Delivers the message typed on a Discover card into the conversation
+    /// between the current user (the liker) and the receiver.
     ///
-    /// If the conversation already exists, this is a no-op except for touching
-    /// updatedAt — we never downgrade an accepted conversation back to pending.
+    /// - New conversation: created as a `pending` message request, or directly
+    ///   `accepted` when the like itself auto-accepted (prior relationship).
+    /// - Existing accepted or pending conversation: the message is appended as
+    ///   a normal chat message and the preview fields are refreshed.
+    /// - Existing rejected conversation: throws `ChatError.requestDeclined` so
+    ///   the sender is told instead of the message vanishing silently.
     @discardableResult
-    func createMessageRequestConversation(
+    func deliverLikeMessage(
         like: TrackLike,
+        text: String,
         receiverUserId: String
     ) async throws -> Conversation {
 
-        guard Auth.auth().currentUser != nil else {
-            throw NSError(
-                domain: "ChatApiService",
-                code: 401,
-                userInfo: [NSLocalizedDescriptionKey: "Not authenticated"]
-            )
+        guard let senderId = Auth.auth().currentUser?.uid else {
+            throw ChatError.notAuthenticated
         }
 
-        let likeMessage = (like.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !likeMessage.isEmpty else {
-            throw NSError(
-                domain: "ChatApiService",
-                code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "Cannot create a request without a message"]
-            )
-        }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw ChatError.emptyMessage }
 
-        let likerId = like.fromUserId
-        let convoId = conversationId(for: receiverUserId, and: likerId)
+        let convoId = conversationId(for: receiverUserId, and: senderId)
         let convoRef = db.collection(conversationsCollection).document(convoId)
-        let now = Date()
 
         let snap = try await convoRef.getDocument()
         if !snap.exists {
-            let payload: [String: Any] = [
-                "participantIds": [receiverUserId, likerId],
-                "createdAt": now,
-                "updatedAt": now,
+            let initialStatus: Conversation.Status = like.status == .accepted ? .accepted : .pending
+            try await convoRef.setData([
+                "participantIds": [receiverUserId, senderId],
+                "createdAt": FieldValue.serverTimestamp(),
+                "updatedAt": FieldValue.serverTimestamp(),
                 "createdFromLikeId": like.id as Any,
                 "createdFromTrackId": like.trackId as Any,
-                "status": Conversation.Status.pending.rawValue,
-                "initiatorId": likerId,
-                "lastMessageText": likeMessage,
-                "lastMessageAt": now,
-                "lastMessageSenderId": likerId
-            ]
-            try await convoRef.setData(payload, merge: true)
-        } else {
-            // Don't change status if already accepted
-            try await convoRef.setData([
-                "updatedAt": now,
-                "lastMessageText": likeMessage,
-                "lastMessageAt": now,
-                "lastMessageSenderId": likerId
+                "status": initialStatus.rawValue,
+                "initiatorId": senderId
             ], merge: true)
+        } else {
+            let existingStatus = (snap.data()?["status"] as? String)
+                .flatMap(Conversation.Status.init(rawValue:)) ?? .accepted
+            if existingStatus == .rejected {
+                throw ChatError.requestDeclined
+            }
         }
 
-        // Create the first message if no messages exist yet
-        let messagesRef = convoRef.collection("messages")
-        let existing = try await messagesRef.limit(to: 1).getDocuments()
-        if existing.documents.isEmpty {
-            let msgRef = messagesRef.document()
-            try await msgRef.setData([
-                "senderId": likerId,
-                "text": likeMessage,
-                "createdAt": now,
-                "type": ChatMessage.MessageType.text.rawValue
-            ])
-        }
+        try await appendMessage(to: convoRef, senderId: senderId, text: trimmed)
 
-        let finalSnap = try await convoRef.getDocument()
-        let data = finalSnap.data() ?? [:]
-        if let convo = Conversation.fromFirestore(id: convoId, data: data) {
-            return convo
-        }
-        return Conversation(
-            id: convoId,
-            participantIds: [receiverUserId, likerId],
-            createdAt: now,
-            updatedAt: now,
-            createdFromLikeId: like.id,
-            createdFromTrackId: like.trackId,
-            lastMessageText: likeMessage,
-            lastMessageAt: now,
-            lastMessageSenderId: likerId,
-            status: .pending,
-            initiatorId: likerId
-        )
+        return try await loadConversation(ref: convoRef, id: convoId, fallbackParticipants: [receiverUserId, senderId])
     }
+
+    // MARK: - Status changes
 
     /// Marks an existing conversation as accepted. Used both when a like is
     /// accepted from the Likes inbox and when the recipient accepts the
     /// message request directly from the chat view.
     func acceptConversation(conversationId: String) async throws {
-        let ref = db.collection(conversationsCollection).document(conversationId)
-        try await ref.setData([
-            "status": Conversation.Status.accepted.rawValue,
-            "updatedAt": Date()
-        ], merge: true)
+        try await setStatus(.accepted, conversationId: conversationId)
     }
 
     /// Marks a pending message-request conversation as rejected so it no
     /// longer shows up in the recipient's requests list.
     func rejectConversation(conversationId: String) async throws {
-        let ref = db.collection(conversationsCollection).document(conversationId)
-        try await ref.setData([
-            "status": Conversation.Status.rejected.rawValue,
-            "updatedAt": Date()
+        try await setStatus(.rejected, conversationId: conversationId)
+    }
+
+    /// Mirrors a like status change onto the linked conversation, if one exists.
+    func mirrorLikeStatus(_ status: Conversation.Status, between uidA: String, and uidB: String) async {
+        let convoId = conversationId(for: uidA, and: uidB)
+        let convoRef = db.collection(conversationsCollection).document(convoId)
+        guard let snap = try? await convoRef.getDocument(), snap.exists else { return }
+        try? await setStatus(status, conversationId: convoId)
+    }
+
+    private func setStatus(_ status: Conversation.Status, conversationId: String) async throws {
+        try await db.collection(conversationsCollection).document(conversationId).setData([
+            "status": status.rawValue,
+            "updatedAt": FieldValue.serverTimestamp()
         ], merge: true)
     }
 
-    /// Fetches a single conversation. Returns nil if it doesn't exist.
-    func fetchConversation(conversationId: String) async throws -> Conversation? {
-        let snap = try await db.collection(conversationsCollection)
-            .document(conversationId)
-            .getDocument()
-        guard snap.exists, let data = snap.data() else { return nil }
-        return Conversation.fromFirestore(id: conversationId, data: data)
+    // MARK: - Delete
+
+    /// Deletes a conversation. Its `messages` subcollection is removed by the
+    /// `onConversationDeleted` Cloud Function (clients cannot delete subcollections).
+    func deleteConversation(conversationId: String) async throws {
+        try await db.collection(conversationsCollection).document(conversationId).delete()
     }
 
-    // MARK: - Send Message (Discover Like Flow)
+    // MARK: - Messages
 
+    /// Sends a regular chat message. Used by the chat thread.
     func sendMessage(
-        from senderId: String,
-        to receiverId: String,
+        conversationId: String,
         text: String,
-        createdFromTrackId: String?,
-        createdFromLikeId: String?
+        replyTo: ChatMessage? = nil
     ) async throws {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
-        let convoId = conversationId(for: senderId, and: receiverId)
-        let convoRef = db.collection(conversationsCollection).document(convoId)
-        let now = Date()
-
-        let snapshot = try await convoRef.getDocument()
-        if !snapshot.exists {
-            let payload: [String: Any] = [
-                "participantIds": [senderId, receiverId],
-                "createdAt": now,
-                "updatedAt": now,
-                "createdFromLikeId": createdFromLikeId as Any,
-                "createdFromTrackId": createdFromTrackId as Any
-            ]
-            try await convoRef.setData(payload, merge: true)
-        } else {
-            try await convoRef.setData(["updatedAt": now], merge: true)
+        guard let senderId = Auth.auth().currentUser?.uid else {
+            throw ChatError.notAuthenticated
         }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw ChatError.emptyMessage }
 
-        let messageRef = convoRef.collection("messages").document()
-        let messagePayload: [String: Any] = [
+        let convoRef = db.collection(conversationsCollection).document(conversationId)
+        try await appendMessage(to: convoRef, senderId: senderId, text: trimmed, replyTo: replyTo)
+    }
+
+    /// Writes one message and refreshes the conversation's preview fields.
+    /// Server timestamps everywhere so ordering, unread state and "Seen" never
+    /// depend on two devices' clocks agreeing.
+    private func appendMessage(
+        to convoRef: DocumentReference,
+        senderId: String,
+        text: String,
+        replyTo: ChatMessage? = nil
+    ) async throws {
+        var payload: [String: Any] = [
             "senderId": senderId,
-            "text": trimmed,
-            "createdAt": now,
+            "text": text,
+            "createdAt": FieldValue.serverTimestamp(),
             "type": ChatMessage.MessageType.text.rawValue
         ]
-        try await messageRef.setData(messagePayload)
+        if let replyTo {
+            payload["replyTo"] = [
+                "messageId": replyTo.id,
+                "senderId": replyTo.senderId,
+                "textPreview": String(replyTo.text.prefix(120))
+            ]
+        }
 
-        try await convoRef.setData([
-            "lastMessageText": trimmed,
-            "lastMessageAt": now,
+        let batch = db.batch()
+        batch.setData(payload, forDocument: convoRef.collection("messages").document())
+        batch.setData([
+            "lastMessageText": text,
+            "lastMessageAt": FieldValue.serverTimestamp(),
             "lastMessageSenderId": senderId,
-            "updatedAt": now
-        ], merge: true)
+            "updatedAt": FieldValue.serverTimestamp()
+        ], forDocument: convoRef, merge: true)
+        try await batch.commit()
+    }
+
+    private func loadConversation(
+        ref: DocumentReference,
+        id: String,
+        fallbackParticipants: [String]
+    ) async throws -> Conversation {
+        let snap = try await ref.getDocument()
+        if let convo = Conversation.fromFirestore(id: id, data: snap.data() ?? [:]) {
+            return convo
+        }
+        let now = Date()
+        return Conversation(
+            id: id,
+            participantIds: fallbackParticipants,
+            createdAt: now,
+            updatedAt: now
+        )
     }
 }

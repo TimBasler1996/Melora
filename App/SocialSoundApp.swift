@@ -50,17 +50,40 @@ struct SocialSoundApp: App {
             .animation(.easeInOut(duration: 0.25), value: onboardingState.isLoading)
             .animation(.easeInOut(duration: 0.25), value: onboardingState.needsOnboarding)
             .onAppear {
-                FirebaseAuthBootstrap.ensureFirebaseUser()
-                currentUserStore.startListening()
+                // Session-independent services.
                 locationService.requestAuthorizationIfNeeded()
+                broadcast.attachLocationService(locationService)
                 notificationService.start(locationService: locationService)
-                likeNotificationService.start()
+
+                // `OnboardingStateManager` bootstraps auth; user-scoped services
+                // are (re)started from `onChange(of: authUid)` below. Cover the
+                // case where auth already resolved before this view appeared.
+                if let uid = onboardingState.authUid {
+                    restartUserScopedServices(uid: uid)
+                }
+            }
+            .onChange(of: onboardingState.authUid) { _, uid in
+                restartUserScopedServices(uid: uid)
             }
             .environmentObject(spotifyAuth)
             .environmentObject(broadcast)
             .environmentObject(locationService)
             .environmentObject(currentUserStore)
         }
+    }
+
+    /// Stops and, when a user is signed in, restarts everything that is bound
+    /// to a specific uid. Runs on first launch once the anonymous sign-in has
+    /// completed, and again after sign-out / re-sign-in.
+    private func restartUserScopedServices(uid: String?) {
+        currentUserStore.stopListening()
+        likeNotificationService.stop()
+
+        guard uid != nil else { return }
+
+        currentUserStore.startListening()
+        likeNotificationService.start()
+        broadcast.reconcileAfterLaunch()
     }
 }
 
@@ -80,4 +103,3 @@ private struct LoadingView: View {
         }
     }
 }
-

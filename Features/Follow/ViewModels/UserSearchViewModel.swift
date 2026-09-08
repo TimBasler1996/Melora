@@ -10,7 +10,7 @@ final class UserSearchViewModel: ObservableObject {
     @Published private(set) var isSearching: Bool = false
     @Published private(set) var followingIds: Set<String> = []
 
-    private let db = Firestore.firestore()
+    private lazy var db = Firestore.firestore()
     private let followService: FollowApiService
     private var followListener: ListenerRegistration?
     private var searchTask: Task<Void, Never>?
@@ -46,12 +46,17 @@ final class UserSearchViewModel: ObservableObject {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard query.count >= 2 else {
             results = []
+            isSearching = false
             return
         }
 
         isSearching = true
 
         searchTask = Task {
+            // Debounce so fast typing doesn't fire two Firestore queries per keystroke.
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+
             do {
                 let users = try await searchUsers(query: query)
                 guard !Task.isCancelled else { return }
@@ -84,13 +89,14 @@ final class UserSearchViewModel: ObservableObject {
             .limit(to: 20)
             .getDocuments()
 
-        // Merge results, deduplicate, exclude self
+        // Merge results, deduplicate, exclude self and blocked users
+        let blockedIds = (try? await BlockService.shared.fetchBlockedIds()) ?? []
         var seen = Set<String>()
         var users: [AppUser] = []
 
         for doc in firstNameSnap.documents + displayNameSnap.documents {
             let uid = doc.documentID
-            guard uid != currentUid, !seen.contains(uid) else { continue }
+            guard uid != currentUid, !seen.contains(uid), !blockedIds.contains(uid) else { continue }
             seen.insert(uid)
             users.append(AppUser.fromFirestore(uid: uid, data: doc.data()))
         }
@@ -105,12 +111,26 @@ final class UserSearchViewModel: ObservableObject {
     }
 
     func toggleFollow(userId: String) async {
-        if isFollowing(userId) {
-            try? await followService.unfollow(userId: userId)
+        let wasFollowing = isFollowing(userId)
+        // Optimistic update with rollback so a failed write doesn't leave the
+        // button showing a state the server never reached.
+        if wasFollowing {
             followingIds.remove(userId)
         } else {
-            try? await followService.follow(userId: userId)
             followingIds.insert(userId)
+        }
+        do {
+            if wasFollowing {
+                try await followService.unfollow(userId: userId)
+            } else {
+                try await followService.follow(userId: userId)
+            }
+        } catch {
+            if wasFollowing {
+                followingIds.insert(userId)
+            } else {
+                followingIds.remove(userId)
+            }
         }
     }
 }

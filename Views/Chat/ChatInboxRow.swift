@@ -73,9 +73,15 @@ final class ChatInboxViewModel: ObservableObject {
 
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
+    private var blockListener: ListenerRegistration?
+
+    /// Users the current user blocked; their chats are hidden.
+    private var blockedIds: Set<String> = []
+    private var allRows: [ChatInboxRow] = []
 
     deinit {
         listener?.remove()
+        blockListener?.remove()
     }
 
     func startListening() {
@@ -87,6 +93,14 @@ final class ChatInboxViewModel: ObservableObject {
             isLoading = false
             errorMessage = "Not authenticated."
             return
+        }
+
+        blockListener = BlockService.shared.listenToBlockedIds { [weak self] ids in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.blockedIds = ids
+                self.applyVisibleRows()
+            }
         }
 
         let ref = db.collection("conversations")
@@ -155,7 +169,8 @@ final class ChatInboxViewModel: ObservableObject {
                 )
             }
 
-            self.rows = baseRows
+            self.allRows = baseRows
+            self.applyVisibleRows()
             self.isLoading = false
 
             self.enrichRowsWithUsers()
@@ -165,11 +180,31 @@ final class ChatInboxViewModel: ObservableObject {
     func stopListening() {
         listener?.remove()
         listener = nil
+        blockListener?.remove()
+        blockListener = nil
     }
 
     /// One-shot reload (pull-to-refresh)
     func reloadOnce() {
         startListening()
+    }
+
+    /// Deletes a chat. The row disappears immediately; the snapshot listener
+    /// confirms (or restores it if the delete failed).
+    func deleteChat(_ row: ChatInboxRow) {
+        allRows.removeAll { $0.id == row.id }
+        applyVisibleRows()
+        Task {
+            do {
+                try await ChatApiService.shared.deleteConversation(conversationId: row.conversationId)
+            } catch {
+                print("❌ [ChatInbox] delete failed:", error.localizedDescription)
+            }
+        }
+    }
+
+    private func applyVisibleRows() {
+        rows = allRows.filter { !blockedIds.contains($0.otherUserId) }
     }
 
     private func enrichRowsWithUsers() {
@@ -185,12 +220,16 @@ final class ChatInboxViewModel: ObservableObject {
                 switch result {
                 case .success(let other):
                     DispatchQueue.main.async {
-                        // Ensure row still exists and still refers to same user
-                        guard index < self.rows.count,
-                              self.rows[index].otherUserId == uid else { return }
-
-                        self.rows[index].displayName = other.displayName
-                        self.rows[index].avatarURL = (other.photoURLs?.first) ?? other.avatarURL
+                        // Rows may have been filtered/reordered meanwhile: match by user, not index.
+                        let avatar = (other.photoURLs?.first) ?? other.avatarURL
+                        for i in self.allRows.indices where self.allRows[i].otherUserId == uid {
+                            self.allRows[i].displayName = other.displayName
+                            self.allRows[i].avatarURL = avatar
+                        }
+                        for i in self.rows.indices where self.rows[i].otherUserId == uid {
+                            self.rows[i].displayName = other.displayName
+                            self.rows[i].avatarURL = avatar
+                        }
                     }
 
                 case .failure(let error):

@@ -31,7 +31,12 @@ struct MainView: View {
             }
         }
         .tint(AppColors.primary)
-        .onAppear { chatBadge.startListening() }
+        .onAppear {
+            chatBadge.startListening()
+            // First time the user reaches the main app (after onboarding) is
+            // the right moment to ask for notifications, not at cold launch.
+            Task { await BroadcastNotificationService.requestPermissionIfNeeded() }
+        }
         .onDisappear { chatBadge.stopListening() }
     }
 }

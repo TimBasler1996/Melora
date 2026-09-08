@@ -9,7 +9,7 @@ final class CurrentUserStore: ObservableObject {
     @Published var isLoading: Bool = true
     @Published var errorMessage: String?
 
-    private let db = Firestore.firestore()
+    private lazy var db = Firestore.firestore()
     private var listener: ListenerRegistration?
 
     deinit {

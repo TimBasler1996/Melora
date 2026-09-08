@@ -309,27 +309,32 @@ final class SpotifyService {
 
     /// Sets the repeat mode for the active device. Allowed values: off, context, track
     func setRepeat(mode: String) async throws {
-        let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
-        var components = URLComponents(url: apiBaseURL.appendingPathComponent("me/player/repeat"), resolvingAgainstBaseURL: false)!
-        components.queryItems = [URLQueryItem(name: "state", value: mode)]
-        guard let url = components.url else { throw SpotifyAPIError.invalidResponse }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-
-        let (_, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw SpotifyAPIError.invalidResponse
-        }
-        if http.statusCode == 404 { throw SpotifyAPIError.noActiveDevice }
-        if http.statusCode == 204 || (200..<300).contains(http.statusCode) { return }
-        throw SpotifyAPIError.invalidResponse
+        try await sendPlayerCommand(
+            path: "me/player/repeat",
+            method: "PUT",
+            queryItems: [URLQueryItem(name: "state", value: mode)]
+        )
     }
 
-    private func sendPlayerCommand(path: String, method: String) async throws {
+    /// Toggles shuffle on the active device.
+    func setShuffle(enabled: Bool) async throws {
+        try await sendPlayerCommand(
+            path: "me/player/shuffle",
+            method: "PUT",
+            queryItems: [URLQueryItem(name: "state", value: enabled ? "true" : "false")]
+        )
+    }
+
+    private func sendPlayerCommand(
+        path: String,
+        method: String,
+        queryItems: [URLQueryItem]? = nil
+    ) async throws {
         let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
-        let url = apiBaseURL.appendingPathComponent(path)
+
+        var components = URLComponents(url: apiBaseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        if let queryItems { components.queryItems = queryItems }
+        guard let url = components.url else { throw SpotifyAPIError.invalidResponse }
 
         var request = URLRequest(url: url)
         request.httpMethod = method

@@ -68,7 +68,9 @@ struct CitySearchFieldOnboarding: View {
                 .disableAutocorrection(true)
                 .focused($isFocused)
                 .onChange(of: completer.query) { _, newValue in
-                    // Don't clear city while user types a new search
+                    // Keep the bound value in sync with what the user typed so a
+                    // city is saved even when no suggestion is tapped.
+                    city = newValue
                 }
 
             if isFocused && !completer.suggestions.isEmpty && completer.query.count >= 2 {
@@ -121,6 +123,9 @@ struct CitySearchFieldEdit: View {
                 .textInputAutocapitalization(.words)
                 .keyboardType(.default)
                 .focused($isFocused)
+                .onChange(of: completer.query) { _, newValue in
+                    city = newValue
+                }
 
             if isFocused && !completer.suggestions.isEmpty && completer.query.count >= 2 {
                 VStack(alignment: .leading, spacing: 0) {

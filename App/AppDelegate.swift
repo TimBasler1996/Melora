@@ -9,33 +9,35 @@ import FirebaseFirestore
 /// can look them up when sending push notifications.
 class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
 
+    /// Most recent FCM token. Re-uploaded whenever the signed-in user changes
+    /// (first anonymous sign-in, sign-out + re-sign-in).
+    private var latestFCMToken: String?
+    private var authHandle: AuthStateDidChangeListenerHandle?
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // Set notification delegate and request permission
         UNUserNotificationCenter.current().delegate = self
-        requestNotificationPermission(application)
-
         Messaging.messaging().delegate = self
-        return true
-    }
 
-    private func requestNotificationPermission(_ application: UIApplication) {
-        UNUserNotificationCenter.current().requestAuthorization(
-            options: [.alert, .badge, .sound]
-        ) { granted, error in
-            if let error {
-                print("❌ [Notifications] Permission error: \(error.localizedDescription)")
-            } else {
-                print("📱 [Notifications] Permission granted: \(granted)")
-            }
-            if granted {
-                DispatchQueue.main.async {
-                    application.registerForRemoteNotifications()
-                }
+        // Register with APNs if the user already granted permission earlier.
+        // The permission prompt itself is shown in context (onboarding /
+        // settings), not at launch.
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized
+                || settings.authorizationStatus == .provisional else { return }
+            DispatchQueue.main.async {
+                application.registerForRemoteNotifications()
             }
         }
+
+        authHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            guard let self, let user, let token = self.latestFCMToken else { return }
+            self.uploadToken(token, for: user.uid)
+        }
+
+        return true
     }
 
     // MARK: - Foreground notification display
@@ -61,33 +63,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
 
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         guard let token = fcmToken else { return }
-        print("📱 [FCM] Token received: \(token.prefix(20))…")
-        storeFCMToken(token)
-    }
-
-    private func storeFCMToken(_ token: String) {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            // Not signed in yet – listen for auth state and retry
-            var handle: AuthStateDidChangeListenerHandle?
-            handle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-                guard let user else { return }
-                if let handle { Auth.auth().removeStateDidChangeListener(handle) }
-                self?.uploadToken(token, for: user.uid)
-            }
-            return
+        latestFCMToken = token
+        if let uid = Auth.auth().currentUser?.uid {
+            uploadToken(token, for: uid)
         }
-        uploadToken(token, for: uid)
+        // Otherwise the auth listener uploads it once a user exists.
     }
 
     private func uploadToken(_ token: String, for uid: String) {
-        let db = Firestore.firestore()
-        db.collection("users").document(uid).setData([
+        Firestore.firestore().collection("users").document(uid).setData([
             "fcmToken": token
         ], merge: true) { error in
             if let error {
                 print("❌ [FCM] Failed to store token: \(error.localizedDescription)")
-            } else {
-                print("✅ [FCM] Token stored for user \(uid)")
             }
         }
     }

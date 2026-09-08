@@ -84,27 +84,11 @@ actor LikeApiService {
             .limit(to: 1)
             .getDocuments()
 
-        if !dupCheck.documents.isEmpty {
-            // already liked -> return a local-ish model
-            return TrackLike(
-                id: dupCheck.documents.first?.documentID ?? UUID().uuidString,
-                fromUserId: fromUserId,
-                toUserId: toUser.uid,
-                trackId: track.id,
-                trackTitle: track.title,
-                trackArtist: track.artist,
-                trackAlbum: track.album,
-                trackArtworkURL: track.artworkURL?.absoluteString,
-                sessionId: nil,
-                createdAt: Date(),
-                placeLabel: placeLabel,
-                latitude: sessionLocation?.latitude,
-                longitude: sessionLocation?.longitude,
-                fromUserDisplayName: likerUser?.displayName,
-                fromUserAvatarURL: avatarURL,
-                message: message,
-                status: .pending
-            )
+        if let existingDoc = dupCheck.documents.first,
+           let existing = TrackLike.fromFirestore(id: existingDoc.documentID, data: existingDoc.data()) {
+            // Already liked this track: return the stored like so callers see
+            // its real status (e.g. accepted) instead of a made-up pending one.
+            return existing
         }
 
         // Check if there's a previously accepted like between these two users.
@@ -151,16 +135,18 @@ actor LikeApiService {
             "status": initialStatus.rawValue
         ]
 
-        // likesReceived
+        // Write likesReceived + the likesGiven mirror atomically so the two
+        // sides can never disagree about whether a like exists.
         let createdReceivedRef = receivedCollection.document()
-        try await createdReceivedRef.setData(payload)
-
-        // likesGiven mirror (owner = liker)
         let givenRef = db.collection(usersCollection)
             .document(fromUserId)
             .collection("likesGiven")
             .document(createdReceivedRef.documentID)
-        try await givenRef.setData(payload)
+
+        let batch = db.batch()
+        batch.setData(payload, forDocument: createdReceivedRef)
+        batch.setData(payload, forDocument: givenRef)
+        try await batch.commit()
 
         return TrackLike(
             id: createdReceivedRef.documentID,
@@ -185,8 +171,10 @@ actor LikeApiService {
 
     // MARK: - Update Like Status (both sides)
 
-    /// Updates like status on both receiver's likesReceived and sender's likesGiven.
-    func setLikeStatusReceivedOnly(
+    /// Updates the like status on the receiver's `likesReceived` and the
+    /// sender's `likesGiven` mirror, then mirrors it onto the linked
+    /// conversation (if any) so it leaves the Message Requests inbox.
+    func setLikeStatus(
         likeId: String,
         toUserId: String,
         status: TrackLike.Status
@@ -194,29 +182,29 @@ actor LikeApiService {
 
         let statusData: [String: Any] = [
             "status": status.rawValue,
-            "respondedAt": Timestamp(date: Date())
+            "respondedAt": FieldValue.serverTimestamp()
         ]
 
-        // Update receiver's likesReceived
         let receivedRef = db.collection(usersCollection)
             .document(toUserId)
             .collection("likesReceived")
             .document(likeId)
 
-        try await receivedRef.updateData(statusData)
-
-        // Also update sender's likesGiven mirror so they can see the status change
         let receivedDoc = try await receivedRef.getDocument()
-        guard let fromUserId = receivedDoc.data()?["fromUserId"] as? String else { return }
+        guard let fromUserId = receivedDoc.data()?["fromUserId"] as? String else {
+            throw NSError(domain: "LikeApiService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Like not found"])
+        }
 
         let givenRef = db.collection(usersCollection)
             .document(fromUserId)
             .collection("likesGiven")
             .document(likeId)
-        try? await givenRef.updateData(statusData)
 
-        // Mirror to the linked conversation (if any) so it disappears from
-        // the recipient's Message Requests inbox or moves to accepted Chats.
+        let batch = db.batch()
+        batch.updateData(statusData, forDocument: receivedRef)
+        batch.updateData(statusData, forDocument: givenRef)
+        try await batch.commit()
+
         let convoStatus: Conversation.Status? = {
             switch status {
             case .accepted: return .accepted
@@ -225,16 +213,7 @@ actor LikeApiService {
             }
         }()
         if let convoStatus {
-            let convoId = [toUserId.lowercased(), fromUserId.lowercased()]
-                .sorted()
-                .joined(separator: "_")
-            let convoRef = db.collection("conversations").document(convoId)
-            if let convoSnap = try? await convoRef.getDocument(), convoSnap.exists {
-                try? await convoRef.setData([
-                    "status": convoStatus.rawValue,
-                    "updatedAt": Date()
-                ], merge: true)
-            }
+            await ChatApiService.shared.mirrorLikeStatus(convoStatus, between: toUserId, and: fromUserId)
         }
     }
 

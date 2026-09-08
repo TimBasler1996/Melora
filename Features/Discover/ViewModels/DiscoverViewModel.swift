@@ -63,12 +63,15 @@ final class DiscoverViewModel: ObservableObject {
 
     private var listener: ListenerRegistration?
     private var followListener: ListenerRegistration?
-    private var pollTimer: Task<Void, Never>?
+    /// Incremented per snapshot so a slow, older snapshot can't overwrite a newer one.
+    private var snapshotGeneration = 0
     private var allBroadcasts: [DiscoverBroadcast] = []
     private var cachedUsers: [String: DiscoverUser] = [:]
 
     private var mutedUserIds: Set<String> = []
     private var mutedTrackIds: Set<String> = []
+    private var blockedUserIds: Set<String> = []
+    private var blockListener: ListenerRegistration?
     private var currentLocation: CLLocation?
 
     private var isListening = false
@@ -83,6 +86,8 @@ final class DiscoverViewModel: ObservableObject {
         self.likeService = likeService
         self.chatService = chatService
         self.followService = followService
+        // Previews have no Firebase app; reading the uid would crash.
+        guard !isRunningInPreview else { return }
         loadLikedBroadcastsFromCache()
         loadMessagedBroadcastsFromCache()
     }
@@ -90,7 +95,7 @@ final class DiscoverViewModel: ObservableObject {
     deinit {
         listener?.remove()
         followListener?.remove()
-        pollTimer?.cancel()
+        blockListener?.remove()
     }
 
     func startListening() {
@@ -102,6 +107,16 @@ final class DiscoverViewModel: ObservableObject {
 
         loadMutedPreferencesIfNeeded()
 
+        // Blocked users never appear in the feed.
+        blockListener = BlockService.shared.listenToBlockedIds { [weak self] ids in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.blockedUserIds = ids
+                self.allBroadcasts.removeAll { ids.contains($0.user.id) }
+                self.updateVisibleBroadcasts()
+            }
+        }
+
         // Listen to following list for friends mode
         followListener = followService.listenToFollowing { [weak self] (ids: Set<String>) in
             Task { @MainActor [weak self] in
@@ -110,6 +125,10 @@ final class DiscoverViewModel: ObservableObject {
             }
         }
 
+        // The snapshot listener is the single real-time source of truth. Stale
+        // documents are hidden client-side (`maxBroadcastAge`) and swept
+        // server-side by the `expireStaleBroadcasts` Cloud Function, so no
+        // polling fallback is needed.
         listener = service.listenToBroadcasts { [weak self] result in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -119,16 +138,13 @@ final class DiscoverViewModel: ObservableObject {
                     self.errorMessage = error.localizedDescription
                     self.allBroadcasts = []
                     self.visibleBroadcasts = []
+                    // Let Retry re-attach the listener.
+                    self.isListening = false
                 case .success(let records):
                     await self.handleBroadcastRecords(records)
                 }
             }
         }
-
-        // The snapshot listener above is the real-time source of truth. Keep a
-        // slow safety fallback only (not active polling) so we don't hammer
-        // Firestore with a full-collection read every few seconds.
-        startPolling()
     }
 
     func stopListening() {
@@ -136,25 +152,18 @@ final class DiscoverViewModel: ObservableObject {
         listener = nil
         followListener?.remove()
         followListener = nil
-        pollTimer?.cancel()
-        pollTimer = nil
+        blockListener?.remove()
+        blockListener = nil
         isListening = false
     }
-    
-    private func startPolling() {
-        pollTimer?.cancel()
-        pollTimer = Task { [weak self] in
-            while !Task.isCancelled {
-                // Slow safety net only — the snapshot listener handles live updates.
-                try? await Task.sleep(nanoseconds: 60_000_000_000) // 60 seconds
-                guard !Task.isCancelled else { break }
-                await self?.refreshBroadcasts()
-            }
-        }
+
+    /// Tear down and re-attach the listeners (Retry button).
+    func retry() {
+        stopListening()
+        startListening()
     }
 
-    /// Manual refresh (pull-to-refresh). Unlike the polling fallback this
-    /// surfaces failures to the user.
+    /// Manual refresh (pull-to-refresh). Surfaces failures to the user.
     func refresh() async {
         do {
             let records = try await service.fetchBroadcastsOnce()
@@ -162,16 +171,6 @@ final class DiscoverViewModel: ObservableObject {
             errorMessage = nil
         } catch {
             actionError = "Couldn’t refresh broadcasts. Please try again."
-        }
-    }
-
-    private func refreshBroadcasts() async {
-        // Safety fallback: one-shot fetch in case the snapshot listener missed an update
-        do {
-            let records = try await service.fetchBroadcastsOnce()
-            await handleBroadcastRecords(records)
-        } catch {
-            // Silently ignore – the snapshot listener is the primary source
         }
     }
 
@@ -202,6 +201,19 @@ final class DiscoverViewModel: ObservableObject {
         mutedTrackIds.insert(broadcast.track.id)
         persistMutedPreferences()
         removeBroadcast(broadcast)
+    }
+
+    /// Blocks the broadcaster: hidden from Discover, Chats and search from now on.
+    func blockUser(for broadcast: DiscoverBroadcast) {
+        blockedUserIds.insert(broadcast.user.id)
+        removeBroadcast(broadcast)
+        Task {
+            do {
+                try await BlockService.shared.blockUser(userId: broadcast.user.id)
+            } catch {
+                actionError = "Couldn’t block \(broadcast.user.displayName). Please try again."
+            }
+        }
     }
 
     func sendLike(
@@ -240,37 +252,43 @@ final class DiscoverViewModel: ObservableObject {
         )
 
         let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let key = Self.interactionKey(for: broadcast)
 
-        if like.status == .accepted {
-            // Prior relationship: create or touch the accepted conversation.
+        // Mark this broadcast as liked (the like itself succeeded above).
+        likedBroadcastIds.insert(key)
+        saveLikedBroadcastsToCache()
+
+        if !trimmedMessage.isEmpty {
+            // Deliver the typed message into the (new or existing) conversation.
+            // This is what the user actually cares about, so failures surface.
+            try await chatService.deliverLikeMessage(
+                like: like,
+                text: trimmedMessage,
+                receiverUserId: broadcast.user.id
+            )
+            messagedBroadcastIds.insert(key)
+            saveMessagedBroadcastsToCache()
+        } else if like.status == .accepted {
+            // Prior relationship: make sure the accepted conversation exists.
             _ = try? await chatService.createConversationStubIfNeeded(
                 acceptedLike: like,
                 receiverUserId: broadcast.user.id
             )
-        } else if !trimmedMessage.isEmpty {
-            // First-time message: create a pending conversation as a message request.
-            _ = try? await chatService.createMessageRequestConversation(
-                like: like,
-                receiverUserId: broadcast.user.id
-            )
         }
-
-        if !trimmedMessage.isEmpty {
-            messagedBroadcastIds.insert(broadcast.id)
-            saveMessagedBroadcastsToCache()
-        }
-
-        // Mark this broadcast as liked
-        likedBroadcastIds.insert(broadcast.id)
-        saveLikedBroadcastsToCache()
     }
-    
+
+    /// Likes and messages are per broadcaster *and* track: a new song from the
+    /// same person is a new thing to react to.
+    private static func interactionKey(for broadcast: DiscoverBroadcast) -> String {
+        "\(broadcast.user.id)_\(broadcast.track.id)"
+    }
+
     func isLiked(_ broadcast: DiscoverBroadcast) -> Bool {
-        likedBroadcastIds.contains(broadcast.id)
+        likedBroadcastIds.contains(Self.interactionKey(for: broadcast))
     }
 
     func hasMessage(_ broadcast: DiscoverBroadcast) -> Bool {
-        messagedBroadcastIds.contains(broadcast.id)
+        messagedBroadcastIds.contains(Self.interactionKey(for: broadcast))
     }
 
     func isFollowing(_ broadcast: DiscoverBroadcast) -> Bool {
@@ -350,6 +368,7 @@ final class DiscoverViewModel: ObservableObject {
         let filtered = records.filter { record in
             if let currentUserId, record.userId == currentUserId { return false }
             if mutedUserIds.contains(record.userId) { return false }
+            if blockedUserIds.contains(record.userId) { return false }
             if mutedTrackIds.contains(record.trackId) { return false }
             // Hide stale broadcasts (not updated recently)
             let age = now.timeIntervalSince(record.updatedAt ?? record.broadcastedAt)
@@ -357,8 +376,15 @@ final class DiscoverViewModel: ObservableObject {
             return true
         }
 
+        snapshotGeneration += 1
+        let generation = snapshotGeneration
+
         let userIds = Set(filtered.map { $0.userId })
         await fetchMissingUsers(userIds: userIds)
+
+        // A newer snapshot arrived while we were fetching profiles; it will
+        // (or already did) apply itself, so don't clobber it with stale data.
+        guard generation == snapshotGeneration else { return }
 
         let broadcasts: [DiscoverBroadcast] = filtered.compactMap { record in
             guard let user = cachedUsers[record.userId] else { return nil }
@@ -415,7 +441,9 @@ final class DiscoverViewModel: ObservableObject {
         let locationAvailable = currentLocation != nil
 
         var updated = allBroadcasts.filter { broadcast in
-            !mutedUserIds.contains(broadcast.user.id) && !mutedTrackIds.contains(broadcast.track.id)
+            !mutedUserIds.contains(broadcast.user.id)
+                && !blockedUserIds.contains(broadcast.user.id)
+                && !mutedTrackIds.contains(broadcast.track.id)
         }
 
         // In friends mode, only show broadcasts from followed users

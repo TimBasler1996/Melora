@@ -8,6 +8,8 @@ struct ChatView: View {
     @StateObject private var vm = ChatViewModel()
     @Environment(\.dismiss) private var dismiss
     @FocusState private var composerFocused: Bool
+    @State private var showBlockConfirm = false
+    @State private var showDeleteConfirm = false
 
     var body: some View {
         ZStack {
@@ -50,6 +52,50 @@ struct ChatView: View {
             ToolbarItem(placement: .principal) {
                 ChatThreadHeader(peer: vm.peer)
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    if vm.otherUserId != nil {
+                        Button(role: .destructive) {
+                            showBlockConfirm = true
+                        } label: {
+                            Label("Block User", systemImage: "hand.raised")
+                        }
+                    }
+                    Button(role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("Delete Chat", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+            }
+        }
+        .confirmationDialog("Block this user?", isPresented: $showBlockConfirm, titleVisibility: .visible) {
+            Button("Block User", role: .destructive) {
+                Task {
+                    if await vm.blockOtherUser(conversationId: conversationId) {
+                        dismiss()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("They won't appear in your Discover feed, chats or search anymore.")
+        }
+        .confirmationDialog("Delete this chat?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete Chat", role: .destructive) {
+                Task {
+                    if await vm.deleteConversation(conversationId: conversationId) {
+                        dismiss()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The conversation is removed for both of you.")
         }
         .alert(
             "Something went wrong",
@@ -180,8 +226,11 @@ struct ChatView: View {
         HStack(spacing: 10) {
             Button {
                 Task {
-                    await vm.declineRequest()
-                    dismiss()
+                    // Only leave the screen when the decline actually went
+                    // through; otherwise the error alert would be lost.
+                    if await vm.declineRequest() {
+                        dismiss()
+                    }
                 }
             } label: {
                 Text("Decline")

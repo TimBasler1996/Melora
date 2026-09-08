@@ -184,7 +184,7 @@ struct TrackLikesDetailView: View {
         do {
             print("🟢 [Like] update status \(status.rawValue) likeId=\(like.id)")
 
-            try await LikeApiService.shared.setLikeStatusReceivedOnly(
+            try await LikeApiService.shared.setLikeStatus(
                 likeId: like.id,
                 toUserId: user.uid,
                 status: status

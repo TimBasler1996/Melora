@@ -28,7 +28,7 @@ struct ProfileView: View {
 
     @State private var mode: Mode = .preview
     @State private var showSettings = false
-    @State private var photoPickerItems: [PhotosPickerItem?] = Array(repeating: nil, count: 6)
+    @State private var photoPickerItems: [PhotosPickerItem?] = Array(repeating: nil, count: ProfileViewModel.photoSlotCount)
     @State private var avatarPickerItem: PhotosPickerItem?
     @State private var showDiscardAlert = false
     @State private var followerCount: Int?
@@ -375,7 +375,7 @@ struct ProfileView: View {
             }
 
             LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(1..<6, id: \.self) { index in
+                ForEach(1..<ProfileViewModel.photoSlotCount, id: \.self) { index in
                     photoEditorTile(index: index, draft: draft)
                 }
             }

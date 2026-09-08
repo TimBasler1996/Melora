@@ -97,7 +97,9 @@ struct SettingsContentView: View {
         }
         .confirmationDialog("Sign Out", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
-                try? Auth.auth().signOut()
+                // Tears down the session and provisions a fresh anonymous
+                // user; the app root reacts to the auth change.
+                FirebaseAuthBootstrap.signOut()
             }
             Button("Cancel", role: .cancel) {}
         } message: {

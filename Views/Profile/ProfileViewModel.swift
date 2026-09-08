@@ -5,6 +5,13 @@ import UIKit
 @MainActor
 final class ProfileViewModel: ObservableObject {
 
+    // MARK: - Photo limits (must match onboarding + `OnboardingStateManager`)
+
+    static let minPhotoCount = 2
+    static let maxPhotoCount = 5
+    /// Number of editor slots: the hero slot (index 0) plus the grid.
+    static let photoSlotCount = maxPhotoCount
+
     // MARK: - UI State
 
     @Published var isLoading: Bool = false
@@ -80,7 +87,8 @@ final class ProfileViewModel: ObservableObject {
     func loadProfile() async {
         isLoading = true
         errorMessage = nil
-        saveSucceeded = false
+        // Note: `saveSucceeded` is intentionally left alone here so the
+        // success banner survives the reload that follows a save.
 
         do {
             let fetchedProfile = try await profileService.fetchCurrentUserProfile()
@@ -108,7 +116,7 @@ final class ProfileViewModel: ObservableObject {
             gender: snapshot.gender,
             lookingFor: snapshot.lookingFor,
             photoURLs: snapshot.photoURLs,
-            selectedImages: Array(repeating: nil, count: 6),
+            selectedImages: Array(repeating: nil, count: ProfileViewModel.photoSlotCount),
             heroImageChanged: false
         )
     }
@@ -167,7 +175,9 @@ final class ProfileViewModel: ObservableObject {
                 firstName: currentDraft.firstName.trimmingCharacters(in: .whitespacesAndNewlines),
                 lastName: currentDraft.lastName.trimmingCharacters(in: .whitespacesAndNewlines),
                 city: currentDraft.city.trimmingCharacters(in: .whitespacesAndNewlines),
-                birthday: currentDraft.birthday,
+                // The editor has no birthday control, so never overwrite the
+                // stored value (the draft falls back to "today" when it is missing).
+                birthday: profile?.birthday,
                 gender: currentDraft.gender.trimmingCharacters(in: .whitespacesAndNewlines),
                 lookingFor: trimmedLookingFor.isEmpty ? nil : trimmedLookingFor
             )
@@ -218,7 +228,21 @@ final class ProfileViewModel: ObservableObject {
                     }
                 }
 
-                try await profileService.savePhotos(photoURLs: updatedPhotoURLs, uid: uid)
+                // The draft works with fixed slots ("" = empty). Persist only the
+                // real URLs: the onboarding gate treats empty entries as an
+                // incomplete profile and would send the user back to onboarding.
+                let cleanedPhotoURLs = Array(
+                    updatedPhotoURLs
+                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty }
+                        .prefix(ProfileViewModel.maxPhotoCount)
+                )
+                guard cleanedPhotoURLs.count >= ProfileViewModel.minPhotoCount else {
+                    throw NSError(domain: "Profile", code: 400, userInfo: [
+                        NSLocalizedDescriptionKey: "Keep at least \(ProfileViewModel.minPhotoCount) photos on your profile."
+                    ])
+                }
+                try await profileService.savePhotos(photoURLs: cleanedPhotoURLs, uid: uid)
             }
 
             saveSucceeded = true
@@ -277,11 +301,12 @@ final class ProfileViewModel: ObservableObject {
     }
 
     private func paddedPhotoURLs(_ urls: [String]) -> [String] {
+        let slots = ProfileViewModel.photoSlotCount
         var padded = urls
-        if padded.count < 6 {
-            padded.append(contentsOf: Array(repeating: "", count: 6 - padded.count))
-        } else if padded.count > 6 {
-            padded = Array(padded.prefix(6))
+        if padded.count < slots {
+            padded.append(contentsOf: Array(repeating: "", count: slots - padded.count))
+        } else if padded.count > slots {
+            padded = Array(padded.prefix(slots))
         }
         return padded
     }
