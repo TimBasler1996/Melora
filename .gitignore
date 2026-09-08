@@ -63,3 +63,9 @@ fastlane/test_output
 *.p8
 functions/node_modules/
 node_modules/
+
+# Secrets / generated (never commit)
+*.p8
+functions/.env
+functions/.env.*
+functions/lib/

@@ -1,0 +1,115 @@
+rules_version = '2';
+
+// Security rules for SocialSound.
+//
+// Every client write path in the app is listed here. If you add a new write
+// in the app, add the matching rule and update Docs/Firebase_Schema.txt.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function me() {
+      return request.auth.uid;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && me() == uid;
+    }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function isParticipant(convo) {
+      return signedIn() && me() in convo.data.participantIds;
+    }
+
+    // ── users/{uid} ──────────────────────────────────────────────
+    match /users/{uid} {
+      // Profiles are visible to every signed-in user (Discover, chat, likes).
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid);
+      allow delete: if false;
+
+      // Likes this user received. Written by the liker, updated by the owner.
+      match /likesReceived/{likeId} {
+        allow read: if isOwner(uid) || resource.data.fromUserId == me();
+        allow create: if signedIn()
+          && request.resource.data.fromUserId == me()
+          && request.resource.data.toUserId == uid
+          && me() != uid;
+        allow update: if isOwner(uid)
+          && changedKeys().hasOnly(['status', 'respondedAt']);
+        allow delete: if false;
+      }
+
+      // Mirror of likes this user gave. Written by the owner; the receiver may
+      // only flip the status.
+      match /likesGiven/{likeId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.fromUserId == uid;
+        allow update: if isOwner(uid)
+          || (resource.data.toUserId == me()
+              && changedKeys().hasOnly(['status', 'respondedAt']));
+        allow delete: if false;
+      }
+    }
+
+    // ── broadcasts/{uid} ─────────────────────────────────────────
+    match /broadcasts/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid)
+        && request.resource.data.userId == uid;
+      allow delete: if isOwner(uid);
+    }
+
+    // ── conversations/{id} ───────────────────────────────────────
+    match /conversations/{conversationId} {
+      allow read: if isParticipant(resource);
+      allow create: if signedIn()
+        && me() in request.resource.data.participantIds
+        && request.resource.data.participantIds.size() == 2;
+      allow update: if isParticipant(resource)
+        && request.resource.data.participantIds == resource.data.participantIds;
+      allow delete: if isParticipant(resource);
+
+      match /messages/{messageId} {
+        function parent() {
+          return get(/databases/$(database)/documents/conversations/$(conversationId));
+        }
+        allow read: if isParticipant(parent());
+        allow create: if isParticipant(parent())
+          && request.resource.data.senderId == me();
+        // Only reactions may change after a message is sent.
+        allow update: if isParticipant(parent())
+          && changedKeys().hasOnly(['reactions']);
+        allow delete: if false;
+      }
+    }
+
+    // ── follows/{followerId_followingId} ─────────────────────────
+    match /follows/{followId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.followerId == me()
+        && followId == me() + '_' + request.resource.data.followingId;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.followerId == me();
+    }
+
+    // ── blocks/{blockerId_blockedUserId} ─────────────────────────
+    match /blocks/{blockId} {
+      allow read: if signedIn() && resource.data.blockerId == me();
+      allow create: if signedIn()
+        && request.resource.data.blockerId == me()
+        && blockId == me() + '_' + request.resource.data.blockedUserId;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.blockerId == me();
+    }
+  }
+}

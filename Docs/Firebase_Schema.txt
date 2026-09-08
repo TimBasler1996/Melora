@@ -1,84 +1,104 @@
 # Firebase Schema (source of truth)
 
-This document defines the expected Firestore/Storage structure for SocialSound.
-If code changes the schema, update this file.
+This document describes the Firestore / Storage structure SocialSound uses.
+If code changes the schema, update this file AND `firestore.rules` /
+`firestore.indexes.json` / `storage.rules` in the repo root. Deploy with:
+
+    firebase deploy --only firestore,storage,functions
+
+Auth is Firebase *anonymous* auth: `uid` is the device's anonymous user.
 
 ## users/{uid}
-Represents a user profile.
+One document per user. Written by the owner only (rules), readable by any
+signed-in user (Discover, chat headers, likes).
 
-Suggested fields:
-- `firstName`: String
-- `lastName`: String
-- `birthday`: Timestamp (optional)
-- `city`: String
-- `gender`: String
-- `countryCode`: String (optional)
-- `heroPhotoURL`: String (optional)
-- `photoURLs`: [String] (0..6)
-- `spotifyId`: String (optional)
-- `spotifyCountry`: String (optional)
+Profile:
+- `firstName`, `lastName`, `city`, `gender`: String
+- `birthday`: Timestamp
+- `lookingFor`: String (optional)
+- `displayName`: String — "First Last", kept in sync by `saveBasics`
+- `firstNameLower`, `displayNameLower`: String — lowercase copies for prefix
+  search. Written by the client and re-derived by the `onUserWritten` Cloud
+  Function so older profiles stay searchable.
+- `photoURLs`: [String] — 2…5 real URLs, index 0 is the profile photo
+- `heroPhotoURL`: String (optional) — uncropped hero image
+- `avatarURL`, `spotifyAvatarURL`: String (optional, legacy / Spotify)
+- `spotifyId`, `spotifyCountry`, `countryCode`: String (optional)
+- `profileCompleted`: Bool, `completedAt`: Timestamp
 
-Notes:
-- `photoURLs` should be treated as fixed slots in UI (6 slots, missing -> empty).
-- `heroPhotoURL` is used for preview hero when available (no round crop).
+Presence:
+- `isBroadcasting`: Bool
+- `currentTrack`: { id, title, artist, album?, artworkURL?, durationMs? }
+- `lastLocation`: { latitude, longitude }
+- `lastActiveAt`, `createdAt`, `updatedAt`: Timestamp
+- `broadcastMinutesTotal`: Int
+- `fcmToken`: String — push token, written by AppDelegate
 
-## broadcasts/{broadcastId}
-Represents "user is broadcasting a track".
+### users/{uid}/likesReceived/{likeId}
+A like (optionally with a message) this user received. Created by the liker,
+status updated by the owner.
+- `fromUserId`, `toUserId`, `trackId`, `trackTitle`, `trackArtist`: String
+- `trackAlbum`, `trackArtworkURL`, `placeLabel`: String (optional)
+- `latitude`, `longitude`: Double (optional)
+- `fromUserDisplayName`, `fromUserAvatarURL`: String (denormalised)
+- `message`: String (optional, ≤160 chars)
+- `status`: "pending" | "accepted" | "rejected"
+- `createdAt`, `respondedAt`: Timestamp
 
-Required fields:
-- `userId`: String
-- `trackId`: String
-- `trackTitle`: String
-- `trackArtist`: String
-- `trackAlbum`: String (optional)
-- `trackArtworkURL`: String (optional)
-- `spotifyTrackURL`: String (optional)
-- `broadcastedAt`: Timestamp
+### users/{uid}/likesGiven/{likeId}
+Mirror of the like for the liker (same document id, same fields). Written
+atomically with `likesReceived`. The receiver may only update `status` /
+`respondedAt`. The `onLikeAccepted` function watches this collection.
 
-Location options (choose ONE approach and keep consistent):
-Option A:
-- `location`: GeoPoint
-Option B:
-- `latitude`: Double
-- `longitude`: Double
+## broadcasts/{uid}
+"User is broadcasting a track". Document id = broadcaster uid, so there is
+at most one live broadcast per user. Owner-only writes.
+- `userId`, `trackId`, `trackTitle`, `trackArtist`: String
+- `trackAlbum`, `trackArtworkURL`, `spotifyTrackURL`: String (optional)
+- `latitude`, `longitude`: Double (optional)
+- `broadcastedAt`, `updatedAt`: Timestamp (server time)
 
-Notes:
-- Discover feed sorts by distance ascending when location is available.
-- If location permission is missing, fallback sorting is `broadcastedAt` (newest first).
-
-Recommended Firestore rules (minimum for Discover):
-```
-match /broadcasts/{broadcastId} {
-  allow read: if true; // or request.auth != null
-  allow create, update, delete: if request.auth != null;
-}
-```
+Lifecycle: the client refreshes `updatedAt` every 15–20 s while live and
+deletes the doc on stop. Discover hides docs older than 5 min; the
+`expireStaleBroadcasts` function deletes docs older than 10 min and resets
+`users/{uid}.isBroadcasting` (covers apps killed mid-broadcast).
 
 ## conversations/{conversationId}
-Represents a chat between two users (or more later).
+Chat between two users. Id = the two uids, lowercased and sorted, joined with
+"_" (see `ChatApiService.conversationId`). Participants only.
+- `participantIds`: [String] (exactly 2, immutable)
+- `status`: "pending" | "accepted" | "rejected" (missing = accepted)
+- `initiatorId`: String — who sent the first message / request
+- `createdFromLikeId`, `createdFromTrackId`: String (optional)
+- `lastMessageText`, `lastMessageSenderId`: String
+- `lastMessageAt`, `createdAt`, `updatedAt`: Timestamp (server time)
+- `lastReadAt`: { uid: Timestamp } — per-participant read marker
 
-Suggested fields:
-- `participantIds`: [String]
-- `updatedAt`: Timestamp
-- `lastMessageText`: String (optional)
-- `lastMessageAt`: Timestamp (optional)
+Deleting the document triggers `onConversationDeleted`, which removes the
+messages subcollection.
 
-## conversations/{conversationId}/messages/{messageId}
-Message inside a conversation.
-
-Suggested fields:
-- `senderId`: String
+### conversations/{conversationId}/messages/{messageId}
+- `senderId`: String (must equal the writer's uid)
 - `text`: String
+- `type`: "text"
+- `createdAt`: Timestamp (server time)
+- `replyTo`: { messageId, senderId, textPreview } (optional)
+- `reactions`: { uid: emoji } — the only field that may change after send
+
+## follows/{followerId_followingId}
+- `followerId`, `followingId`: String
 - `createdAt`: Timestamp
 
-## likes/{likeId}
-A "track like" event from sender to receiver, optionally with a message.
-
-Suggested fields:
-- `senderId`: String
-- `receiverId`: String
-- `trackId`: String
-- `trackTitle`: String
-- `message`: String (optional)
+## blocks/{blockerId_blockedUserId}
+Private to the blocker; hides the blocked user from Discover, Chats and search.
+- `blockerId`, `blockedUserId`: String
 - `createdAt`: Timestamp
-- `broadcastId`: String (optional)
+
+## Storage
+- `userPhotos/{uid}/photo_{index}.jpg` — profile photos (owner writes)
+- `userPhotos/{uid}/hero_photo.jpg` — hero image
+
+## Composite indexes (firestore.indexes.json)
+- `likesGiven`: status ASC, respondedAt DESC
+- `follows`: followingId ASC, createdAt DESC
+- `conversations`: participantIds CONTAINS, updatedAt DESC

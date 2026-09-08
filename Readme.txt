@@ -10,8 +10,8 @@ SocialSound is an iOS app built with SwiftUI.
 ## Tech stack
 - SwiftUI (iOS 18+)
 - Architecture: MVVM
-- Firebase: Auth, Firestore, Storage
-- Spotify integration (connected during onboarding)
+- Firebase: Auth (anonymous), Firestore, Storage, Cloud Messaging, Cloud Functions
+- Spotify integration (PKCE, connected during onboarding or later)
 
 ## Navigation
 Bottom tab bar:
@@ -20,11 +20,25 @@ Bottom tab bar:
 - Chats
 - Profile
 
+## Backend
+Everything server-side lives in this repo and deploys with the Firebase CLI:
+- `firestore.rules`, `storage.rules` – security rules (every client write path is covered)
+- `firestore.indexes.json` – composite indexes
+- `functions/src/index.ts` – push notifications, search-field sync, cleanup jobs
+
+    cd functions && npm install
+    firebase deploy --only firestore,storage,functions
+
+Schema reference: `Docs/Firebase_Schema.txt`.
+
+## Secrets
+Never commit `*.p8` keys, `functions/.env` or anything under `functions/lib`.
+APNs keys are uploaded in the Firebase console (Cloud Messaging → APNs), not
+stored in the repo.
+
 ## Important constraints
 - Do NOT use "+" in file names
 - Do NOT break SwiftUI previews
 - Avoid heavy rebuild/run loops (Xcode Previews are important)
 - All ViewModels are annotated with `@MainActor`
 - UX quality is more important than speed
-
-
