@@ -88,14 +88,16 @@ final class BroadcastManager: ObservableObject {
         guard !isBroadcasting, let startedAt = broadcastStartedAt else { return }
         guard let uid = Auth.auth().currentUser?.uid else { return }
 
+        // Clear synchronously so a second call (onAppear + onChange) is a no-op.
+        broadcastStartedAt = nil
+        UserDefaults.standard.removeObject(forKey: broadcastStartKey)
+
         Task {
             let minutes = Int(Date().timeIntervalSince(startedAt) / 60)
             if minutes > 0 {
                 userService.addBroadcastMinutes(uid: uid, minutes: min(minutes, 12 * 60))
             }
             await clearServerState(uid: uid)
-            broadcastStartedAt = nil
-            UserDefaults.standard.removeObject(forKey: broadcastStartKey)
         }
     }
 
@@ -153,19 +155,21 @@ final class BroadcastManager: ObservableObject {
 
         isBroadcasting = false
 
+        let startedAt = broadcastStartedAt
+        broadcastStartedAt = nil
+        UserDefaults.standard.removeObject(forKey: broadcastStartKey)
+
         guard let uid = Auth.auth().currentUser?.uid else {
             errorMessage = "No Firebase user."
             return
         }
 
-        if let startedAt = broadcastStartedAt {
+        if let startedAt {
             let minutes = Int(Date().timeIntervalSince(startedAt) / 60)
             if minutes > 0 {
                 userService.addBroadcastMinutes(uid: uid, minutes: minutes)
             }
         }
-        broadcastStartedAt = nil
-        UserDefaults.standard.removeObject(forKey: broadcastStartKey)
 
         await clearServerState(uid: uid)
     }

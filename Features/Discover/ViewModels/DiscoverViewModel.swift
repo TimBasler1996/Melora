@@ -138,8 +138,9 @@ final class DiscoverViewModel: ObservableObject {
                     self.errorMessage = error.localizedDescription
                     self.allBroadcasts = []
                     self.visibleBroadcasts = []
-                    // Let Retry re-attach the listener.
-                    self.isListening = false
+                    // Detach everything so Retry / the next appear starts clean
+                    // instead of stacking a second set of listeners.
+                    self.stopListening()
                 case .success(let records):
                     await self.handleBroadcastRecords(records)
                 }

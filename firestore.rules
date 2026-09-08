@@ -53,9 +53,8 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid)
           && request.resource.data.fromUserId == uid;
-        allow update: if isOwner(uid)
-          || (resource.data.toUserId == me()
-              && changedKeys().hasOnly(['status', 'respondedAt']));
+        allow update: if resource.data.toUserId == me()
+          && changedKeys().hasOnly(['status', 'respondedAt']);
         allow delete: if false;
       }
     }
@@ -70,12 +69,20 @@ service cloud.firestore {
 
     // ── conversations/{id} ───────────────────────────────────────
     match /conversations/{conversationId} {
-      allow read: if isParticipant(resource);
+      // `get` must succeed for a not-yet-existing doc: the client checks
+      // whether a conversation exists before creating it.
+      allow get: if signedIn()
+        && (resource == null || me() in resource.data.participantIds);
+      allow list: if isParticipant(resource);
       allow create: if signedIn()
         && me() in request.resource.data.participantIds
         && request.resource.data.participantIds.size() == 2;
+      // Participants may update, but only the *recipient* of a request can
+      // change its status (the initiator cannot accept their own request).
       allow update: if isParticipant(resource)
-        && request.resource.data.participantIds == resource.data.participantIds;
+        && request.resource.data.participantIds == resource.data.participantIds
+        && (request.resource.data.get('status', 'accepted') == resource.data.get('status', 'accepted')
+            || me() != resource.data.get('initiatorId', ''));
       allow delete: if isParticipant(resource);
 
       match /messages/{messageId} {

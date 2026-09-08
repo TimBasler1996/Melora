@@ -32,6 +32,8 @@ Presence:
 - `lastLocation`: { latitude, longitude }
 - `lastActiveAt`, `createdAt`, `updatedAt`: Timestamp
 - `broadcastMinutesTotal`: Int
+- `likesReceivedCount`: Int — maintained by the `onLikeCreated` function;
+  shown on other users' profiles (their `likesReceived` is not listable)
 - `fcmToken`: String — push token, written by AppDelegate
 
 ### users/{uid}/likesReceived/{likeId}

@@ -189,15 +189,19 @@ final class ChatInboxViewModel: ObservableObject {
         startListening()
     }
 
-    /// Deletes a chat. The row disappears immediately; the snapshot listener
-    /// confirms (or restores it if the delete failed).
+    /// Deletes a chat. The row disappears immediately and comes back with an
+    /// error message if the delete failed.
     func deleteChat(_ row: ChatInboxRow) {
+        let previousRows = allRows
         allRows.removeAll { $0.id == row.id }
         applyVisibleRows()
         Task {
             do {
                 try await ChatApiService.shared.deleteConversation(conversationId: row.conversationId)
             } catch {
+                allRows = previousRows
+                applyVisibleRows()
+                errorMessage = "Couldn’t delete the chat. Please try again."
                 print("❌ [ChatInbox] delete failed:", error.localizedDescription)
             }
         }

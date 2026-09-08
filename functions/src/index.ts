@@ -106,6 +106,13 @@ export const onLikeCreated = onDocumentCreated(
     const receiverUid = event.params.userId;
     const data = snap.data();
 
+    // Public counter shown on other people's profiles (clients may not list
+    // someone else's likesReceived).
+    await db.collection("users").doc(receiverUid).set(
+      {likesReceivedCount: admin.firestore.FieldValue.increment(1)},
+      {merge: true}
+    );
+
     const token = await getFcmToken(receiverUid);
     if (!token) return;
 

@@ -200,10 +200,11 @@ actor LikeApiService {
             .collection("likesGiven")
             .document(likeId)
 
-        let batch = db.batch()
-        batch.updateData(statusData, forDocument: receivedRef)
-        batch.updateData(statusData, forDocument: givenRef)
-        try await batch.commit()
+        try await receivedRef.updateData(statusData)
+
+        // The mirror may be missing for likes written by older clients, so it
+        // must not make the whole accept/decline fail.
+        try? await givenRef.updateData(statusData)
 
         let convoStatus: Conversation.Status? = {
             switch status {
@@ -219,12 +220,25 @@ actor LikeApiService {
 
     // MARK: - Fetching
 
+    /// Own profile: exact aggregation over `likesReceived`. Other profiles:
+    /// the `likesReceivedCount` counter on the user doc, which the
+    /// `onLikeCreated` Cloud Function maintains (rules don't allow listing
+    /// someone else's likes).
     func fetchLikesReceivedCount(for userId: String) async throws -> Int {
-        let query = db.collection(usersCollection)
-            .document(userId)
-            .collection("likesReceived")
-        let snapshot = try await query.count.getAggregation(source: .server)
-        return Int(truncating: snapshot.count)
+        if userId == Auth.auth().currentUser?.uid {
+            let query = db.collection(usersCollection)
+                .document(userId)
+                .collection("likesReceived")
+            let snapshot = try await query.count.getAggregation(source: .server)
+            return Int(truncating: snapshot.count)
+        }
+
+        let doc = try await db.collection(usersCollection).document(userId).getDocument()
+        let raw = doc.data()?["likesReceivedCount"]
+        if let value = raw as? Int { return value }
+        if let value = raw as? Int64 { return Int(value) }
+        if let value = raw as? Double { return Int(value) }
+        return 0
     }
 
     func fetchLikesReceived(for userId: String) async throws -> [TrackLike] {

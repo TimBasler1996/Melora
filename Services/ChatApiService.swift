@@ -74,10 +74,16 @@ actor ChatApiService {
                 "status": Conversation.Status.accepted.rawValue,
                 "initiatorId": likerId
             ], merge: true)
-        } else {
+        } else if callerId == receiverUserId {
+            // Only the recipient may flip the status (rules enforce this too);
+            // the liker just touches the conversation.
             try await convoRef.setData([
                 "updatedAt": FieldValue.serverTimestamp(),
                 "status": Conversation.Status.accepted.rawValue
+            ], merge: true)
+        } else {
+            try await convoRef.setData([
+                "updatedAt": FieldValue.serverTimestamp()
             ], merge: true)
         }
 

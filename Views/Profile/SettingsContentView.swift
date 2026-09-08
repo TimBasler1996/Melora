@@ -3,6 +3,8 @@ import FirebaseAuth
 
 struct SettingsContentView: View {
 
+    @EnvironmentObject private var broadcast: BroadcastManager
+
     @AppStorage("settings.notify.broadcastNearby") private var notifyBroadcast = true
     @AppStorage("settings.notify.friendBroadcasts") private var notifyFriends = true
     @AppStorage("settings.notify.radiusMeters") private var radiusMeters: Double = 5000
@@ -99,7 +101,7 @@ struct SettingsContentView: View {
             Button("Sign Out", role: .destructive) {
                 // Tears down the session and provisions a fresh anonymous
                 // user; the app root reacts to the auth change.
-                FirebaseAuthBootstrap.signOut()
+                Task { await FirebaseAuthBootstrap.signOut(stopping: broadcast) }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
