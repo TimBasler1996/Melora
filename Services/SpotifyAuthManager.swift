@@ -13,6 +13,16 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
     // MARK: - Public state
 
     @Published var isAuthorized: Bool = false
+
+    /// Why the last interactive login did not end with tokens. Cleared when a
+    /// new login starts, so screens waiting on `isAuthorized` can stop
+    /// waiting as soon as the user closes the sheet.
+    @Published private(set) var lastLoginFailure: LoginFailure?
+
+    enum LoginFailure: Equatable {
+        case cancelled
+        case failed
+    }
     @Published private(set) var tokens: SpotifyTokens?
 
     // MARK: - Private
@@ -50,6 +60,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
     /// Call this from views to make sure user is authorized. Launches the
     /// interactive login only when there is no usable refresh token.
     func ensureAuthorized() {
+        lastLoginFailure = nil
         if let t = tokens, t.expiresAt > Date().addingTimeInterval(30) {
             isAuthorized = true
             return
@@ -130,6 +141,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
     // MARK: - Auth Flow (Login)
 
     private func startAuthFlow() {
+        lastLoginFailure = nil
         let verifier = Self.generateCodeVerifier()
         let challenge = Self.codeChallenge(for: verifier)
         currentCodeVerifier = verifier
@@ -158,6 +170,10 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
 
             if let error {
                 print("❌ [Auth] Auth cancelled or failed: \(error)")
+                let cancelled = (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin
+                Task { @MainActor in
+                    self.lastLoginFailure = cancelled ? .cancelled : .failed
+                }
                 return
             }
 
@@ -168,6 +184,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
                 let verifier = self.currentCodeVerifier
             else {
                 print("❌ [Auth] Callback missing code")
+                Task { @MainActor in self.lastLoginFailure = .failed }
                 return
             }
 
@@ -177,6 +194,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
                     self.isAuthorized = true
                 } catch {
                     print("❌ [Auth] Failed to exchange code for tokens: \(error)")
+                    self.lastLoginFailure = .failed
                 }
             }
         }

@@ -439,6 +439,15 @@ private struct CompactBroadcastToggle: View {
     @EnvironmentObject private var locationService: LocationService
 
     var body: some View {
+        VStack(spacing: 0) {
+            toggleRow
+            if broadcast.isBroadcasting && locationDenied {
+                locationWarning
+            }
+        }
+    }
+
+    private var toggleRow: some View {
         HStack(spacing: 12) {
             // Indicator dot
             Circle()
@@ -456,9 +465,18 @@ private struct CompactBroadcastToggle: View {
                         )
                 )
 
-            Text(broadcast.isBroadcasting ? "Broadcasting nearby" : "Go live nearby")
-                .font(AppFonts.subheadline())
-                .foregroundColor(.white.opacity(hasTrack ? 0.9 : 0.5))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(broadcast.isBroadcasting ? "You’re live nearby" : "Go live nearby")
+                    .font(AppFonts.subheadline())
+                    .foregroundColor(.white.opacity(hasTrack ? 0.9 : 0.5))
+
+                if let hint {
+                    Text(hint)
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.6))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
 
             Spacer()
 
@@ -467,6 +485,8 @@ private struct CompactBroadcastToggle: View {
                 set: { newValue in
                     Task {
                         if newValue {
+                            // First go-live is where location makes sense:
+                            // it is what puts you on other people's Discover.
                             locationService.requestAuthorizationIfNeeded()
                             broadcast.attachLocationService(locationService)
                         }
@@ -482,9 +502,52 @@ private struct CompactBroadcastToggle: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(
-            Capsule()
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(AppColors.surface)
         )
+    }
+
+    private var locationDenied: Bool {
+        switch locationService.authorizationStatus {
+        case .denied, .restricted: return true
+        default: return false
+        }
+    }
+
+    /// Why the toggle can't be used right now; nil when it can.
+    private var hint: String? {
+        if broadcast.isBroadcasting {
+            return locationDenied ? nil : "People nearby can see what you’re playing"
+        }
+        if !spotifyAuth.isAuthorized { return "Connect Spotify to go live" }
+        if !hasTrack { return "Play something on Spotify to go live" }
+        return nil
+    }
+
+    private var locationWarning: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "location.slash")
+                .foregroundColor(AppColors.primary)
+            Text("Location is off, so nobody nearby can find you. Turn it on in Settings.")
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundColor(.white.opacity(0.85))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .foregroundColor(.white)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(AppColors.surface)
+        )
+        .padding(.top, 8)
     }
 }
 

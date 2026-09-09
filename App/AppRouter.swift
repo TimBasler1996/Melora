@@ -22,6 +22,9 @@ final class AppRouter: ObservableObject {
     /// Ask the Now tab to present the likes inbox.
     @Published var showLikesInbox: Bool = false
 
+    /// Profile the Profile tab should push (e.g. a new follower).
+    @Published var pendingProfileUserId: String?
+
     private init() {}
 
     // MARK: - Intents
@@ -38,6 +41,11 @@ final class AppRouter: ObservableObject {
 
     func goLive() {
         selectedTab = .now
+    }
+
+    func openProfile(_ userId: String) {
+        selectedTab = .profile
+        pendingProfileUserId = userId
     }
 
     // MARK: - Push notifications
@@ -57,6 +65,12 @@ final class AppRouter: ObservableObject {
             }
         case "likeReceived":
             openLikesInbox()
+        case "newFollower":
+            if let userId = userInfo["userId"] as? String, !userId.isEmpty {
+                openProfile(userId)
+            } else {
+                selectedTab = .profile
+            }
         case "broadcast":
             selectedTab = .discover
         default:

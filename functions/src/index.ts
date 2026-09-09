@@ -19,11 +19,12 @@ const db = admin.firestore();
 /**
  * Returns the user's push token, or null when the user has no token or has
  * switched the given notification category off in Settings (the app mirrors
- * the toggles to `notifyLikes` / `notifyMessages`; missing means enabled).
+ * the toggles to `notifyLikes` / `notifyMessages` / `notifyFollowers`;
+ * missing means enabled).
  */
 async function getFcmToken(
   userId: string,
-  preferenceKey?: "notifyLikes" | "notifyMessages"
+  preferenceKey?: "notifyLikes" | "notifyMessages" | "notifyFollowers"
 ): Promise<string | null> {
   if (!userId) return null;
   const userDoc = await db.collection("users").doc(userId).get();
@@ -76,7 +77,7 @@ async function sendPush(
 // ──────────────────────────────────────────────────
 
 /**
- * The client searches `firstNameLower` / `displayNameLower` with prefix
+ * The client searches `firstNameLower` / `lastNameLower` / `displayNameLower` with prefix
  * queries. Derive them server-side so every profile is searchable even if it
  * was written by an older client that never set them.
  */
@@ -95,6 +96,7 @@ export const onUserWritten = onDocumentWritten(
     }
 
     const firstNameLower = String(data.firstName ?? "").trim().toLowerCase();
+    const lastNameLower = String(data.lastName ?? "").trim().toLowerCase();
     const displayNameLower = String(data.displayName ?? "")
       .trim()
       .toLowerCase();
@@ -102,6 +104,9 @@ export const onUserWritten = onDocumentWritten(
     const updates: Record<string, string> = {};
     if (firstNameLower && data.firstNameLower !== firstNameLower) {
       updates.firstNameLower = firstNameLower;
+    }
+    if (lastNameLower && data.lastNameLower !== lastNameLower) {
+      updates.lastNameLower = lastNameLower;
     }
     if (displayNameLower && data.displayNameLower !== displayNameLower) {
       updates.displayNameLower = displayNameLower;
@@ -166,6 +171,68 @@ async function deleteAccountData(uid: string): Promise<void> {
 
   logger.info(`Account ${uid} deleted`);
 }
+
+// ──────────────────────────────────────────────────
+// Follows
+// ──────────────────────────────────────────────────
+
+/**
+ * Someone started following a user → push to that user (honours the
+ * "New followers" toggle).
+ */
+export const onFollowCreated = onDocumentCreated(
+  "follows/{followId}",
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    const followerUid: string = data.followerId ?? "";
+    const followedUid: string = data.followingId ?? "";
+    if (!followerUid || !followedUid || followerUid === followedUid) return;
+
+    const token = await getFcmToken(followedUid, "notifyFollowers");
+    if (!token) return;
+
+    const followerName = await getDisplayName(followerUid);
+    const message: admin.messaging.Message = {
+      token,
+      notification: {
+        title: `${followerName} started following you`,
+        body: "Open their profile to follow back.",
+      },
+      data: {
+        type: "newFollower",
+        userId: followerUid,
+      },
+      apns: {payload: {aps: {sound: "default"}}},
+    };
+
+    await sendPush(followedUid, message);
+  }
+);
+
+// ──────────────────────────────────────────────────
+// Reports
+// ──────────────────────────────────────────────────
+
+/**
+ * Reports are write-only for clients. Log them so they show up in Cloud
+ * Logging (filter on `report.received`) until there is a review tool.
+ */
+export const onReportCreated = onDocumentCreated(
+  "reports/{reportId}",
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+    logger.warn("report.received", {
+      reportId: event.params.reportId,
+      reporterId: data.reporterId,
+      reportedUserId: data.reportedUserId,
+      reason: data.reason,
+      details: data.details ?? "",
+    });
+  }
+);
 
 // ──────────────────────────────────────────────────
 // Likes
@@ -287,10 +354,10 @@ export const onLikeAccepted = onDocumentUpdated(
     const message: admin.messaging.Message = {
       token,
       notification: {
-        title: `${receiverName} accepted your interaction!`,
-        body: hasMessage ?
-          `Your message on "${trackTitle}" was delivered. Start chatting!` :
-          `Your like on "${trackTitle}" was accepted. Start chatting now!`,
+        title: hasMessage ?
+          `${receiverName} accepted your message request` :
+          `${receiverName} accepted your like`,
+        body: `You can chat about "${trackTitle}" now.`,
       },
       data: {
         type: "likeAccepted",

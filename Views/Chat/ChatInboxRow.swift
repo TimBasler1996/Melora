@@ -32,6 +32,8 @@ final class ChatInboxViewModel: ObservableObject {
     @Published var rows: [ChatInboxRow] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
+    /// A failed action (e.g. delete) — shown as a toast, the list stays.
+    @Published var actionError: String?
 
     /// Accepted conversations only.
     var acceptedRows: [ChatInboxRow] {
@@ -91,7 +93,7 @@ final class ChatInboxViewModel: ObservableObject {
 
         guard let myUid = Auth.auth().currentUser?.uid else {
             isLoading = false
-            errorMessage = "Not authenticated."
+            errorMessage = "You’re not signed in yet. Try again in a moment."
             return
         }
 
@@ -112,7 +114,7 @@ final class ChatInboxViewModel: ObservableObject {
 
             if let err {
                 self.isLoading = false
-                self.errorMessage = err.localizedDescription
+                self.errorMessage = UserFacingError.message(for: err, fallback: "Check your connection and try again.")
                 print("❌ [ChatInbox] listen failed:", err.localizedDescription)
                 return
             }
@@ -201,7 +203,7 @@ final class ChatInboxViewModel: ObservableObject {
             } catch {
                 allRows = previousRows
                 applyVisibleRows()
-                errorMessage = "Couldn’t delete the chat. Please try again."
+                actionError = "Couldn’t delete the chat. Please try again."
                 print("❌ [ChatInbox] delete failed:", error.localizedDescription)
             }
         }

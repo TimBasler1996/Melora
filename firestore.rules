@@ -116,6 +116,20 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.followerId == me();
     }
 
+    // ── reports/{reportId} ───────────────────────────────────────
+    // Write-only for users; reviewed via the console / function logs.
+    match /reports/{reportId} {
+      allow read: if false;
+      allow create: if signedIn()
+        && request.resource.data.reporterId == me()
+        && request.resource.data.reportedUserId is string
+        && request.resource.data.reportedUserId != me()
+        && request.resource.data.reason is string
+        && request.resource.data.details is string
+        && request.resource.data.details.size() <= 500;
+      allow update, delete: if false;
+    }
+
     // ── blocks/{blockerId_blockedUserId} ─────────────────────────
     match /blocks/{blockId} {
       allow read: if signedIn() && resource.data.blockerId == me();

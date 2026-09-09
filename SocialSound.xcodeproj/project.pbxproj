@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7210DF7946B441C7AECBE56C /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0A95CCC58C944FD83CC1164 /* OnboardingWelcomeView.swift */; };
+		A1896B352E0649539024457E /* UserFacingError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718DFED3B33A4C36A2BBC0B4 /* UserFacingError.swift */; };
+		E603DAB4923243B39C049CF5 /* HiddenAndBlockedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95DAD8D7718044DD9DD24C52 /* HiddenAndBlockedView.swift */; };
+		721E3C3A47AE471BA2A5CF69 /* ReportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23CA9C9F54704D9E9359DA74 /* ReportService.swift */; };
+		46541488C3344CE9B6B8AF25 /* HiddenContentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635D4B1776D043C28DB14E32 /* HiddenContentStore.swift */; };
 		0F55817B66D8415D8C9BC878 /* OnboardingStepAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CF947EB84F4271BFFC0678 /* OnboardingStepAccountView.swift */; };
 		D16536F528CB40E1A5783F1C /* AccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70BCDF4636CD4DD9B8A2A4C5 /* AccountService.swift */; };
 		78E9E99AC6E7488896EA0EA2 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BFE7DE16AC494C81718739 /* AppRouter.swift */; };
@@ -80,6 +85,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E0A95CCC58C944FD83CC1164 /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
+		718DFED3B33A4C36A2BBC0B4 /* UserFacingError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFacingError.swift; sourceTree = "<group>"; };
+		95DAD8D7718044DD9DD24C52 /* HiddenAndBlockedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenAndBlockedView.swift; sourceTree = "<group>"; };
+		23CA9C9F54704D9E9359DA74 /* ReportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportService.swift; sourceTree = "<group>"; };
+		635D4B1776D043C28DB14E32 /* HiddenContentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenContentStore.swift; sourceTree = "<group>"; };
 		63CF947EB84F4271BFFC0678 /* OnboardingStepAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepAccountView.swift; sourceTree = "<group>"; };
 		70BCDF4636CD4DD9B8A2A4C5 /* AccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountService.swift; sourceTree = "<group>"; };
 		13BFE7DE16AC494C81718739 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
@@ -304,6 +314,8 @@
 				75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */,
 				756E44892EFE8BE500F49C30 /* FirebaseAuthBootstrap.swift */,
 				75A1740F2ECA159900CEB48F /* LikeApiService.swift */,
+				23CA9C9F54704D9E9359DA74 /* ReportService.swift */,
+				635D4B1776D043C28DB14E32 /* HiddenContentStore.swift */,
 				70BCDF4636CD4DD9B8A2A4C5 /* AccountService.swift */,
 				8275EC568A0B45DFA72BD774 /* BlockService.swift */,
 				75A174072EC8B0E400CEB48F /* UserApiService.swift */,
@@ -345,6 +357,7 @@
 				75A174032EC7E40D00CEB48F /* AppTheme.swift */,
 				79A1C0002F30000100112233 /* DateAge.swift */,
 				B21BE36111534A499759CE08 /* ImageDownscale.swift */,
+				718DFED3B33A4C36A2BBC0B4 /* UserFacingError.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -371,6 +384,7 @@
 			children = (
 				7576DF652F1836BE0034BF2A /* ProfileChip.swift */,
 				75F1A0052F5B000100ABC003 /* SettingsContentView.swift */,
+				95DAD8D7718044DD9DD24C52 /* HiddenAndBlockedView.swift */,
 				75834A832F0C2CE7008C51F8 /* LikesInboxButton.swift */,
 				75A1741B2ECE59E300CEB48F /* TrackLikesDetailView.swift */,
 				75A1740B2EC8C0FA00CEB48F /* ProfileViewModel.swift */,
@@ -421,6 +435,7 @@
 				76B0C1AB2F12345600112233 /* Steps */,
 				76B0C1A92F12345600112233 /* OnboardingFlowView.swift */,
 				75DAD8762F20E80500D1219E /* OnboardingStepSpotifyView.swift */,
+				E0A95CCC58C944FD83CC1164 /* OnboardingWelcomeView.swift */,
 				63CF947EB84F4271BFFC0678 /* OnboardingStepAccountView.swift */,
 			);
 			path = Onboarding;
@@ -550,6 +565,7 @@
 			files = (
 				79A1C0012F30000100112233 /* DateAge.swift in Sources */,
 				83D91861AFFE423E9F99BC7D /* ImageDownscale.swift in Sources */,
+				A1896B352E0649539024457E /* UserFacingError.swift in Sources */,
 				79A1C0062F30000300112233 /* CitySearchField.swift in Sources */,
 				75DDECAE2F3E3FE1009426B5 /* FollowApiService.swift in Sources */,
 				759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */,
@@ -557,6 +573,7 @@
 				75834A902F0D8F0C008C51F8 /* ChatApiService.swift in Sources */,
 				753AD78C2F2CC12500521CF9 /* SharedProfilePreviewView.swift in Sources */,
 				75DAD8772F20E80500D1219E /* OnboardingStepSpotifyView.swift in Sources */,
+				7210DF7946B441C7AECBE56C /* OnboardingWelcomeView.swift in Sources */,
 				0F55817B66D8415D8C9BC878 /* OnboardingStepAccountView.swift in Sources */,
 				75DAD87B2F20EBE900D1219E /* NowPlayingView.swift in Sources */,
 				76B0C1A12F12345600112233 /* OnboardingStateManager.swift in Sources */,
@@ -588,6 +605,8 @@
 				75A174212ED0FFFA00CEB48F /* TrackLikesCluster.swift in Sources */,
 				22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */,
 				75A174102ECA159900CEB48F /* LikeApiService.swift in Sources */,
+				721E3C3A47AE471BA2A5CF69 /* ReportService.swift in Sources */,
+				46541488C3344CE9B6B8AF25 /* HiddenContentStore.swift in Sources */,
 				D16536F528CB40E1A5783F1C /* AccountService.swift in Sources */,
 				D7C3F433FAA341BC8EAD1656 /* BlockService.swift in Sources */,
 				759F7B102EC78B5C0012A549 /* SpotifyService.swift in Sources */,
@@ -607,6 +626,7 @@
 				75F1A0022F5B000100ABC001 /* ChatBadgeViewModel.swift in Sources */,
 				75F1A0042F5B000100ABC002 /* FollowersInboxViewModel.swift in Sources */,
 				75F1A0062F5B000100ABC003 /* SettingsContentView.swift in Sources */,
+				E603DAB4923243B39C049CF5 /* HiddenAndBlockedView.swift in Sources */,
 				A1C2D3E42F60000100APDLG1 /* AppDelegate.swift in Sources */,
 				A1C2D3E82F60000100BCNTF1 /* BroadcastNotificationService.swift in Sources */,
 				A1C2D3EC2F60000100SPLNK1 /* SpotifyLinkCard.swift in Sources */,

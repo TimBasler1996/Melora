@@ -5,6 +5,7 @@ struct MainView: View {
 
     @EnvironmentObject private var router: AppRouter
     @StateObject private var chatBadge = ChatBadgeViewModel()
+    @State private var routedProfileUserId: String?
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
@@ -29,6 +30,9 @@ struct MainView: View {
 
             NavigationStack {
                 ProfileView()
+                    .navigationDestination(item: $routedProfileUserId) { userId in
+                        UserProfilePreviewView(userId: userId)
+                    }
             }
             .tabItem {
                 Label("Profile", systemImage: "person.circle")
@@ -36,6 +40,11 @@ struct MainView: View {
             .tag(AppRouter.Tab.profile)
         }
         .tint(AppColors.primary)
+        .onChange(of: router.pendingProfileUserId) { _, userId in
+            guard let userId else { return }
+            router.pendingProfileUserId = nil
+            routedProfileUserId = userId
+        }
         .onAppear {
             chatBadge.startListening()
             // First time the user reaches the main app (after onboarding) is

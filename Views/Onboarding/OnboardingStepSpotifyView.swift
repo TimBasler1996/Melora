@@ -10,7 +10,7 @@ struct OnboardingStepSpotifyView: View {
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundColor(AppColors.primaryText)
 
-                Text("Connect your Spotify account to share your music taste with matches.")
+                Text("Melora shows the track you’re playing on Spotify when you go live.")
                     .font(.system(size: 17, weight: .medium, design: .rounded))
                     .foregroundColor(AppColors.secondaryText)
             }
@@ -42,7 +42,7 @@ struct OnboardingStepSpotifyView: View {
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundColor(AppColors.primaryText)
 
-                        Text("Your Spotify account is connected")
+                        Text("You’re ready to go live")
                             .font(AppFonts.body())
                             .foregroundColor(AppColors.secondaryText)
                             .multilineTextAlignment(.center)
@@ -51,7 +51,7 @@ struct OnboardingStepSpotifyView: View {
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundColor(AppColors.primaryText)
 
-                        Text("Connect now, or skip and do it later")
+                        Text("Connect now, or skip and do it in Settings later. Without Spotify you can browse and chat, but not go live.")
                             .font(AppFonts.body())
                             .foregroundColor(AppColors.secondaryText)
                             .multilineTextAlignment(.center)
@@ -61,21 +61,21 @@ struct OnboardingStepSpotifyView: View {
                 // Features list
                 VStack(alignment: .leading, spacing: 12) {
                     FeatureRow(
-                        icon: "music.note.list",
-                        title: "Share your music taste",
-                        description: "Let matches see what you're listening to"
+                        icon: "dot.radiowaves.left.and.right",
+                        title: "Go live with what you play",
+                        description: "People nearby see your current track while you’re live"
                     )
 
                     FeatureRow(
-                        icon: "person.2.fill",
-                        title: "Find music compatibility",
-                        description: "Match with people who share your taste"
+                        icon: "play.circle",
+                        title: "Control playback from Melora",
+                        description: "Play, pause and skip without leaving the app"
                     )
 
                     FeatureRow(
                         icon: "lock.fill",
-                        title: "Your data is private",
-                        description: "We only access your basic profile info"
+                        title: "Nothing is posted to Spotify",
+                        description: "We read your current track and profile picture, and never share your listening history"
                     )
                 }
                 .padding(.top, 8)

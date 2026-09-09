@@ -25,12 +25,10 @@ final class FollowersInboxViewModel: ObservableObject {
         return followers.filter { $0.followedAt > seen }
     }
 
-    var todayFollowers: [FollowerEntry] {
-        newFollowers.filter { Calendar.current.isDateInToday($0.followedAt) }
-    }
-
+    /// Everyone who followed before the last visit; they stay listed.
     var earlierFollowers: [FollowerEntry] {
-        newFollowers.filter { !Calendar.current.isDateInToday($0.followedAt) }
+        guard let seen = lastSeenDate else { return [] }
+        return followers.filter { $0.followedAt <= seen }
     }
 
     func markAllAsSeen() {
@@ -59,7 +57,7 @@ final class FollowersInboxViewModel: ObservableObject {
 
         guard let myUid = Auth.auth().currentUser?.uid else {
             isLoading = false
-            errorMessage = "Not authenticated."
+            errorMessage = "You’re not signed in yet. Try again in a moment."
             return
         }
 
@@ -73,7 +71,7 @@ final class FollowersInboxViewModel: ObservableObject {
 
             if let error {
                 self.isLoading = false
-                self.errorMessage = error.localizedDescription
+                self.errorMessage = UserFacingError.message(for: error, fallback: "Check your connection and try again.")
                 return
             }
 

@@ -9,15 +9,28 @@ struct OnboardingFlowView: View {
 
     var body: some View {
         ZStack {
-            VStack(spacing: 0) {
-                topBar
-                contentArea
-                Spacer(minLength: 20)
-                bottomCTA
+            if viewModel.hasSeenWelcome {
+                VStack(spacing: 0) {
+                    topBar
+                    contentArea
+                    Spacer(minLength: 20)
+                    bottomCTA
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                OnboardingWelcomeView {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        viewModel.hasSeenWelcome = true
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 24)
+                .transition(.opacity)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
         }
         .melScreenBackground()
         .animation(.easeInOut(duration: 0.25), value: viewModel.stepIndex)
@@ -139,7 +152,7 @@ struct OnboardingFlowView: View {
                         viewModel.spotifySkipped = true
                         Task { await viewModel.finish(using: spotifyAuth) }
                     } label: {
-                        Text(viewModel.isFinishing ? "Finishing…" : "Skip for now")
+                        Text(viewModel.isFinishing ? (viewModel.finishProgressText ?? "Finishing…") : "Skip for now")
                             .font(AppFonts.subheadline())
                             .foregroundColor(.white.opacity(0.7))
                             .frame(maxWidth: .infinity)
@@ -150,7 +163,7 @@ struct OnboardingFlowView: View {
                     Button {
                         Task { await viewModel.finish(using: spotifyAuth) }
                     } label: {
-                        Text(viewModel.isFinishing ? "Finishing…" : "Finish")
+                        Text(viewModel.isFinishing ? (viewModel.finishProgressText ?? "Finishing…") : "Finish")
                             .font(.system(size: 17, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)

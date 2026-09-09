@@ -54,6 +54,9 @@ final class OnboardingProfileService {
             data["firstNameLower"] = basics.firstName
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .lowercased()
+            data["lastNameLower"] = basics.lastName
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
         }
         if let birthday = basics.birthday {
             data["birthday"] = Timestamp(date: birthday)
@@ -68,23 +71,6 @@ final class OnboardingProfileService {
     }
 
     // MARK: - Step 2: Photos
-
-    func uploadPhotos(images: [UIImage], uid: String) async throws -> [String] {
-        guard images.count >= 2 && images.count <= 5 else {
-            throw NSError(domain: "Onboarding", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: "Between 2 and 5 photos are required."
-            ])
-        }
-
-        var urls: [String] = []
-
-        for (index, image) in images.enumerated() {
-            let url = try await uploadPhoto(image: image, uid: uid, index: index)
-            urls.append(url)
-        }
-
-        return urls
-    }
 
     /// Upload a photo at a specific index
     /// - Note: Index 0 is the profile photo (shown on discovery cards and as avatar).

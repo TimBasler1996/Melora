@@ -10,6 +10,9 @@ final class OnboardingViewModel: ObservableObject {
 
     @Published var stepIndex: Int = 1
 
+    /// The welcome screen shown before step 1 (what the app is, in one screen).
+    @Published var hasSeenWelcome: Bool = false
+
     static let stepCount = 4
     var progressText: String { "\(stepIndex)/\(Self.stepCount)" }
     var progressValue: Double { Double(stepIndex) / Double(Self.stepCount) }
@@ -27,6 +30,9 @@ final class OnboardingViewModel: ObservableObject {
 
     @Published var selectedImages: [UIImage?] = [nil, nil, nil, nil, nil] // Max 5 photos
     @Published var uploadedPhotoURLs: [String] = []
+    /// The exact images `uploadedPhotoURLs` were made from, so a retry after
+    /// a later failure doesn't upload them again.
+    private var uploadedImages: [UIImage] = []
 
     // MARK: - Step 3: Spotify
 
@@ -42,6 +48,8 @@ final class OnboardingViewModel: ObservableObject {
     @Published var isConnectingSpotify: Bool = false
     @Published var isFinishing: Bool = false
     @Published var finishErrorMessage: String?
+    /// What the finish step is doing right now ("Uploading photo 2 of 4…").
+    @Published var finishProgressText: String?
     @Published var didFinish: Bool = false
 
     // MARK: - Step 4: Keep your profile (Sign in with Apple, optional)
@@ -160,12 +168,12 @@ final class OnboardingViewModel: ObservableObject {
 
             let spotifyId = profile.id
             guard !spotifyId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                spotifyErrorMessage = "Could not read Spotify user id."
+                spotifyErrorMessage = "Spotify didn’t return your account. Please try again."
                 return
             }
 
             guard let uid = Auth.auth().currentUser?.uid else {
-                spotifyErrorMessage = "Not authenticated."
+                spotifyErrorMessage = "You’re not signed in yet. Try again in a moment."
                 return
             }
 
@@ -179,17 +187,36 @@ final class OnboardingViewModel: ObservableObject {
             )
 
             spotifyConnected = true
+        } catch SpotifyLoginError.cancelled {
+            // The user closed the Spotify sheet; nothing to explain.
+            spotifyErrorMessage = nil
+        } catch SpotifyLoginError.failed {
+            spotifyErrorMessage = "Spotify didn’t connect. Check your connection and try again."
         } catch {
-            spotifyErrorMessage = "Spotify connection failed. Please try again."
+            spotifyErrorMessage = UserFacingError.message(
+                for: error,
+                fallback: "Spotify didn’t connect. Please try again."
+            )
         }
+    }
+
+    private enum SpotifyLoginError: Error {
+        case cancelled
+        case failed
     }
 
     private func waitUntilSpotifyAuthorized(spotifyAuth: SpotifyAuthManager, timeoutSeconds: TimeInterval) async throws -> String {
         let start = Date()
 
         while spotifyAuth.isAuthorized == false {
+            // The login sheet was closed or failed: stop waiting right away.
+            switch spotifyAuth.lastLoginFailure {
+            case .cancelled: throw SpotifyLoginError.cancelled
+            case .failed: throw SpotifyLoginError.failed
+            case nil: break
+            }
             if Date().timeIntervalSince(start) > timeoutSeconds {
-                throw SpotifyAuthError.notAuthorized
+                throw SpotifyLoginError.failed
             }
             try await Task.sleep(nanoseconds: 300_000_000)
         }
@@ -209,14 +236,18 @@ final class OnboardingViewModel: ObservableObject {
         }
 
         guard let uid = Auth.auth().currentUser?.uid else {
-            finishErrorMessage = "Not authenticated."
+            finishErrorMessage = "You’re not signed in yet. Try again in a moment."
             return
         }
 
         isFinishing = true
-        defer { isFinishing = false }
+        defer {
+            isFinishing = false
+            finishProgressText = nil
+        }
 
         do {
+            finishProgressText = "Saving your profile…"
             let trimmedLookingFor = lookingFor.trimmingCharacters(in: .whitespacesAndNewlines)
             let basics = OnboardingProfileService.Basics(
                 firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -229,8 +260,8 @@ final class OnboardingViewModel: ObservableObject {
             try await profileService.saveBasics(basics, uid: uid)
 
             let images = selectedImages.compactMap { $0 }
-            let urls = try await profileService.uploadPhotos(images: images, uid: uid)
-            uploadedPhotoURLs = urls
+            let urls = try await uploadPhotosIfNeeded(images, uid: uid)
+            finishProgressText = "Almost done…"
             try await profileService.savePhotos(photoURLs: urls, uid: uid)
 
             if spotifyConnected {
@@ -242,8 +273,38 @@ final class OnboardingViewModel: ObservableObject {
             // Profile is complete. One more (skippable) step: keep it safe.
             stepIndex = 4
         } catch {
-            finishErrorMessage = error.localizedDescription
+            finishErrorMessage = UserFacingError.message(
+                for: error,
+                fallback: "Couldn’t finish your profile. Please try again."
+            )
         }
+    }
+
+    /// Uploads the photos one by one with progress, reusing the URLs from a
+    /// previous attempt when the same images are still selected.
+    private func uploadPhotosIfNeeded(_ images: [UIImage], uid: String) async throws -> [String] {
+        let unchanged = images.count == uploadedImages.count
+            && zip(images, uploadedImages).allSatisfy { $0 === $1 }
+        if unchanged, uploadedPhotoURLs.count == images.count {
+            return uploadedPhotoURLs
+        }
+
+        var urls: [String] = []
+        var done: [UIImage] = []
+        for (index, image) in images.enumerated() {
+            finishProgressText = "Uploading photo \(index + 1) of \(images.count)…"
+            // Reuse a photo already uploaded at the same slot last time.
+            if index < uploadedImages.count, uploadedImages[index] === image, index < uploadedPhotoURLs.count {
+                urls.append(uploadedPhotoURLs[index])
+            } else {
+                urls.append(try await profileService.uploadPhoto(image: image, uid: uid, index: index))
+            }
+            done.append(image)
+            // Remember partial progress so a failure on photo 3 keeps 1 and 2.
+            uploadedImages = done
+            uploadedPhotoURLs = urls
+        }
+        return urls
     }
 }
 

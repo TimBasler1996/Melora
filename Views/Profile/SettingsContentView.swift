@@ -1,10 +1,14 @@
 import SwiftUI
 import AuthenticationServices
 import FirebaseAuth
+import UserNotifications
+import UIKit
 
 struct SettingsContentView: View {
 
     @EnvironmentObject private var broadcast: BroadcastManager
+    @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
+    @Environment(\.scenePhase) private var scenePhase
 
     @AppStorage("settings.notify.broadcastNearby") private var notifyBroadcast = true
     @AppStorage("settings.notify.friendBroadcasts") private var notifyFriends = true
@@ -19,13 +23,19 @@ struct SettingsContentView: View {
     @State private var showDeleteFinalConfirm = false
     @State private var isLinking = false
     @State private var accountMessage: String?
+    @State private var showSpotifyDisconnectConfirm = false
+    @State private var notificationsDenied = false
 
     var body: some View {
         List {
+            if notificationsDenied {
+                notificationsDeniedSection
+            }
+
             // MARK: - Broadcast Notifications
             Section {
                 Toggle(isOn: $notifyBroadcast) {
-                    Label("Nearby broadcasts", systemImage: "dot.radiowaves.left.and.right")
+                    Label("Someone goes live nearby", systemImage: "dot.radiowaves.left.and.right")
                 }
 
                 if notifyBroadcast {
@@ -53,19 +63,19 @@ struct SettingsContentView: View {
                                 .font(AppFonts.caption())
                                 .foregroundColor(AppColors.secondaryText)
                         }
-                        Text("You'll be notified when someone starts broadcasting within this distance.")
+                        Text("You’ll be notified when someone goes live within this distance.")
                             .font(.system(size: 12, weight: .regular, design: .rounded))
                             .foregroundColor(AppColors.secondaryText)
                     }
                 }
 
                 Toggle(isOn: $notifyFriends) {
-                    Label("Friend broadcasts", systemImage: "person.2")
+                    Label("People you follow go live", systemImage: "person.2")
                 }
             } header: {
-                Text("Broadcasts")
+                Text("Going live")
             } footer: {
-                Text("These settings control when you receive notifications. Your broadcast is always visible to everyone on the map.")
+                Text("These settings only control notifications. While you’re live, everyone nearby can see you in Discover.")
             }
 
             // MARK: - Other Notifications
@@ -83,6 +93,47 @@ struct SettingsContentView: View {
                 }
             } header: {
                 Text("Other Notifications")
+            }
+
+            // MARK: - Privacy
+            Section {
+                NavigationLink {
+                    HiddenAndBlockedView()
+                } label: {
+                    Label("Blocked and hidden", systemImage: "eye.slash")
+                }
+            } header: {
+                Text("Privacy")
+            } footer: {
+                Text("People you blocked and songs or people you hid from Discover.")
+            }
+
+            // MARK: - Spotify
+            Section {
+                if spotifyAuth.isAuthorized {
+                    HStack {
+                        Label("Spotify connected", systemImage: "music.note")
+                        Spacer()
+                        Button("Disconnect") {
+                            showSpotifyDisconnectConfirm = true
+                        }
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .buttonStyle(.bordered)
+                        .tint(AppColors.primary)
+                    }
+                } else {
+                    Button {
+                        spotifyAuth.ensureAuthorized()
+                    } label: {
+                        Label("Connect Spotify", systemImage: "music.note")
+                    }
+                }
+            } header: {
+                Text("Spotify")
+            } footer: {
+                Text(spotifyAuth.isAuthorized
+                     ? "Going live shares what you’re playing on Spotify."
+                     : "Connect Spotify to go live and share what you’re playing.")
             }
 
             // MARK: - Account
@@ -174,6 +225,29 @@ struct SettingsContentView: View {
             if newValue { requestNotificationPermission() }
             syncNotificationPreference("notifyMessages", newValue)
         }
+        .onChange(of: notifyFollowers) { _, newValue in
+            if newValue { requestNotificationPermission() }
+            syncNotificationPreference("notifyFollowers", newValue)
+        }
+        .confirmationDialog("Disconnect Spotify?", isPresented: $showSpotifyDisconnectConfirm, titleVisibility: .visible) {
+            Button("Disconnect", role: .destructive) {
+                Task {
+                    if broadcast.isBroadcasting {
+                        await broadcast.stopBroadcasting()
+                    }
+                    spotifyAuth.disconnect()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(broadcast.isBroadcasting
+                 ? "This ends your live session. You can reconnect any time."
+                 : "You won’t be able to go live until you reconnect.")
+        }
+        .task { await refreshNotificationStatus() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await refreshNotificationStatus() } }
+        }
         .confirmationDialog("Sign out?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 // Safe for Apple-linked accounts: signing in again restores everything.
@@ -183,6 +257,34 @@ struct SettingsContentView: View {
         } message: {
             Text("You’ll start with an empty profile until you sign in with Apple again.")
         }
+    }
+
+    // MARK: - Notifications permission
+
+    private var notificationsDeniedSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Notifications are off", systemImage: "bell.slash")
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                Text("Melora can’t tell you about likes, messages or people going live nearby until you allow notifications in iOS Settings.")
+                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                    .foregroundColor(AppColors.secondaryText)
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .buttonStyle(.bordered)
+                .tint(AppColors.primary)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func refreshNotificationStatus() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        notificationsDenied = settings.authorizationStatus == .denied
     }
 
     // MARK: - Account actions

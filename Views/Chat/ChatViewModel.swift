@@ -119,7 +119,7 @@ final class ChatViewModel: ObservableObject {
                 }
                 guard let snap, snap.exists, let data = snap.data() else {
                     self.isLoading = false
-                    self.errorMessage = "Conversation not found."
+                    self.errorMessage = "This chat no longer exists."
                     return
                 }
                 let convo = Conversation.fromFirestore(id: conversationId, data: data)
@@ -138,7 +138,7 @@ final class ChatViewModel: ObservableObject {
 
             if let err {
                 self.isLoading = false
-                self.errorMessage = err.localizedDescription
+                self.errorMessage = UserFacingError.message(for: err, fallback: "Check your connection and try again.")
                 print("❌ [Chat] listen failed:", err.localizedDescription)
                 return
             }

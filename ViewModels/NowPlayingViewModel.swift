@@ -78,7 +78,7 @@ final class NowPlayingViewModel: ObservableObject {
             repeatMode = .off
             progressTask?.cancel()
             progressTask = nil
-            errorMessage = "No active Spotify device."
+            errorMessage = "Open Spotify and play something first."
         } catch {
             // Transient failure (network blip, token refresh in flight): keep
             // the last known track so the UI and the live broadcast don't flap
@@ -111,7 +111,7 @@ final class NowPlayingViewModel: ObservableObject {
             await refreshNowPlaying()
             restartProgressTickerIfNeeded(durationMs: currentTrack?.durationMs)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, fallback: "Spotify didn’t respond. Please try again.")
         }
     }
 
@@ -121,7 +121,7 @@ final class NowPlayingViewModel: ObservableObject {
             await refreshNowPlaying()
             restartProgressTickerIfNeeded(durationMs: currentTrack?.durationMs)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, fallback: "Spotify didn’t respond. Please try again.")
         }
     }
 
@@ -131,7 +131,7 @@ final class NowPlayingViewModel: ObservableObject {
             await refreshNowPlaying()
             restartProgressTickerIfNeeded(durationMs: currentTrack?.durationMs)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, fallback: "Spotify didn’t respond. Please try again.")
         }
     }
 
@@ -161,7 +161,7 @@ final class NowPlayingViewModel: ObservableObject {
         do {
             try await SpotifyService.shared.seek(to: positionMs)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, fallback: "Spotify didn’t respond. Please try again.")
         }
     }
     func toggleShuffle() async {
@@ -171,10 +171,10 @@ final class NowPlayingViewModel: ObservableObject {
             try await SpotifyService.shared.setShuffle(enabled: isShuffling)
         } catch SpotifyAPIError.noActiveDevice {
             isShuffling = previous // device didn't accept it
-            errorMessage = "No active Spotify device."
+            errorMessage = "Open Spotify and play something first."
         } catch {
             isShuffling = previous
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, fallback: "Spotify didn’t respond. Please try again.")
         }
     }
 
@@ -191,10 +191,10 @@ final class NowPlayingViewModel: ObservableObject {
             try await SpotifyService.shared.setRepeat(mode: next.rawValue)
         } catch SpotifyAPIError.noActiveDevice {
             repeatMode = previous
-            errorMessage = "No active Spotify device."
+            errorMessage = "Open Spotify and play something first."
         } catch {
             repeatMode = previous
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, fallback: "Spotify didn’t respond. Please try again.")
         }
     }
 }

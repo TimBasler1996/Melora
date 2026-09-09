@@ -1,6 +1,7 @@
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
+import UserNotifications
 
 /// Owns the "I am broadcasting" state: mirrors the user's current Spotify
 /// track and location to Firestore while the toggle is on.
@@ -128,7 +129,7 @@ final class BroadcastManager: ObservableObject {
         errorMessage = nil
 
         guard let uid = Auth.auth().currentUser?.uid else {
-            errorMessage = "No Firebase user."
+            errorMessage = "You’re not signed in yet. Try again in a moment."
             isBroadcasting = false
             return
         }
@@ -142,7 +143,7 @@ final class BroadcastManager: ObservableObject {
         // 1) Flag the user as broadcasting.
         let startError = await setBroadcastingFlag(uid: uid, isBroadcasting: true)
         if let startError {
-            errorMessage = "Broadcast start failed: \(startError.localizedDescription)"
+            errorMessage = UserFacingError.message(for: startError, fallback: "Couldn’t go live. Please try again.")
             isBroadcasting = false
             broadcastStartedAt = nil
             UserDefaults.standard.removeObject(forKey: broadcastStartKey)
@@ -172,7 +173,7 @@ final class BroadcastManager: ObservableObject {
         UserDefaults.standard.removeObject(forKey: broadcastStartKey)
 
         guard let uid = Auth.auth().currentUser?.uid else {
-            errorMessage = "No Firebase user."
+            errorMessage = "You’re not signed in yet. Try again in a moment."
             return
         }
 
@@ -225,7 +226,7 @@ final class BroadcastManager: ObservableObject {
         await withCheckedContinuation { cont in
             userService.updateLastLocation(uid: uid, location: loc) { err in
                 if let err {
-                    self.errorMessage = "Location update failed: \(err.localizedDescription)"
+                    print("⚠️ [Broadcast] location update failed: \(err)")
                 }
                 cont.resume()
             }
@@ -248,7 +249,8 @@ final class BroadcastManager: ObservableObject {
                 idlePolls += 1
                 if idlePolls >= Self.maxIdlePolls {
                     await stopBroadcasting()
-                    errorMessage = "Broadcast ended: nothing has been playing for a while."
+                    errorMessage = "You went offline: nothing has been playing for a while."
+                    await notifyAutoEnded()
                     return
                 }
             }
@@ -257,13 +259,26 @@ final class BroadcastManager: ObservableObject {
         await syncTrack(uid: uid)
     }
 
+    /// The user is usually not looking at the app when the idle timeout
+    /// hits, so tell them with a local notification (only shows when allowed).
+    private func notifyAutoEnded() async {
+        let content = UNMutableNotificationContent()
+        content.title = "Your live session ended"
+        content.body = "Nothing has been playing for a while. Play something and go live again any time."
+        content.sound = .default
+        content.userInfo = ["type": "broadcastEnded"]
+        let request = UNNotificationRequest(identifier: "broadcast-auto-ended", content: content, trigger: nil)
+        try? await UNUserNotificationCenter.current().add(request)
+    }
+
     private func syncTrack(uid: String) async {
         guard isBroadcasting else { return }
 
         await withCheckedContinuation { cont in
             userService.updateCurrentTrack(uid: uid, track: currentTrack) { err in
                 if let err {
-                    self.errorMessage = "Track update failed: \(err.localizedDescription)"
+                    print("⚠️ [Broadcast] track update failed: \(err)")
+                    self.errorMessage = "Couldn’t update your track. Retrying…"
                 }
                 cont.resume()
             }
@@ -286,7 +301,8 @@ final class BroadcastManager: ObservableObject {
     /// mirrored track and the Discover document.
     private func clearServerState(uid: String) async {
         if let err = await setBroadcastingFlag(uid: uid, isBroadcasting: false) {
-            errorMessage = "Broadcast stop failed: \(err.localizedDescription)"
+            print("⚠️ [Broadcast] stop failed: \(err)")
+            errorMessage = "Couldn’t end your live session cleanly. It will expire on its own."
         }
 
         await withCheckedContinuation { cont in
@@ -305,7 +321,7 @@ final class BroadcastManager: ObservableObject {
                 "updatedAt": FieldValue.serverTimestamp()
             ], merge: true)
         } catch {
-            errorMessage = "Couldn’t end your broadcast cleanly. It will expire on its own."
+            errorMessage = "Couldn’t end your live session cleanly. It will expire on its own."
         }
     }
 
@@ -345,7 +361,8 @@ final class BroadcastManager: ObservableObject {
                 .setData(payload, merge: true)
             hasWrittenBroadcastDoc = true
         } catch {
-            errorMessage = "Broadcast update failed: \(error.localizedDescription)"
+            print("⚠️ [Broadcast] update failed: \(error)")
+            errorMessage = "Couldn’t update your live session. Retrying…"
         }
     }
 }

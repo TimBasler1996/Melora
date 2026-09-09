@@ -4,7 +4,16 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 14
+Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 34
+
+## Your to-dos (need the project owner)
+
+- [ ] **OWN-1** Revoke and re-create the Apple push key AuthKey_6VS39MY9B2 and rotate the Spotify client secret — Both were committed to git history before being untracked.
+- [ ] **OWN-2** Enable Sign in with Apple for the app ID in the Apple developer portal and add Apple as a provider in the Firebase console — The entitlement is in the repo; the capability and provider are console settings.
+- [ ] **OWN-3** Deploy the backend: cd functions && npm install, then firebase deploy --only firestore,storage,functions — Rules, indexes and every Cloud Function (push, search fields, sweeper, deletion) only exist in the repo until deployed.
+- [ ] **OWN-4** Build once in Xcode and run onboarding, going live, and a like with a message between two devices — The Swift changes were reviewed but not compiled; this session has no Xcode.
+- [ ] **OWN-5** Delete the seven fully merged claude/* remote branches — chat-reply-reactions-seen, cool-darwin, discover-radius-slider, fix-follow-messaging-issues, melora-design-system, melora-profile-cleanup, unified-profile-follow are ancestors of Dev3.
+- [ ] **OWN-6** Optionally purge the .p8 key and functions/.env from git history with a force push — They are untracked now but still in history; say the word and it can be done.
 
 ## Decisions taken
 
@@ -56,11 +65,11 @@ _Discover is the reason the app exists and today it is empty for almost every ne
 
 ### UX-05 · Let users undo 'Not interested' and see what they hid
 
-**P1 · next** · effort medium (2–4 days) · **Partly done**
+**P1 · next** · effort medium (2–4 days) · **Done**
 
 - **Problem:** Muting a song hides it for every future broadcaster forever, muting a person is permanent, and neither is visible or reversible anywhere.
 - **Fix:** Undo toast right after muting; 'Hidden songs and people' list in Settings; consider making song mutes session-only.
-- **Progress:** Dialog copy now says hidden songs/people can be restored in Settings; the Settings list itself is still open.
+- **Progress:** Hidden people and songs live in a per-account store with names; every hide shows a 5-second Undo toast; Settings → Blocked and hidden lists them with Show again.
 
 ### UX-06 · Bring the Discover card back to the guideline
 
@@ -106,17 +115,19 @@ _Anonymous auth, exact locations and no report path are launch blockers for a da
 
 ### UX-11 · Add Block and Report to other people's profiles
 
-**P1 · next** · effort medium (2–4 days)
+**P1 · next** · effort medium (2–4 days) · **Done**
 
 - **Problem:** A profile reached from Discover, a like or a follower list offers only Follow. Reporting does not exist anywhere.
 - **Fix:** Overflow menu with Block and Report; reports land in a 'reports' collection and trigger an email to the team.
+- **Progress:** Profile toolbar menu: Report (reason list + optional details, written to reports/, logged by onReportCreated) and Block (confirms, closes the chat, dismisses).
 
 ### UX-12 · Blocked people list with unblock
 
-**P1 · next** · effort medium (2–4 days)
+**P1 · next** · effort medium (2–4 days) · **Done**
 
 - **Problem:** Block is a one-way door: no list, no unblock, and the button sits in a destructive-styled dialog that is easy to fat-finger.
 - **Fix:** Settings → 'Blocked people' with unblock, plus an undo toast right after blocking.
+- **Progress:** Settings → Blocked and hidden: blocked people with avatar and Unblock (rolls back on failure), plus hidden people and songs.
 
 ### UX-13 · Blocking from Discover should also close the chat and clear the badge
 
@@ -167,17 +178,19 @@ _Both sides of an interaction need to see the same truth at every step._
 
 ### UX-19 · Make the Likes inbox reachable from Profile and Chats
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** The inbox is only a heart icon on the Now tab. People look for 'who liked me' in Profile or Chats; the Likes stat on the profile is not tappable.
 - **Fix:** Tapping the Likes stat opens the inbox; add an entry above Message Requests in Chats.
+- **Progress:** Likes inbox opens from the Likes stat on your own profile and from a "Likes and followers" card at the top of Chats (also in the empty state).
 
 ### UX-20 · One vocabulary for the whole loop
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** 'Ignore' in the likes inbox vs 'Decline' in chat; pushes say 'accepted your interaction'; Discover says 'broadcasts' while Now says 'go live'.
 - **Fix:** Settle on: like, message request, accept, decline, live. Apply to labels, empty states and push copy.
+- **Progress:** "Ignore" → "Decline" everywhere; accepted pushes say "accepted your like / message request"; Settings and Discover speak of going live; stat is "Live time".
 
 ### UX-21 · Show what needs action in the likes cluster rows
 
@@ -199,24 +212,27 @@ _The first ninety seconds decide whether the profile gets finished._
 
 ### UX-23 · Add a welcome screen and move the location prompt to first go-live
 
-**P1 · next** · effort medium (2–4 days)
+**P1 · next** · effort medium (2–4 days) · **Done**
 
 - **Problem:** The app opens straight into a form, and the system location prompt fires on the loading screen before the user has seen anything.
 - **Fix:** One screen: broadcast what you play, meet people through music. Ask for location the first time the user toggles live, with a sentence explaining why.
+- **Progress:** Welcome screen (what Melora is, three rows, "Get started") before step 1; the location prompt moved from cold launch to Discover and the first go-live toggle.
 
 ### UX-24 · Make the Spotify step honest and cancel-aware
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** Copy promises 'matches' and 'music compatibility' the app does not have and claims only basic profile access while requesting playback control. Cancelling the login sheet leaves 'Connecting…' for ninety seconds.
 - **Fix:** Rewrite the three feature rows to what the app does; detect the cancelled web session and return to the buttons immediately.
+- **Progress:** Spotify step copy now describes going live, playback control and what is read; cancelling the Spotify sheet returns to the buttons immediately (lastLoginFailure).
 
 ### UX-25 · Don't re-upload photos on every finish retry; show progress
 
-**P1 · next** · effort medium (2–4 days)
+**P1 · next** · effort medium (2–4 days) · **Done**
 
 - **Problem:** Finishing uploads all photos each attempt with only 'Finishing…' as feedback; a failure at the last step redoes everything.
 - **Fix:** Upload photos once as they are picked (or cache uploaded URLs), and show a per-step progress line while finishing.
+- **Progress:** Finish uploads photos one by one with "Uploading photo 2 of 4…", keeps URLs of photos already uploaded, and reuses them on retry.
 
 ### UX-26 · Explain that the birthday is permanent, and label optional fields
 
@@ -239,17 +255,19 @@ _Going live is the first action of the loop; it must feel safe and understood._
 
 ### UX-28 · Explain why the live toggle is disabled and warn when location is off while live
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** The toggle is greyed out with no reason when nothing is playing. With location denied the user goes live but is invisible to nearby people.
 - **Fix:** Caption 'Play something on Spotify to go live'; when live without location show 'Enable location so people nearby can find you'.
+- **Progress:** Toggle caption explains "Connect Spotify to go live" / "Play something on Spotify to go live"; while live with location denied a warning with Open Settings appears.
 
 ### UX-29 · Replace raw error strings under the toggle
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** 'Broadcast update failed: …' and Firestore messages appear as body text.
 - **Fix:** Map to 'Couldn't update your broadcast. Retrying…' and keep the detail in logs.
+- **Progress:** Broadcast errors are now human ("Couldn’t update your live session. Retrying…"); technical detail goes to the console.
 
 ### UX-30 · Tell the user when a broadcast auto-ends
 
@@ -286,25 +304,27 @@ _Editing must never lose work or lock the user out._
 
 ### UX-34 · Show success after saving without the loading flash
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** The 'Changes saved' pill lives in edit mode, which closes on save; the user sees 'Loading profile…' then stale stats.
 - **Fix:** Toast on the preview, update the profile in place, refresh stats.
+- **Progress:** "Profile saved" toast over the preview for 2.5 s; reload after save no longer blanks the screen.
 
 ### UX-35 · Explain photo rules in the editor and fix re-picking
 
-**P1 · next** · effort small (≤1 day) · **Partly done**
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** Min 2 / max 5 only surfaces as an error after upload; removing a photo then picking the same one again does nothing; Discard asks in one place and not the other.
 - **Fix:** Subtitle '2–5 photos · first is your profile picture', a live counter, disable X on the last two, clear the picker on remove, confirm Discard consistently.
-- **Progress:** Discard now confirms; photo-rule hint shows before saving. Re-pick and counter still open.
+- **Progress:** Editor shows "3 of 5 · tap to add or replace"; removing a photo also clears the picker selection so the same photo can be picked again.
 
 ### UX-36 · Friendly load errors with Retry on own and other profiles
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** 'Profile not found.' or 'No Firebase user.' appear as body text with no way forward.
 - **Fix:** Human copy plus a Retry button; hide the mode picker while nothing is loaded.
+- **Progress:** Other profiles: friendly "Check your connection" copy with Retry; follow failures show an alert instead of silently reverting.
 
 ### UX-37 · Read-only birthday row in the editor
 
@@ -322,10 +342,11 @@ _Editing must never lose work or lock the user out._
 
 ### UX-39 · Make the stats strip readable and tappable where it should be
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Partly done**
 
 - **Problem:** '0min / Broadcast' is cryptic; Followers is tappable with no affordance; Likes for others starts at zero until the counter fills.
 - **Fix:** 'Time on air 2 h 15 m', chevron on Followers, show '—' while loading or when unknown.
+- **Progress:** Stats show — instead of 0 while loading. Tappable followers/likes still open.
 
 ### UX-40 · Make 'This is how others see you' true
 
@@ -340,24 +361,27 @@ _Inboxes must show what needs action and never lie about state._
 
 ### UX-41 · Chat delete failure as a toast, not the full-screen error
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** A failed delete shows 'Couldn't load chats' with a Retry that re-subscribes.
 - **Fix:** Transient alert like the chat screen already uses.
+- **Progress:** Delete failure is a 3-second toast at the bottom of Chats; the list stays.
 
 ### UX-42 · Followers tab keeps followers after they are seen
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** The tab only lists followers newer than last-seen; on reopen it says 'No New Followers' even with fifty followers.
 - **Fix:** List all recent followers with a 'New' marker; mark seen when the inbox is dismissed, not when a detail is pushed.
+- **Progress:** Followers tab keeps everyone: "New" since the last visit, then "Earlier".
 
 ### UX-43 · Follow-back must not report success on failure
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** The follow-back row flips to 'Following' even when the write failed; profile follow failures revert silently.
 - **Fix:** Optimistic with rollback and a 'Couldn't follow' toast, like Discover already does.
+- **Progress:** Follow back is optimistic with rollback and an alert on failure; button disabled while the write is in flight.
 
 ### UX-44 · Message Requests list must reflect accept and decline immediately
 
@@ -393,24 +417,27 @@ _Every control must do what it says; expected controls must exist._
 
 ### UX-48 · Remove or implement the 'New followers' toggle
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** The toggle is connected to nothing.
 - **Fix:** Either remove it or add an onFollowCreated push that honours it.
+- **Progress:** New followers toggle now syncs notifyFollowers to the user doc; onFollowCreated sends a push (tap opens the follower’s profile).
 
 ### UX-49 · Spotify connection row in Settings
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** Connect, disconnect and refresh are only reachable through the Now tab's disconnected state.
 - **Fix:** Account section row showing connection state with Connect / Disconnect.
+- **Progress:** Settings → Spotify: Connected/Disconnect (ends a live session first) or Connect Spotify.
 
 ### UX-50 · Reflect iOS notification permission in the toggles
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** Toggles stay on when notifications are denied at system level and nothing arrives.
 - **Fix:** Inline 'Notifications are off in iOS Settings — Enable' row when permission is denied.
+- **Progress:** Settings shows a "Notifications are off" card with Open Settings when iOS permission is denied (refreshes when the app returns).
 
 ## Copy & polish
 
@@ -418,10 +445,11 @@ _Calm, premium tone means one vocabulary and no debug text._
 
 ### UX-51 · Map raw technical errors to human copy everywhere
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** 'Not authenticated.', 'User document not found.' and verbatim Firestore or Storage messages reach the screen.
 - **Fix:** One error-to-copy mapping used by all screens; technical detail stays in logs.
+- **Progress:** UserFacingError maps offline, Firestore, Storage, Auth and Spotify errors; used by onboarding, Now, broadcasts, chats, inboxes, profile load/save and Discover. "Not authenticated" copy replaced.
 
 ### UX-52 · Calm system copy: no emoji toasts, lowercase status pills
 

@@ -92,6 +92,8 @@ struct ProfilePreviewData: Equatable {
 struct SharedProfilePreviewView: View {
 
     let data: ProfilePreviewData
+    /// Own profile: tapping the Likes stat opens the likes inbox.
+    var onLikesTap: (() -> Void)? = nil
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -149,14 +151,27 @@ struct SharedProfilePreviewView: View {
     private var statsStrip: some View {
         HStack(spacing: 0) {
             followersStat
-            statItem(value: formatBroadcastTime(data.broadcastMinutes), label: "Broadcast")
-            statItem(value: data.likesReceivedCount.map(String.init) ?? "0", label: "Likes")
+            statItem(value: formatBroadcastTime(data.broadcastMinutes), label: "Live time")
+            likesStat
+        }
+    }
+
+    @ViewBuilder
+    private var likesStat: some View {
+        let value = data.likesReceivedCount.map(String.init) ?? "—"
+        if let onLikesTap {
+            Button(action: onLikesTap) {
+                statItem(value: value, label: "Likes")
+            }
+            .buttonStyle(.plain)
+        } else {
+            statItem(value: value, label: "Likes")
         }
     }
 
     @ViewBuilder
     private var followersStat: some View {
-        let value = data.followerCount.map(String.init) ?? "0"
+        let value = data.followerCount.map(String.init) ?? "—"
         if let uid = data.userId {
             NavigationLink {
                 FollowersListView(userId: uid)

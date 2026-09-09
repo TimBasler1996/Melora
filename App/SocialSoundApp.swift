@@ -49,8 +49,8 @@ struct SocialSoundApp: App {
             .animation(.easeInOut(duration: 0.25), value: onboardingState.isLoading)
             .animation(.easeInOut(duration: 0.25), value: onboardingState.needsOnboarding)
             .onAppear {
-                // Session-independent services.
-                locationService.requestAuthorizationIfNeeded()
+                // Session-independent services. Location is asked for in
+                // context (Discover, first go-live), not at cold launch.
                 broadcast.attachLocationService(locationService)
                 notificationService.start(locationService: locationService)
 

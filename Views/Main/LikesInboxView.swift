@@ -8,6 +8,8 @@ struct LikesInboxView: View {
     }
 
     let user: AppUser
+    /// Presented modally (Now tab) → X button; pushed (Chats, Profile) → none.
+    var showsCloseButton: Bool = true
     @StateObject private var vm = LikesInboxViewModel()
     @StateObject private var followersVM = FollowersInboxViewModel()
     @State private var selectedTab: InboxTab = .likes
@@ -45,6 +47,7 @@ struct LikesInboxView: View {
             }
 
             ToolbarItem(placement: .topBarLeading) {
+                if showsCloseButton {
                 Button {
                     dismiss()
                 } label: {
@@ -56,6 +59,7 @@ struct LikesInboxView: View {
                             Circle()
                                 .fill(AppColors.surfaceElevated)
                         )
+                }
                 }
             }
         }
@@ -139,7 +143,7 @@ struct LikesInboxView: View {
                         .font(AppFonts.title())
                         .foregroundColor(.white)
 
-                    Text("When someone likes a track you\nbroadcast, it will show up here")
+                    Text("When someone likes a track you\nplayed live, it will show up here")
                         .font(AppFonts.body())
                         .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
@@ -238,7 +242,7 @@ struct LikesInboxView: View {
                 Spacer()
             }
             .padding(.horizontal, 20)
-        } else if followersVM.newFollowers.isEmpty {
+        } else if followersVM.followers.isEmpty {
             VStack(spacing: 20) {
                 Spacer()
 
@@ -247,11 +251,11 @@ struct LikesInboxView: View {
                     .foregroundColor(.white.opacity(0.4))
 
                 VStack(spacing: 8) {
-                    Text("No New Followers")
+                    Text("No Followers Yet")
                         .font(AppFonts.title())
                         .foregroundColor(.white)
 
-                    Text("When someone new follows you,\nthey'll appear here")
+                    Text("When someone follows you,\nthey'll appear here")
                         .font(AppFonts.body())
                         .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
@@ -263,9 +267,9 @@ struct LikesInboxView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    if !followersVM.todayFollowers.isEmpty {
-                        sectionHeader("Today")
-                        ForEach(followersVM.todayFollowers) { follower in
+                    if !followersVM.newFollowers.isEmpty {
+                        sectionHeader("New")
+                        ForEach(followersVM.newFollowers) { follower in
                             FollowerRowView(follower: follower)
                         }
                     }
@@ -291,6 +295,8 @@ private struct FollowerRowView: View {
     let follower: FollowerEntry
     @State private var isFollowingBack: Bool = false
     @State private var checkedFollow: Bool = false
+    @State private var isUpdatingFollow: Bool = false
+    @State private var followError: String?
 
     var body: some View {
         HStack(spacing: 14) {
@@ -334,15 +340,7 @@ private struct FollowerRowView: View {
 
             if checkedFollow {
                 Button {
-                    Task {
-                        if isFollowingBack {
-                            try? await FollowApiService.shared.unfollow(userId: follower.userId)
-                            isFollowingBack = false
-                        } else {
-                            try? await FollowApiService.shared.follow(userId: follower.userId)
-                            isFollowingBack = true
-                        }
-                    }
+                    Task { await toggleFollowBack() }
                 } label: {
                     Text(isFollowingBack ? "Following" : "Follow back")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
@@ -353,6 +351,8 @@ private struct FollowerRowView: View {
                             Capsule().fill(isFollowingBack ? AppColors.surfaceElevated : AppColors.primary)
                         )
                 }
+                .disabled(isUpdatingFollow)
+                .opacity(isUpdatingFollow ? 0.6 : 1)
             }
         }
         .padding(14)
@@ -360,6 +360,35 @@ private struct FollowerRowView: View {
         .task {
             isFollowingBack = (try? await FollowApiService.shared.isFollowing(userId: follower.userId)) ?? false
             checkedFollow = true
+        }
+        .alert(
+            "Couldn’t do that",
+            isPresented: Binding(get: { followError != nil }, set: { if !$0 { followError = nil } })
+        ) {
+            Button("OK", role: .cancel) { followError = nil }
+        } message: {
+            Text(followError ?? "")
+        }
+    }
+
+    /// Optimistic toggle; rolls back and explains if the write fails.
+    private func toggleFollowBack() async {
+        let wasFollowing = isFollowingBack
+        isFollowingBack.toggle()
+        isUpdatingFollow = true
+        defer { isUpdatingFollow = false }
+        do {
+            if wasFollowing {
+                try await FollowApiService.shared.unfollow(userId: follower.userId)
+            } else {
+                try await FollowApiService.shared.follow(userId: follower.userId)
+            }
+        } catch {
+            isFollowingBack = wasFollowing
+            followError = UserFacingError.message(
+                for: error,
+                fallback: wasFollowing ? "Couldn’t unfollow. Please try again." : "Couldn’t follow back. Please try again."
+            )
         }
     }
 

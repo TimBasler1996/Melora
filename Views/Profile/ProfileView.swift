@@ -28,6 +28,7 @@ struct ProfileView: View {
 
     @State private var mode: Mode = .preview
     @State private var showSettings = false
+    @State private var showLikesInbox = false
     @State private var photoPickerItems: [PhotosPickerItem?] = Array(repeating: nil, count: ProfileViewModel.photoSlotCount)
     @State private var avatarPickerItem: PhotosPickerItem?
     @State private var showDiscardAlert = false
@@ -80,6 +81,24 @@ struct ProfileView: View {
             .melScreenBackground()
         }
         .sheet(isPresented: $showSettings) { settingsSheet }
+        .fullScreenCover(isPresented: $showLikesInbox) {
+            if let me = currentUserStore.user {
+                NavigationStack {
+                    LikesInboxView(user: me)
+                }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if viewModel.saveSucceeded {
+                savedToast
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .task {
+                        try? await Task.sleep(nanoseconds: 2_500_000_000)
+                        viewModel.saveSucceeded = false
+                    }
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.saveSucceeded)
         .alert("Discard changes?", isPresented: $showDiscardAlert) {
             Button("Discard", role: .destructive) {
                 viewModel.discardDraft()
@@ -154,7 +173,10 @@ struct ProfileView: View {
                     likesReceivedCount: likesReceivedCount,
                     userId: profile.uid
                 )
-                SharedProfilePreviewView(data: previewData)
+                SharedProfilePreviewView(
+                    data: previewData,
+                    onLikesTap: currentUserStore.user == nil ? nil : { showLikesInbox = true }
+                )
             } else {
                 Text("No profile data available")
                     .font(AppFonts.body())
@@ -233,21 +255,6 @@ struct ProfileView: View {
                 }
                 .padding(.top, 6)
 
-                if viewModel.saveSucceeded {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Changes saved successfully")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                    }
-                    .foregroundColor(AppColors.live)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 16)
-                    .background(
-                        Capsule()
-                            .fill(AppColors.live.opacity(0.15))
-                    )
-                }
             }
         } else {
             VStack(spacing: 16) {
@@ -380,7 +387,7 @@ struct ProfileView: View {
                 
                 Spacer()
                 
-                Text("Tap to add or replace")
+                Text("\(draftPhotoCount(draft)) of \(ProfileViewModel.maxPhotoCount) · tap to add or replace")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(AppColors.mutedText)
             }
@@ -456,6 +463,9 @@ struct ProfileView: View {
                     Button {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         viewModel.removeDraftPhoto(at: index)
+                        // Forget the picker selection too, so picking the same
+                        // photo again counts as a new pick.
+                        if photoPickerItems.indices.contains(index) { photoPickerItems[index] = nil }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 24, weight: .semibold))
@@ -488,6 +498,13 @@ struct ProfileView: View {
                     }
                 }
             }
+    }
+
+    /// Photos in the draft: a kept remote URL or a newly picked image per slot.
+    private func draftPhotoCount(_ draft: ProfileViewModel.ProfileDraft) -> Int {
+        zip(draft.photoURLs, draft.selectedImages).filter { url, image in
+            image != nil || !url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }.count
     }
 
     private func editPhotoPlaceholder(index: Int) -> some View {
@@ -727,6 +744,24 @@ struct ProfileView: View {
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 32)
+    }
+
+    private var savedToast: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 16, weight: .semibold))
+            Text("Profile saved")
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+        }
+        .foregroundColor(.white)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 18)
+        .background(
+            Capsule()
+                .fill(AppColors.live)
+                .shadow(color: .black.opacity(0.3), radius: 10, y: 4)
+        )
+        .padding(.bottom, 16)
     }
 
     // MARK: Settings sheet

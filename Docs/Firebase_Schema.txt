@@ -17,7 +17,7 @@ Profile:
 - `birthday`: Timestamp
 - `lookingFor`: String (optional)
 - `displayName`: String — "First Last", kept in sync by `saveBasics`
-- `firstNameLower`, `displayNameLower`: String — lowercase copies for prefix
+- `firstNameLower`, `lastNameLower`, `displayNameLower`: String — lowercase copies for prefix
   search. Written by the client and re-derived by the `onUserWritten` Cloud
   Function so older profiles stay searchable.
 - `photoURLs`: [String] — 2…5 real URLs, index 0 is the profile photo
@@ -38,8 +38,8 @@ Presence:
 - `deletionRequestedAt`: Timestamp — set by the app when the user deletes
   their profile; the `onUserWritten` function then removes the user doc,
   photos, follows, blocks, broadcast, conversations and the auth user
-- `notifyLikes`, `notifyMessages`: Bool — mirrored from Settings; missing
-  means enabled. Cloud Functions skip the push when false.
+- `notifyLikes`, `notifyMessages`, `notifyFollowers`: Bool — mirrored from
+  Settings; missing means enabled. Cloud Functions skip the push when false.
 
 ### users/{uid}/likesReceived/{likeId}
 A like (optionally with a message) this user received. Created by the liker,
@@ -98,6 +98,16 @@ messages subcollection.
 
 ## follows/{followerId_followingId}
 - `followerId`, `followingId`: String
+- `createdAt`: Timestamp
+The `onFollowCreated` function pushes "X started following you" to the
+followed user (type `newFollower`, `userId` = follower).
+
+## reports/{reportId}
+Write-only for users (rules deny reads); `onReportCreated` logs each one to
+Cloud Logging as `report.received` until there is a review tool.
+- `reporterId`, `reportedUserId`: String
+- `reason`: spam | inappropriate_photos | harassment | fake_profile | underage | other
+- `details`: String (≤ 500 chars, may be empty)
 - `createdAt`: Timestamp
 
 ## blocks/{blockerId_blockedUserId}

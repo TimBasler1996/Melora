@@ -15,13 +15,19 @@ struct DiscoverView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
+            ZStack(alignment: .bottom) {
                 VStack(spacing: 0) {
                     modePickerBar
                     locationBar
                     content
                 }
+
+                if let undo = viewModel.undo {
+                    undoToast(undo)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
+            .animation(.easeInOut(duration: 0.2), value: viewModel.undo)
             .melScreenBackground()
             .navigationTitle("Discover")
             .navigationBarTitleDisplayMode(.large)
@@ -361,6 +367,31 @@ struct DiscoverView: View {
         ))
     }
 
+    // MARK: - Undo toast
+
+    private func undoToast(_ undo: DiscoverViewModel.UndoAction) -> some View {
+        HStack(spacing: 12) {
+            Text(undo.message)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundColor(.white)
+                .lineLimit(1)
+            Spacer()
+            Button("Undo") {
+                viewModel.performUndo()
+            }
+            .font(.system(size: 14, weight: .bold, design: .rounded))
+            .foregroundColor(AppColors.live)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            Capsule().fill(AppColors.backgroundElevated)
+                .shadow(color: .black.opacity(0.35), radius: 12, x: 0, y: 6)
+        )
+        .padding(.horizontal, AppLayout.screenPadding)
+        .padding(.bottom, 12)
+    }
+
     // MARK: - Empty states
 
     /// Shown at the top of the feed when nobody is live within the radius.
@@ -434,7 +465,7 @@ struct DiscoverView: View {
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundColor(.white)
 
-            Text("Follow people to see their broadcasts here.")
+            Text("Follow people to see when they go live here.")
                 .font(AppFonts.footnote())
                 .foregroundColor(.white.opacity(0.7))
                 .multilineTextAlignment(.center)

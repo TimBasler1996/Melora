@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import FirebaseAuth
 import FirebaseFirestore
 import CoreLocation
@@ -77,9 +78,36 @@ final class DiscoverViewModel: ObservableObject {
     private var allBroadcasts: [DiscoverBroadcast] = []
     private var cachedUsers: [String: DiscoverUser] = [:]
 
-    private var mutedUserIds: Set<String> = []
-    private var mutedTrackIds: Set<String> = []
+    private let hidden = HiddenContentStore.shared
+    private var mutedUserIds: Set<String> { hidden.mutedUserIds }
+    private var mutedTrackIds: Set<String> { hidden.mutedTrackIds }
     private var blockedUserIds: Set<String> = []
+
+    /// A just-performed hide/block the user can take back for a few seconds.
+    struct UndoAction: Identifiable, Equatable {
+        let id = UUID()
+        let message: String
+        let perform: () -> Void
+        static func == (lhs: UndoAction, rhs: UndoAction) -> Bool { lhs.id == rhs.id }
+    }
+    @Published var undo: UndoAction?
+    private var undoTimeout: Task<Void, Never>?
+    /// The action whose server write is waiting for the undo window.
+    private var pendingUndo: PendingUndo?
+    /// Blocks applied locally but not yet written (inside the undo window).
+    private var pendingBlockIds: Set<String> = []
+    private var hiddenObserver: AnyCancellable?
+
+    private final class PendingUndo {
+        let action: UndoAction
+        let commit: (() async -> Void)?
+        var undone = false
+        init(action: UndoAction, commit: (() async -> Void)?) {
+            self.action = action
+            self.commit = commit
+        }
+    }
+    private static let undoWindow: UInt64 = 5 * 1_000_000_000
     private var blockListener: ListenerRegistration?
     private var currentLocation: CLLocation?
 
@@ -116,14 +144,17 @@ final class DiscoverViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        loadMutedPreferencesIfNeeded()
+        hidden.loadIfNeeded()
+        // "Show again" in Settings must reach the feed without a new snapshot.
+        hiddenObserver = hidden.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.updateVisibleBroadcasts() }
 
         // Blocked users never appear in the feed.
         blockListener = BlockService.shared.listenToBlockedIds { [weak self] ids in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.blockedUserIds = ids
-                self.allBroadcasts.removeAll { ids.contains($0.user.id) }
+                self.blockedUserIds = ids.union(self.pendingBlockIds)
                 self.updateVisibleBroadcasts()
             }
         }
@@ -145,7 +176,7 @@ final class DiscoverViewModel: ObservableObject {
                 self.isLoading = false
                 switch result {
                 case .failure(let error):
-                    self.errorMessage = error.localizedDescription
+                    self.errorMessage = UserFacingError.message(for: error, fallback: "Couldn’t load Discover. Check your connection and try again.")
                     self.allBroadcasts = []
                     self.visibleBroadcasts = []
                     self.recentBroadcasts = []
@@ -166,7 +197,9 @@ final class DiscoverViewModel: ObservableObject {
         followListener = nil
         blockListener?.remove()
         blockListener = nil
+        hiddenObserver = nil
         isListening = false
+        flushPendingUndo()
     }
 
     /// Tear down and re-attach the listeners (Retry button).
@@ -220,32 +253,104 @@ final class DiscoverViewModel: ObservableObject {
     }
 
     func muteUser(for broadcast: DiscoverBroadcast) {
-        mutedUserIds.insert(broadcast.user.id)
-        persistMutedPreferences()
-        removeBroadcast(broadcast)
+        hidden.hideUser(id: broadcast.user.id, name: broadcast.user.displayName)
+        dismissTarget = nil
+        updateVisibleBroadcasts()
+        offerUndo("\(broadcast.user.displayName) hidden") { [weak self] in
+            self?.hidden.unhideUser(id: broadcast.user.id)
+            self?.updateVisibleBroadcasts()
+        }
     }
 
     func muteTrack(for broadcast: DiscoverBroadcast) {
-        mutedTrackIds.insert(broadcast.track.id)
-        persistMutedPreferences()
-        removeBroadcast(broadcast)
+        hidden.hideTrack(id: broadcast.track.id, title: broadcast.track.title, artist: broadcast.track.artist)
+        dismissTarget = nil
+        updateVisibleBroadcasts()
+        offerUndo("“\(broadcast.track.title)” hidden") { [weak self] in
+            self?.hidden.unhideTrack(id: broadcast.track.id)
+            self?.updateVisibleBroadcasts()
+        }
     }
 
-    /// Blocks the broadcaster: hidden from Discover, Chats and search from now on.
+    /// Blocks the broadcaster: hidden from Discover, Chats and search from
+    /// now on. The server write waits for the undo window so a slip of the
+    /// thumb costs nothing.
     func blockUser(for broadcast: DiscoverBroadcast) {
-        blockedUserIds.insert(broadcast.user.id)
-        removeBroadcast(broadcast)
-        Task {
+        let userId = broadcast.user.id
+        let name = broadcast.user.displayName
+
+        blockedUserIds.insert(userId)
+        pendingBlockIds.insert(userId)
+        dismissTarget = nil
+        updateVisibleBroadcasts()
+
+        // The commit must not depend on `self`: it has to land even if this
+        // view model goes away while the toast is up.
+        let chatService = self.chatService
+        let currentUserId = service.currentUserId() ?? ""
+
+        offerUndo("\(name) blocked") { [weak self] in
+            self?.pendingBlockIds.remove(userId)
+            self?.blockedUserIds.remove(userId)
+            self?.updateVisibleBroadcasts()
+        } commit: { [weak self] in
             do {
-                try await BlockService.shared.blockUser(userId: broadcast.user.id)
+                try await BlockService.shared.blockUser(userId: userId)
                 // Any chat with them is closed too, so no unread badge lingers
                 // on a conversation the user can no longer see.
-                let convoId = await chatService.conversationId(for: broadcast.user.id, and: service.currentUserId() ?? "")
+                let convoId = chatService.conversationId(for: userId, and: currentUserId)
                 try? await chatService.deleteConversation(conversationId: convoId)
+                self?.pendingBlockIds.remove(userId)
             } catch {
-                actionError = "Couldn’t block \(broadcast.user.displayName). Please try again."
+                self?.pendingBlockIds.remove(userId)
+                self?.blockedUserIds.remove(userId)
+                self?.updateVisibleBroadcasts()
+                self?.actionError = "Couldn’t block \(name). Please try again."
             }
         }
+    }
+
+    // MARK: - Undo
+
+    /// Shows an undo toast. `commit` (if any) runs once the window passes
+    /// without an undo; the local effect has already been applied. A second
+    /// action inside the window commits the first one right away.
+    private func offerUndo(_ message: String, undo: @escaping () -> Void, commit: (() async -> Void)? = nil) {
+        flushPendingUndo()
+
+        let action = UndoAction(message: message, perform: undo)
+        let pending = PendingUndo(action: action, commit: commit)
+        pendingUndo = pending
+        self.undo = action
+
+        undoTimeout = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: Self.undoWindow)
+            guard !Task.isCancelled, !pending.undone else { return }
+            if let self, self.undo == action { self.undo = nil }
+            if let self, self.pendingUndo === pending { self.pendingUndo = nil }
+            await pending.commit?()
+        }
+    }
+
+    func performUndo() {
+        guard let pending = pendingUndo, !pending.undone else { return }
+        pending.undone = true
+        undoTimeout?.cancel()
+        undoTimeout = nil
+        pendingUndo = nil
+        undo = nil
+        pending.action.perform()
+    }
+
+    /// Ends the current undo window early and runs its commit (if not undone).
+    private func flushPendingUndo() {
+        undoTimeout?.cancel()
+        undoTimeout = nil
+        undo = nil
+        guard let pending = pendingUndo else { return }
+        pendingUndo = nil
+        guard !pending.undone, let commit = pending.commit else { return }
+        Task { await commit() }
     }
 
     // MARK: - Like / message
@@ -324,14 +429,14 @@ final class DiscoverViewModel: ObservableObject {
         if error is LikeApiService.LikeError || error is ChatApiService.ChatError {
             actionError = error.localizedDescription
         } else {
-            actionError = fallback
+            actionError = UserFacingError.message(for: error, fallback: fallback)
         }
     }
 
     /// The conversation id for a broadcaster, so the card can offer "Open chat".
     func conversationId(with broadcast: DiscoverBroadcast) async -> String? {
         guard let me = service.currentUserId() else { return nil }
-        return await chatService.conversationId(for: me, and: broadcast.user.id)
+        return chatService.conversationId(for: me, and: broadcast.user.id)
     }
 
     /// Likes and messages are per broadcaster *and* track: a new song from the
@@ -420,9 +525,6 @@ final class DiscoverViewModel: ObservableObject {
         let now = Date()
         let filtered = records.filter { record in
             if let currentUserId, record.userId == currentUserId { return false }
-            if mutedUserIds.contains(record.userId) { return false }
-            if blockedUserIds.contains(record.userId) { return false }
-            if mutedTrackIds.contains(record.trackId) { return false }
             let age = now.timeIntervalSince(record.updatedAt ?? record.broadcastedAt)
             return age <= DiscoverService.recentWindow
         }
@@ -430,7 +532,10 @@ final class DiscoverViewModel: ObservableObject {
         snapshotGeneration += 1
         let generation = snapshotGeneration
 
+        // Profiles of people we hide anyway are not worth a read.
         let userIds = Set(filtered.map { $0.userId })
+            .subtracting(blockedUserIds)
+            .subtracting(mutedUserIds)
         await fetchMissingUsers(userIds: userIds)
 
         // A newer snapshot arrived while we were fetching profiles; it will
@@ -549,28 +654,6 @@ final class DiscoverViewModel: ObservableObject {
                 .sorted { $0.lastSeenAt > $1.lastSeenAt }
                 .prefix(Self.maxRecentRows)
         )
-    }
-
-    private func removeBroadcast(_ broadcast: DiscoverBroadcast) {
-        allBroadcasts.removeAll { $0.id == broadcast.id }
-        visibleBroadcasts.removeAll { $0.id == broadcast.id }
-        recentBroadcasts.removeAll { $0.id == broadcast.id }
-        dismissTarget = nil
-    }
-
-    private func loadMutedPreferencesIfNeeded() {
-        guard mutedUserIds.isEmpty && mutedTrackIds.isEmpty else { return }
-        guard let uid = service.currentUserId() else { return }
-        let defaults = UserDefaults.standard
-        mutedUserIds = Set(defaults.stringArray(forKey: "discover.mutedUsers.\(uid)") ?? [])
-        mutedTrackIds = Set(defaults.stringArray(forKey: "discover.mutedTracks.\(uid)") ?? [])
-    }
-
-    private func persistMutedPreferences() {
-        guard let uid = service.currentUserId() else { return }
-        let defaults = UserDefaults.standard
-        defaults.set(Array(mutedUserIds), forKey: "discover.mutedUsers.\(uid)")
-        defaults.set(Array(mutedTrackIds), forKey: "discover.mutedTracks.\(uid)")
     }
 
     private var isRunningInPreview: Bool {

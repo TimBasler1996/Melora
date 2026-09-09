@@ -115,7 +115,9 @@ final class ProfileViewModel: ObservableObject {
     // MARK: - Loading
 
     func loadProfile() async {
-        isLoading = true
+        // Only blank the screen on the very first load; a reload after a
+        // save keeps the current profile on screen until the fresh one lands.
+        if profile == nil { isLoading = true }
         errorMessage = nil
         // Note: `saveSucceeded` is intentionally left alone here so the
         // success banner survives the reload that follows a save.
@@ -124,7 +126,7 @@ final class ProfileViewModel: ObservableObject {
             let fetchedProfile = try await profileService.fetchCurrentUserProfile()
             applyProfile(fetchedProfile)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, fallback: "Couldn’t load your profile. Check your connection and try again.")
         }
 
         isLoading = false
@@ -191,7 +193,7 @@ final class ProfileViewModel: ObservableObject {
     func saveDraftChanges() async -> Bool {
         guard let currentDraft = draft else { return false }
         guard let uid = Auth.auth().currentUser?.uid else {
-            errorMessage = "No Firebase user."
+            errorMessage = "You’re not signed in yet. Try again in a moment."
             return false
         }
 
@@ -297,21 +299,15 @@ final class ProfileViewModel: ObservableObject {
     }
 
     private static func friendlySaveError(_ error: Error) -> String {
-        if error is URLError {
-            return "You seem to be offline. Your edits are kept — try again when you’re connected."
-        }
-        let text = error.localizedDescription
-        if text.lowercased().contains("permission") {
-            return "Couldn’t save your profile. Please try again in a moment."
-        }
-        return "Couldn’t save your profile. Your edits are kept — try again."
+        let mapped = UserFacingError.message(for: error, fallback: "Couldn’t save your profile.")
+        return mapped + " Your edits are kept."
     }
 
     // MARK: - Spotify
 
     func refreshSpotifyProfile() async {
         guard let uid = Auth.auth().currentUser?.uid else {
-            errorMessage = "No Firebase user."
+            errorMessage = "You’re not signed in yet. Try again in a moment."
             return
         }
 
@@ -322,7 +318,7 @@ final class ProfileViewModel: ObservableObject {
             try await profileService.refreshSpotifyProfile(uid: uid)
             await loadProfile()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error, fallback: "Couldn’t refresh your Spotify profile. Please try again.")
         }
 
         isRefreshingSpotify = false

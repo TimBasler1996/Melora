@@ -201,14 +201,14 @@ struct TrackLikesDetailView: View {
                     receiverUserId: user.uid
                 )
                 print("✅ [Chat] stub ready convoId=\(convo.id)")
-                showToast("Accepted ✅ Chat created ✅")
+                showToast("Accepted. You can chat now.")
             } else {
-                showToast(status == .accepted ? "Accepted ✅" : "Ignored ✅")
+                showToast(status == .accepted ? "Accepted" : "Declined")
             }
 
         } catch {
             print("❌ [Like/Chat] failed:", error.localizedDescription)
-            showToast("Failed: \(error.localizedDescription)")
+            showToast(UserFacingError.message(for: error, fallback: "Couldn’t update this like. Please try again."))
         }
     }
 
@@ -284,7 +284,7 @@ private struct ModernLikeRow: View {
                     Button(action: onReject) {
                         HStack(spacing: 8) {
                             if isUpdating { ProgressView().tint(.white) }
-                            Text("Ignore")
+                            Text("Decline")
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
                         }
                         .padding(.horizontal, 12)
@@ -396,9 +396,9 @@ private struct ModernLikeRow: View {
         let s = like.status ?? .pending
         let text: String = {
             switch s {
-            case .pending: return "PENDING"
-            case .accepted: return "ACCEPTED"
-            case .rejected: return "IGNORED"
+            case .pending: return "Pending"
+            case .accepted: return "Accepted"
+            case .rejected: return "Declined"
             }
         }()
         

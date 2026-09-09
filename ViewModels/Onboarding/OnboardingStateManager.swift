@@ -47,7 +47,7 @@ final class OnboardingStateManager: ObservableObject {
 
             if let err {
                 Task { @MainActor in
-                    self.errorMessage = err.localizedDescription
+                    self.errorMessage = UserFacingError.message(for: err, fallback: "Couldn’t load your profile. Check your connection and try again.")
                     self.isLoading = false
                     self.needsOnboarding = true
                 }
