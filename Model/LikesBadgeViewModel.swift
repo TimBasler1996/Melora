@@ -25,7 +25,8 @@ final class LikesBadgeViewModel: ObservableObject {
     }
 
     private let lastSeenKey = "LikesInboxView_lastSeenDate"
-    private let lastSeenFollowersKey = "FollowersInboxView_lastSeenDate"
+    // Must match `FollowersInboxViewModel.lastSeenKey`, or the badge never clears.
+    private let lastSeenFollowersKey = "FollowersInbox_lastSeenDate"
 
     private var lastSeenDate: Date? {
         UserDefaults.standard.object(forKey: lastSeenKey) as? Date

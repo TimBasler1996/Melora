@@ -13,6 +13,8 @@ struct LikesInboxView: View {
     @StateObject private var vm = LikesInboxViewModel()
     @StateObject private var followersVM = FollowersInboxViewModel()
     @State private var selectedTab: InboxTab = .likes
+    /// Only tabs the user actually looked at get marked as seen.
+    @State private var viewedTabs: Set<InboxTab> = [.likes]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -67,9 +69,12 @@ struct LikesInboxView: View {
             vm.loadLikes(for: user.uid)
             followersVM.startListening()
         }
+        .onChange(of: selectedTab) { _, tab in
+            viewedTabs.insert(tab)
+        }
         .onDisappear {
-            vm.markAllAsSeen()
-            followersVM.markAllAsSeen()
+            if viewedTabs.contains(.likes) { vm.markAllAsSeen() }
+            if viewedTabs.contains(.followers) { followersVM.markAllAsSeen() }
             followersVM.stopListening()
         }
         .refreshable {
@@ -161,7 +166,7 @@ struct LikesInboxView: View {
                             NavigationLink {
                                 TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
                             } label: {
-                                ModernTrackLikesClusterRow(cluster: cluster)
+                                ModernTrackLikesClusterRow(cluster: cluster, isNew: vm.isNew(cluster))
                             }
                             .buttonStyle(.plain)
                         }
@@ -172,7 +177,7 @@ struct LikesInboxView: View {
                             NavigationLink {
                                 TrackLikesDetailView(user: user, track: cluster.asTrack, likes: cluster.likes)
                             } label: {
-                                ModernTrackLikesClusterRow(cluster: cluster)
+                                ModernTrackLikesClusterRow(cluster: cluster, isNew: vm.isNew(cluster))
                             }
                             .buttonStyle(.plain)
                         }
@@ -406,6 +411,8 @@ private struct FollowerRowView: View {
 
 private struct ModernTrackLikesClusterRow: View {
     let cluster: TrackLikesCluster
+    /// Newer than the last visit to this inbox.
+    var isNew: Bool = false
     
     var body: some View {
         HStack(spacing: 14) {
@@ -459,6 +466,15 @@ private struct ModernTrackLikesClusterRow: View {
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
                     }
                     .foregroundColor(AppColors.live)
+
+                    if isNew {
+                        Text("New")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(AppColors.live))
+                    }
 
                     if cluster.pendingCount > 0 {
                         Text("\(cluster.pendingCount) waiting")

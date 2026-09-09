@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 46
+Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 50
 
 ## Your to-dos (need the project owner)
 
@@ -14,6 +14,7 @@ Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 46
 - [ ] **OWN-4** Build once in Xcode and run onboarding, going live, and a like with a message between two devices — The Swift changes were reviewed but not compiled; this session has no Xcode.
 - [ ] **OWN-5** Delete the seven fully merged claude/* remote branches — chat-reply-reactions-seen, cool-darwin, discover-radius-slider, fix-follow-messaging-issues, melora-design-system, melora-profile-cleanup, unified-profile-follow are ancestors of Dev3.
 - [ ] **OWN-6** Optionally purge the .p8 key and functions/.env from git history with a force push — They are untracked now but still in history; say the word and it can be done.
+- [ ] **OWN-7** Set the privacy policy, terms and support email in Utils/LegalLinks.swift — The About rows in Settings stay hidden until these URLs exist; App Store review expects a privacy policy link.
 
 ## Decisions taken
 
@@ -139,10 +140,11 @@ _Anonymous auth, exact locations and no report path are launch blockers for a da
 
 ### UX-14 · Privacy controls and legal links in Settings
 
-**P2 · later** · effort medium (2–4 days)
+**P2 · later** · effort medium (2–4 days) · **Done**
 
 - **Problem:** Settings admits 'Your broadcast is always visible to everyone' and has no privacy policy, terms or support link.
 - **Fix:** Privacy section (who can see me, distance precision) and Legal / Support rows.
+- **Progress:** Settings → About: Privacy policy, Terms and Contact rows appear once the URLs are set in Utils/LegalLinks.swift (hidden until then), plus version and a one-line location/privacy note. Blocked list and delete already live in Privacy/Account.
 
 ## Like → request → chat loop
 
@@ -349,18 +351,19 @@ _Editing must never lose work or lock the user out._
 
 ### UX-39 · Make the stats strip readable and tappable where it should be
 
-**P2 · later** · effort small (≤1 day) · **Partly done**
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** '0min / Broadcast' is cryptic; Followers is tappable with no affordance; Likes for others starts at zero until the counter fills.
 - **Fix:** 'Time on air 2 h 15 m', chevron on Followers, show '—' while loading or when unknown.
-- **Progress:** Stats show — instead of 0 while loading. Tappable followers/likes still open.
+- **Progress:** Stats read "—" while loading, "Live time" label; Followers opens the list, Likes opens the inbox on your own profile.
 
 ### UX-40 · Make 'This is how others see you' true
 
-**P3 · someday** · effort small (≤1 day)
+**P3 · someday** · effort small (≤1 day) · **Done**
 
 - **Problem:** Own preview and the visitor layout differ (Follow bar, nav title, likes count source).
 - **Fix:** Render the visitor layout for the own preview, or soften the label to 'Preview'.
+- **Progress:** Own preview and other people’s profile render the same SharedProfilePreviewView with the same data; only the follow bar differs.
 
 ## Chats & inboxes
 
@@ -416,10 +419,11 @@ _Inboxes must show what needs action and never lie about state._
 
 ### UX-47 · Clear inbox badges per tab and mark new rows
 
-**P3 · someday** · effort small (≤1 day)
+**P3 · someday** · effort small (≤1 day) · **Done**
 
 - **Problem:** Opening the Likes tab clears the Followers badge too; nothing in the list shows which items are new.
 - **Fix:** Per-tab seen state and a 'New' dot on unseen rows.
+- **Progress:** Leaving the inbox clears only the tabs that were opened; likes rows carry a "New" pill since the last visit; the followers badge key mismatch that kept it from clearing is fixed.
 
 ## Settings
 

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		37F3896CA94D43B593651D27 /* LegalLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB05F36BE7BE4FD58CA1BC8A /* LegalLinks.swift */; };
 		7210DF7946B441C7AECBE56C /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0A95CCC58C944FD83CC1164 /* OnboardingWelcomeView.swift */; };
 		A1896B352E0649539024457E /* UserFacingError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718DFED3B33A4C36A2BBC0B4 /* UserFacingError.swift */; };
 		E603DAB4923243B39C049CF5 /* HiddenAndBlockedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95DAD8D7718044DD9DD24C52 /* HiddenAndBlockedView.swift */; };
@@ -85,6 +86,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		EB05F36BE7BE4FD58CA1BC8A /* LegalLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalLinks.swift; sourceTree = "<group>"; };
 		E0A95CCC58C944FD83CC1164 /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		718DFED3B33A4C36A2BBC0B4 /* UserFacingError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserFacingError.swift; sourceTree = "<group>"; };
 		95DAD8D7718044DD9DD24C52 /* HiddenAndBlockedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenAndBlockedView.swift; sourceTree = "<group>"; };
@@ -357,6 +359,7 @@
 				75A174032EC7E40D00CEB48F /* AppTheme.swift */,
 				79A1C0002F30000100112233 /* DateAge.swift */,
 				B21BE36111534A499759CE08 /* ImageDownscale.swift */,
+				EB05F36BE7BE4FD58CA1BC8A /* LegalLinks.swift */,
 				718DFED3B33A4C36A2BBC0B4 /* UserFacingError.swift */,
 			);
 			path = Utils;
@@ -565,6 +568,7 @@
 			files = (
 				79A1C0012F30000100112233 /* DateAge.swift in Sources */,
 				83D91861AFFE423E9F99BC7D /* ImageDownscale.swift in Sources */,
+				37F3896CA94D43B593651D27 /* LegalLinks.swift in Sources */,
 				A1896B352E0649539024457E /* UserFacingError.swift in Sources */,
 				79A1C0062F30000300112233 /* CitySearchField.swift in Sources */,
 				75DDECAE2F3E3FE1009426B5 /* FollowApiService.swift in Sources */,

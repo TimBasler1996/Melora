@@ -204,8 +204,11 @@ struct ChatView: View {
 
     @ViewBuilder
     private var footer: some View {
-        if vm.isDeclined {
+        if vm.declinedByMe {
             declinedFooter
+        } else if vm.isDeclined {
+            // Sender side: a decline looks like a request still waiting.
+            waitingFooter
         } else if vm.needsAcceptance {
             acceptDeclineFooter
         } else if vm.waitingForAcceptance, !vm.canSendFirstRequestMessage {
@@ -224,9 +227,7 @@ struct ChatView: View {
         HStack(spacing: 8) {
             Image(systemName: "hand.raised")
                 .font(.system(size: 12, weight: .bold))
-            Text(vm.declinedByMe
-                 ? "You declined this request."
-                 : "This request wasn’t accepted.")
+            Text("You declined this request.")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
         }
         .foregroundColor(.white.opacity(0.7))

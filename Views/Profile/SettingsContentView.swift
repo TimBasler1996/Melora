@@ -189,6 +189,36 @@ struct SettingsContentView: View {
                      ? "Signing out keeps your profile; sign in with Apple again to get it back."
                      : "Deleting removes your profile, photos, likes, chats and followers for good.")
             }
+
+            // MARK: - About
+            Section {
+                if let url = LegalLinks.privacyPolicy {
+                    Link(destination: url) {
+                        Label("Privacy policy", systemImage: "hand.raised")
+                    }
+                }
+                if let url = LegalLinks.termsOfService {
+                    Link(destination: url) {
+                        Label("Terms of service", systemImage: "doc.text")
+                    }
+                }
+                if let email = LegalLinks.supportEmail, let url = URL(string: "mailto:\(email)") {
+                    Link(destination: url) {
+                        Label("Contact us", systemImage: "envelope")
+                    }
+                }
+                HStack {
+                    Label("Version", systemImage: "info.circle")
+                    Spacer()
+                    Text(LegalLinks.appVersion)
+                        .font(AppFonts.caption())
+                        .foregroundColor(AppColors.secondaryText)
+                }
+            } header: {
+                Text("About")
+            } footer: {
+                Text("Your location is shared only while you’re live, rounded to a few hundred metres. Blocked people never see you.")
+            }
         }
         .confirmationDialog("Delete your profile?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete everything", role: .destructive) {

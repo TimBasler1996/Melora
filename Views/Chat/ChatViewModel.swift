@@ -237,7 +237,11 @@ final class ChatViewModel: ObservableObject {
         // rest waits for the accept. Declined chats take nothing.
         if let convo = conversation {
             if convo.effectiveStatus == .rejected {
-                actionError = "This request was declined."
+                // The sender is never told about a decline (UX-16): they get
+                // the same neutral answer as a pending request.
+                actionError = declinedByMe
+                    ? "You declined this request."
+                    : "Wait for the other person to accept your request before sending more messages."
                 return
             }
             if convo.effectiveStatus == .pending, !canSendFirstRequestMessage {

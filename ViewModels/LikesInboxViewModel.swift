@@ -86,7 +86,13 @@ final class LikesInboxViewModel: ObservableObject {
         }
     }
     
-    /// Wird in `LikesInboxView.onDisappear` aufgerufen.
+    /// True when the track got a like since the last visit.
+    func isNew(_ cluster: TrackLikesCluster) -> Bool {
+        guard let seen = lastSeenDate else { return true }
+        return cluster.lastLikeAt > seen
+    }
+
+    /// Called from `LikesInboxView.onDisappear`.
     func markAllAsSeen() {
         let now = Date()
         lastSeenDate = now
