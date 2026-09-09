@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		83D91861AFFE423E9F99BC7D /* ImageDownscale.swift in Sources */ = {isa = PBXBuildFile; fileRef = B21BE36111534A499759CE08 /* ImageDownscale.swift */; };
 		D7C3F433FAA341BC8EAD1656 /* BlockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8275EC568A0B45DFA72BD774 /* BlockService.swift */; };
 		A1B2C3D42F3000000000FCM1 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D32F3000000000FCM1 /* FirebaseMessaging */; };
 		22182E426CDD435A9B779AE5 /* DiscoverCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867F3432B825422BBA8DB009 /* DiscoverCardView.swift */; };
@@ -64,7 +65,6 @@
 		79A1C0012F30000100112233 /* DateAge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0002F30000100112233 /* DateAge.swift */; };
 		79A1C0062F30000300112233 /* CitySearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0052F30000300112233 /* CitySearchField.swift */; };
 		A1C2D3E42F60000100APDLG1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3E32F60000100APDLG1 /* AppDelegate.swift */; };
-		A1C2D3E62F60000100LKNTF1 /* LikeNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3E52F60000100LKNTF1 /* LikeNotificationService.swift */; };
 		A1C2D3E82F60000100BCNTF1 /* BroadcastNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3E72F60000100BCNTF1 /* BroadcastNotificationService.swift */; };
 		A1C2D3EC2F60000100SPLNK1 /* SpotifyLinkCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3EB2F60000100SPLNK1 /* SpotifyLinkCard.swift */; };
 		7A1B1C1D2E3F4A5B6C7D8E90 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */; };
@@ -77,6 +77,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B21BE36111534A499759CE08 /* ImageDownscale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDownscale.swift; sourceTree = "<group>"; };
 		8275EC568A0B45DFA72BD774 /* BlockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockService.swift; sourceTree = "<group>"; };
 		753AD78B2F2CC12500521CF9 /* SharedProfilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedProfilePreviewView.swift; sourceTree = "<group>"; };
 		7556B7FD2F2CADF400DA2EE8 /* UserProfilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfilePreviewView.swift; sourceTree = "<group>"; };
@@ -146,7 +147,6 @@
 		75F1A0032F5B000100ABC002 /* FollowersInboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowersInboxViewModel.swift; sourceTree = "<group>"; };
 		75F1A0052F5B000100ABC003 /* SettingsContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsContentView.swift; sourceTree = "<group>"; };
 		A1C2D3E32F60000100APDLG1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		A1C2D3E52F60000100LKNTF1 /* LikeNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeNotificationService.swift; sourceTree = "<group>"; };
 		A1C2D3E72F60000100BCNTF1 /* BroadcastNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BroadcastNotificationService.swift; sourceTree = "<group>"; };
 		A1C2D3EB2F60000100SPLNK1 /* SpotifyLinkCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyLinkCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -291,7 +291,6 @@
 			isa = PBXGroup;
 			children = (
 				A1C2D3E72F60000100BCNTF1 /* BroadcastNotificationService.swift */,
-				A1C2D3E52F60000100LKNTF1 /* LikeNotificationService.swift */,
 				75DDECAD2F3E3FE1009426B5 /* FollowApiService.swift */,
 				75834AE92F1650A3008C51F8 /* OnboardingProfileService.swift */,
 				7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */,
@@ -337,6 +336,7 @@
 			children = (
 				75A174032EC7E40D00CEB48F /* AppTheme.swift */,
 				79A1C0002F30000100112233 /* DateAge.swift */,
+				B21BE36111534A499759CE08 /* ImageDownscale.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -540,6 +540,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				79A1C0012F30000100112233 /* DateAge.swift in Sources */,
+				83D91861AFFE423E9F99BC7D /* ImageDownscale.swift in Sources */,
 				79A1C0062F30000300112233 /* CitySearchField.swift in Sources */,
 				75DDECAE2F3E3FE1009426B5 /* FollowApiService.swift in Sources */,
 				759F7AFF2EC782D30012A549 /* ProfileView.swift in Sources */,
@@ -595,7 +596,6 @@
 				75F1A0042F5B000100ABC002 /* FollowersInboxViewModel.swift in Sources */,
 				75F1A0062F5B000100ABC003 /* SettingsContentView.swift in Sources */,
 				A1C2D3E42F60000100APDLG1 /* AppDelegate.swift in Sources */,
-				A1C2D3E62F60000100LKNTF1 /* LikeNotificationService.swift in Sources */,
 				A1C2D3E82F60000100BCNTF1 /* BroadcastNotificationService.swift in Sources */,
 				A1C2D3EC2F60000100SPLNK1 /* SpotifyLinkCard.swift in Sources */,
 			);

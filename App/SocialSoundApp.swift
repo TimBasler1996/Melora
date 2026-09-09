@@ -13,7 +13,6 @@ struct SocialSoundApp: App {
     @StateObject private var currentUserStore = CurrentUserStore()
     @StateObject private var onboardingState = OnboardingStateManager()
     @StateObject private var notificationService = BroadcastNotificationService()
-    @StateObject private var likeNotificationService = LikeNotificationService()
 
     init() {
         // Give URLSession.shared (used by AsyncImage) a real memory + disk cache
@@ -75,14 +74,16 @@ struct SocialSoundApp: App {
     /// Stops and, when a user is signed in, restarts everything that is bound
     /// to a specific uid. Runs on first launch once the anonymous sign-in has
     /// completed, and again after sign-out / re-sign-in.
+    ///
+    /// Like / message notifications are delivered exclusively by Cloud
+    /// Functions push (see functions/src/index.ts), so nothing client-side
+    /// needs to be started for them.
     private func restartUserScopedServices(uid: String?) {
         currentUserStore.stopListening()
-        likeNotificationService.stop()
 
         guard uid != nil else { return }
 
         currentUserStore.startListening()
-        likeNotificationService.start()
         broadcast.reconcileAfterLaunch()
     }
 }

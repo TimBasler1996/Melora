@@ -87,10 +87,11 @@ final class OnboardingProfileService {
     }
 
     /// Upload a photo at a specific index
-    /// - Note: Index 0 is the profile photo (shown on discovery cards and as avatar)
-    ///         All photos are uploaded in their original quality
+    /// - Note: Index 0 is the profile photo (shown on discovery cards and as avatar).
+    ///         Photos are downscaled to `UIImage.profilePhotoMaxDimension` before upload.
     func uploadPhoto(image: UIImage, uid: String, index: Int) async throws -> String {
-        guard let data = image.jpegData(compressionQuality: 0.85) else {
+        // Never ship raw camera-roll pixels: cap the longest edge before encoding.
+        guard let data = image.downscaled().jpegData(compressionQuality: 0.85) else {
             throw NSError(domain: "Onboarding", code: 2, userInfo: [
                 NSLocalizedDescriptionKey: "Invalid image data."
             ])
@@ -124,7 +125,8 @@ final class OnboardingProfileService {
 
     /// Upload a hero photo (large banner image for profile)
     func uploadHeroPhoto(image: UIImage, uid: String) async throws -> String {
-        guard let data = image.jpegData(compressionQuality: 0.85) else {
+        // The hero is shown full-width; allow a little more resolution than a tile.
+        guard let data = image.downscaled(maxDimension: 2000).jpegData(compressionQuality: 0.85) else {
             throw NSError(domain: "Onboarding", code: 2, userInfo: [
                 NSLocalizedDescriptionKey: "Invalid image data."
             ])

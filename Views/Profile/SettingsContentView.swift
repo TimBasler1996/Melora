@@ -97,6 +97,16 @@ struct SettingsContentView: View {
         .onChange(of: notifyFriends) { _, newValue in
             if newValue { requestNotificationPermission() }
         }
+        // Like and message pushes are sent by Cloud Functions, which read
+        // these flags from the user document.
+        .onChange(of: notifyLikes) { _, newValue in
+            if newValue { requestNotificationPermission() }
+            syncNotificationPreference("notifyLikes", newValue)
+        }
+        .onChange(of: notifyMessages) { _, newValue in
+            if newValue { requestNotificationPermission() }
+            syncNotificationPreference("notifyMessages", newValue)
+        }
         .confirmationDialog("Sign Out", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 // Tears down the session and provisions a fresh anonymous
@@ -110,6 +120,11 @@ struct SettingsContentView: View {
     }
 
     // MARK: - Helpers
+
+    private func syncNotificationPreference(_ key: String, _ enabled: Bool) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        UserApiService.shared.updateProfile(uid: uid, updates: [key: enabled])
+    }
 
     private func formatRadius(_ meters: Double) -> String {
         if meters < 1000 {

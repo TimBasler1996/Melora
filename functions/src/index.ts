@@ -16,10 +16,21 @@ const db = admin.firestore();
 // Helpers
 // ──────────────────────────────────────────────────
 
-async function getFcmToken(userId: string): Promise<string | null> {
+/**
+ * Returns the user's push token, or null when the user has no token or has
+ * switched the given notification category off in Settings (the app mirrors
+ * the toggles to `notifyLikes` / `notifyMessages`; missing means enabled).
+ */
+async function getFcmToken(
+  userId: string,
+  preferenceKey?: "notifyLikes" | "notifyMessages"
+): Promise<string | null> {
   if (!userId) return null;
   const userDoc = await db.collection("users").doc(userId).get();
-  return userDoc.data()?.fcmToken ?? null;
+  const data = userDoc.data();
+  if (!data) return null;
+  if (preferenceKey && data[preferenceKey] === false) return null;
+  return data.fcmToken ?? null;
 }
 
 async function getDisplayName(userId: string): Promise<string> {
@@ -113,7 +124,7 @@ export const onLikeCreated = onDocumentCreated(
       {merge: true}
     );
 
-    const token = await getFcmToken(receiverUid);
+    const token = await getFcmToken(receiverUid, "notifyLikes");
     if (!token) return;
 
     const fromName: string =
@@ -156,7 +167,7 @@ export const onLikeAccepted = onDocumentUpdated(
     if (before.status === "accepted" || after.status !== "accepted") return;
 
     const likerUid = event.params.userId;
-    const token = await getFcmToken(likerUid);
+    const token = await getFcmToken(likerUid, "notifyLikes");
     if (!token) return;
 
     const receiverName = await getDisplayName(after.toUserId ?? "");
@@ -218,7 +229,7 @@ export const onNewChatMessage = onDocumentCreated(
     const recipientUid = participants.find((uid) => uid !== senderUid);
     if (!recipientUid) return;
 
-    const token = await getFcmToken(recipientUid);
+    const token = await getFcmToken(recipientUid, "notifyMessages");
     if (!token) return;
 
     const senderName = await getDisplayName(senderUid);

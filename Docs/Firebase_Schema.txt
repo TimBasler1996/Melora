@@ -35,6 +35,8 @@ Presence:
 - `likesReceivedCount`: Int — maintained by the `onLikeCreated` function;
   shown on other users' profiles (their `likesReceived` is not listable)
 - `fcmToken`: String — push token, written by AppDelegate
+- `notifyLikes`, `notifyMessages`: Bool — mirrored from Settings; missing
+  means enabled. Cloud Functions skip the push when false.
 
 ### users/{uid}/likesReceived/{likeId}
 A like (optionally with a message) this user received. Created by the liker,

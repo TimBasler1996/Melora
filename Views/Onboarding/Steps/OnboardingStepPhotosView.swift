@@ -109,7 +109,7 @@ struct OnboardingStepPhotosView: View {
     private func loadImage(from item: PhotosPickerItem, at index: Int) {
         Task {
             let data = try? await item.loadTransferable(type: Data.self)
-            let image = data.flatMap { UIImage(data: $0) }
+            let image = data.flatMap { UIImage(data: $0)?.downscaled() }
             await MainActor.run {
                 if let image {
                     viewModel.selectedImages[index] = image

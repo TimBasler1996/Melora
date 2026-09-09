@@ -323,7 +323,7 @@ struct ProfileView: View {
 
                 Task {
                     let data = try? await newItem.loadTransferable(type: Data.self)
-                    let image = data.flatMap { UIImage(data: $0) }
+                    let image = data.flatMap { UIImage(data: $0)?.downscaled() }
 
                     await MainActor.run {
                         viewModel.setDraftSelectedImage(image, index: 0)
@@ -469,7 +469,7 @@ struct ProfileView: View {
 
                 Task {
                     let data = try? await newItem.loadTransferable(type: Data.self)
-                    let image = data.flatMap { UIImage(data: $0) }
+                    let image = data.flatMap { UIImage(data: $0)?.downscaled() }
 
                     await MainActor.run {
                         viewModel.setDraftSelectedImage(image, index: index)
