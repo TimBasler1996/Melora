@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 34
+Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 46
 
 ## Your to-dos (need the project owner)
 
@@ -81,10 +81,11 @@ _Discover is the reason the app exists and today it is empty for almost every ne
 
 ### UX-07 · Hide incomplete or ghost profiles from Discover and follower lists
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** Profiles without photos or with a blank name render as 'No photo' and 'Unknown', which looks broken.
 - **Fix:** Filter out profiles that fail the completeness rule before showing them anywhere.
+- **Progress:** Discover, Find People and follower lists drop profiles that never finished onboarding or are being deleted.
 
 ## Account, safety & privacy
 
@@ -194,17 +195,19 @@ _Both sides of an interaction need to see the same truth at every step._
 
 ### UX-21 · Show what needs action in the likes cluster rows
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** Rows only say '3 likes'; pending, accepted and ignored likes sit together forever.
 - **Fix:** Show '2 new' or '1 pending' per row, sort rows with pending likes first, collapse ignored ones.
+- **Progress:** Likes rows show "2 waiting" when likes need an answer and sort those tracks first.
 
 ### UX-22 · Recover when 'Open chat' from an accepted like hits a deleted conversation
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** If either side deleted the chat the screen shows 'Conversation not found' with a Retry that can never succeed.
 - **Fix:** Offer 'Start a new chat' that recreates the conversation.
+- **Progress:** "This chat no longer exists" offers Start a new chat (from Discover) which sends a fresh message request; the first message from the sender is allowed.
 
 ## First run & onboarding
 
@@ -236,10 +239,11 @@ _The first ninety seconds decide whether the profile gets finished._
 
 ### UX-26 · Explain that the birthday is permanent, and label optional fields
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** Birthday can never be changed later and nothing says so; 'Looking for' is optional but not marked.
 - **Fix:** Caption under the birthday picker; '(optional)' on Looking for.
+- **Progress:** Birthday caption "Only your age is shown. Your birthday can’t be changed later."; "Looking for (optional)".
 
 ### UX-27 · Reconsider asking for a last name
 
@@ -271,10 +275,11 @@ _Going live is the first action of the loop; it must feel safe and understood._
 
 ### UX-30 · Tell the user when a broadcast auto-ends
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** After ten idle minutes the broadcast stops; the message only appears if the Now tab is open.
 - **Fix:** Local notification 'Your broadcast ended because nothing was playing'.
+- **Progress:** Local notification "Your live session ended" when the idle timeout stops a broadcast.
 
 ### UX-31 · Server-side nearby notifications
 
@@ -328,17 +333,19 @@ _Editing must never lose work or lock the user out._
 
 ### UX-37 · Read-only birthday row in the editor
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** Age is prominent in preview but there is no birthday field in edit mode and nothing says it is fixed.
 - **Fix:** Show 'Birthday · 27' read-only with 'Age can't be changed after sign-up'.
+- **Progress:** Editor shows the birthday and age read-only with "Your age can’t be changed after sign-up."
 
 ### UX-38 · City picker: cities only, store the city name
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** Suggestions include street addresses and the saved value becomes 'Berlin, Germany'.
 - **Fix:** Filter completer results to locality level and store just the city.
+- **Progress:** City suggestions are localities only (MKAddressFilter); the stored value is the city name, the list shows "Berlin, Germany".
 
 ### UX-39 · Make the stats strip readable and tappable where it should be
 
@@ -385,24 +392,27 @@ _Inboxes must show what needs action and never lie about state._
 
 ### UX-44 · Message Requests list must reflect accept and decline immediately
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** The list is a value copy; after declining and popping back the row can still be there and opens a declined chat with a composer.
 - **Fix:** Drive the list from the view model and give the chat screen an explicit declined state.
+- **Progress:** Message Requests reads the live view model so accepted/declined rows vanish immediately; declined chats show an explicit footer and take no input.
 
 ### UX-45 · Relative timestamps in chat rows
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** 'Sep 9, 2026, 3:42 PM' under a 'Today' header.
 - **Fix:** Time for today, weekday for this week, short date otherwise.
+- **Progress:** Chat rows show time today, "Yesterday", weekday within a week, "12 Mar" this year, numeric date otherwise.
 
 ### UX-46 · Find People: tappable rows, real error state, surname search
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** Rows can't open a profile, any error looks like 'No results', and searching by last name finds nothing.
 - **Fix:** Row tap opens the profile; distinct error state with Retry; search on first and last name.
+- **Progress:** Rows open the profile; a real error state with Retry; search matches first name, last name and display name (new lastNameLower field).
 
 ### UX-47 · Clear inbox badges per tab and mark new rows
 
@@ -453,14 +463,16 @@ _Calm, premium tone means one vocabulary and no debug text._
 
 ### UX-52 · Calm system copy: no emoji toasts, lowercase status pills
 
-**P2 · later** · effort small (≤1 day)
+**P2 · later** · effort small (≤1 day) · **Done**
 
 - **Problem:** 'Accepted ✅ Chat created ✅', 'PENDING / IGNORED' pills, 'Say hi 👋', 'Something went wrong' as every alert title.
 - **Fix:** Plain-language toasts as overlays, soft pills, specific alert titles.
+- **Progress:** No emoji toasts; status pills read Pending/Accepted/Declined in sentence case.
 
 ### UX-53 · Small copy fixes
 
-**P3 · someday** · effort small (≤1 day)
+**P3 · someday** · effort small (≤1 day) · **Done**
 
 - **Problem:** 'Open for all' capitalisation, 'Your Name' fallback shown as a real name, 'Search city...' under a 'City' label, Chats empty state explains only one way a chat starts.
 - **Fix:** 'Open to all', neutral fallback 'New member', 'Which city?', 'Chats start when you accept someone's like or request, or they accept yours.'
+- **Progress:** "Open to all", "New member" fallback, "Which city?" placeholder, new Chats empty-state sentence.

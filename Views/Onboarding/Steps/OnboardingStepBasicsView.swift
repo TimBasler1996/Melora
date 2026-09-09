@@ -49,11 +49,11 @@ struct OnboardingStepBasicsView: View {
         }
     }
 
-    private let lookingForOptions = ["New Music", "Friends", "Open for all"]
+    private let lookingForOptions = ["New Music", "Friends", "Open to all"]
 
     private var lookingForSelector: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Looking for")
+            Text("Looking for (optional)")
                 .font(AppFonts.footnote())
                 .foregroundColor(AppColors.mutedText)
 
@@ -136,6 +136,10 @@ struct OnboardingStepBasicsView: View {
                     }
                 }
             }
+
+            Text("Only your age is shown. Your birthday can’t be changed later.")
+                .font(AppFonts.caption())
+                .foregroundColor(AppColors.mutedText)
         }
     }
 

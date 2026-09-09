@@ -4,6 +4,9 @@ import FirebaseAuth
 struct ChatView: View {
 
     let conversationId: String
+    /// Known when opened from Discover; lets the user start over if the
+    /// conversation was deleted.
+    var peerUserId: String? = nil
 
     @StateObject private var vm = ChatViewModel()
     @Environment(\.dismiss) private var dismiss
@@ -30,12 +33,23 @@ struct ChatView: View {
                             .foregroundColor(AppColors.secondaryText)
                             .multilineTextAlignment(.center)
 
-                        Button("Retry") { vm.start(conversationId: conversationId) }
+                        if vm.conversationMissing, let peerUserId {
+                            Button("Start a new chat") {
+                                Task { await vm.startNewChat(with: peerUserId) }
+                            }
                             .font(AppFonts.subheadline())
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
-                            .melCard(cornerRadius: 12)
-                            .foregroundColor(AppColors.primaryText)
+                            .background(Capsule().fill(AppColors.primary))
+                            .foregroundColor(.white)
+                        } else {
+                            Button("Retry") { vm.start(conversationId: conversationId) }
+                                .font(AppFonts.subheadline())
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                                .melCard(cornerRadius: 12)
+                                .foregroundColor(AppColors.primaryText)
+                        }
                     }
                     .padding(.horizontal, AppLayout.screenPadding)
                     Spacer()
@@ -190,9 +204,11 @@ struct ChatView: View {
 
     @ViewBuilder
     private var footer: some View {
-        if vm.needsAcceptance {
+        if vm.isDeclined {
+            declinedFooter
+        } else if vm.needsAcceptance {
             acceptDeclineFooter
-        } else if vm.waitingForAcceptance {
+        } else if vm.waitingForAcceptance, !vm.canSendFirstRequestMessage {
             waitingFooter
         } else {
             VStack(spacing: 6) {
@@ -202,6 +218,23 @@ struct ChatView: View {
                 composer
             }
         }
+    }
+
+    private var declinedFooter: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "hand.raised")
+                .font(.system(size: 12, weight: .bold))
+            Text(vm.declinedByMe
+                 ? "You declined this request."
+                 : "This request wasn’t accepted.")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+        }
+        .foregroundColor(.white.opacity(0.7))
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(Capsule().fill(AppColors.surfaceElevated))
+        .padding(.horizontal, AppLayout.screenPadding)
+        .padding(.bottom, 8)
     }
 
     private var requestBanner: some View {

@@ -111,6 +111,13 @@ final class DiscoverService {
         func stringValue(_ key: String) -> String { (data[key] as? String) ?? "" }
         func optionalString(_ key: String) -> String? { data[key] as? String }
 
+        // Ghost profiles (onboarding never finished, or a deletion in
+        // progress) have nothing to show; treat them as absent.
+        guard (data["profileCompleted"] as? Bool) == true,
+              !stringValue("firstName").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              data["deletionRequestedAt"] == nil
+        else { return nil }
+
         let birthday: Date? = {
             if let ts = data["birthday"] as? Timestamp { return ts.dateValue() }
             return data["birthday"] as? Date

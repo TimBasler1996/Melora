@@ -4,7 +4,10 @@ import SwiftUI
 /// the chat in pending mode, where the recipient can Accept or Decline.
 struct ChatRequestsView: View {
 
-    let rows: [ChatInboxRow]
+    /// Live rows: an accept or decline removes the request immediately.
+    @ObservedObject var vm: ChatInboxViewModel
+
+    private var rows: [ChatInboxRow] { vm.pendingRequestRows }
 
     var body: some View {
         ZStack {
@@ -22,7 +25,7 @@ struct ChatRequestsView: View {
             } else {
                 ScrollView {
                     VStack(spacing: 12) {
-                        Text("Accept a request to start chatting. Ignored requests are not delivered.")
+                        Text("Accept a request to start chatting. Declined requests are not delivered.")
                             .font(AppFonts.footnote())
                             .foregroundColor(.white.opacity(0.6))
                             .multilineTextAlignment(.leading)

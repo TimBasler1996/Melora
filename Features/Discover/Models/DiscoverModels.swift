@@ -16,7 +16,7 @@ struct DiscoverUser: Identifiable, Codable, Equatable {
         let trimmedFirst = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedLast = lastName.trimmingCharacters(in: .whitespacesAndNewlines)
         let combined = [trimmedFirst, trimmedLast].filter { !$0.isEmpty }.joined(separator: " ")
-        return combined.isEmpty ? "Unknown" : combined
+        return combined.isEmpty ? "New member" : combined
     }
 
     var primaryPhotoURL: String? {
@@ -38,7 +38,7 @@ struct DiscoverUser: Identifiable, Codable, Equatable {
 
     var locationText: String {
         let trimmed = city.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Unknown" : trimmed
+        return trimmed.isEmpty ? "Somewhere" : trimmed
     }
 }
 

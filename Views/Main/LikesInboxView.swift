@@ -451,13 +451,24 @@ private struct ModernTrackLikesClusterRow: View {
                     .foregroundColor(AppColors.secondaryText)
                     .lineLimit(1)
                 
-                HStack(spacing: 6) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 11, weight: .semibold))
-                    Text("\(cluster.likes.count) like\(cluster.likes.count == 1 ? "" : "s")")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                HStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("\(cluster.likes.count) like\(cluster.likes.count == 1 ? "" : "s")")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(AppColors.live)
+
+                    if cluster.pendingCount > 0 {
+                        Text("\(cluster.pendingCount) waiting")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(AppColors.primary))
+                    }
                 }
-                .foregroundColor(AppColors.live)
                 .padding(.top, 2)
             }
             

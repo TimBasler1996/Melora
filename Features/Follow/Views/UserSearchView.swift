@@ -92,28 +92,59 @@ struct UserSearchView: View {
                     .foregroundColor(.white.opacity(0.4))
                 Spacer()
             }
+        } else if let error = viewModel.errorMessage {
+            VStack(spacing: 10) {
+                Spacer()
+                Image(systemName: "wifi.exclamationmark")
+                    .font(.system(size: 36))
+                    .foregroundColor(.white.opacity(0.3))
+                Text("Couldn’t search")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.6))
+                Text(error)
+                    .font(AppFonts.footnote())
+                    .foregroundColor(.white.opacity(0.4))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                Button("Retry") { viewModel.search() }
+                    .font(AppFonts.subheadline())
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(AppColors.surfaceElevated)
+                    .foregroundColor(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                Spacer()
+            }
         } else if viewModel.results.isEmpty {
             VStack(spacing: 10) {
                 Spacer()
                 Image(systemName: "person.slash.fill")
                     .font(.system(size: 36))
                     .foregroundColor(.white.opacity(0.3))
-                Text("No results found")
+                Text("Nobody by that name")
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundColor(.white.opacity(0.6))
+                Text("Try a first or last name.")
+                    .font(AppFonts.footnote())
+                    .foregroundColor(.white.opacity(0.4))
                 Spacer()
             }
         } else {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(viewModel.results) { user in
-                        UserSearchRowView(
-                            user: user,
-                            isFollowing: viewModel.isFollowing(user.uid),
-                            onToggleFollow: {
-                                Task { await viewModel.toggleFollow(userId: user.uid) }
-                            }
-                        )
+                        NavigationLink {
+                            UserProfilePreviewView(userId: user.uid)
+                        } label: {
+                            UserSearchRowView(
+                                user: user,
+                                isFollowing: viewModel.isFollowing(user.uid),
+                                onToggleFollow: {
+                                    Task { await viewModel.toggleFollow(userId: user.uid) }
+                                }
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, AppLayout.screenPadding)

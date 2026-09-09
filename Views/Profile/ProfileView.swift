@@ -566,6 +566,8 @@ struct ProfileView: View {
                     CitySearchFieldEdit(city: draftBinding(\.city))
                 }
 
+                birthdayRow(draft: draft)
+
                 genderSelector(currentGender: draft.gender)
 
                 lookingForSelector(currentValue: draft.lookingFor)
@@ -575,7 +577,33 @@ struct ProfileView: View {
         .melCard(cornerRadius: AppLayout.cornerRadiusLarge)
     }
 
-    private let lookingForOptions = ["New Music", "Friends", "Open for all"]
+    /// Birthday is fixed at sign-up: shown, never edited.
+    private func birthdayRow(draft: ProfileViewModel.ProfileDraft) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Birthday")
+                .font(AppFonts.footnote())
+                .foregroundColor(AppColors.mutedText)
+
+            fieldContainer {
+                HStack {
+                    Text(draft.birthday.formatted(date: .long, time: .omitted))
+                        .foregroundColor(AppColors.secondaryText)
+                    Spacer()
+                    if let age = draft.birthday.age() {
+                        Text("\(age)")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundColor(AppColors.primaryText)
+                    }
+                }
+            }
+
+            Text("Your age can’t be changed after sign-up.")
+                .font(AppFonts.caption())
+                .foregroundColor(AppColors.mutedText)
+        }
+    }
+
+    private let lookingForOptions = ["New Music", "Friends", "Open to all"]
 
     private func lookingForSelector(currentValue: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -586,6 +614,8 @@ struct ProfileView: View {
             fieldContainer {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
+                        // Profiles saved before the label change still say "Open for all".
+                        let selected = currentValue == "Open for all" ? "Open to all" : currentValue
                         ForEach(lookingForOptions, id: \.self) { option in
                             Button {
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -593,11 +623,11 @@ struct ProfileView: View {
                             } label: {
                                 Text(option)
                                     .font(AppFonts.subheadline())
-                                    .foregroundColor(currentValue == option ? .white : AppColors.primaryText)
+                                    .foregroundColor(selected == option ? .white : AppColors.primaryText)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                                     .background(
-                                        Capsule().fill(currentValue == option ? AppColors.primary : AppColors.tintedBackground.opacity(0.8))
+                                        Capsule().fill(selected == option ? AppColors.primary : AppColors.tintedBackground.opacity(0.8))
                                     )
                             }
                             .buttonStyle(.plain)

@@ -116,7 +116,7 @@ struct ChatInboxView: View {
                 Text("No chats yet")
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
-                Text("Like a track in Discover or accept a like you received, and the chat shows up here.")
+                Text("Chats start when you accept someone’s like or request, or they accept yours.")
                     .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
@@ -128,7 +128,7 @@ struct ChatInboxView: View {
                 VStack(spacing: 12) {
                     if !vm.pendingRequestRows.isEmpty {
                         NavigationLink {
-                            ChatRequestsView(rows: vm.pendingRequestRows)
+                            ChatRequestsView(vm: vm)
                         } label: {
                             requestsBanner(count: vm.pendingRequestRows.count)
                         }

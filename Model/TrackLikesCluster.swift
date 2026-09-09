@@ -26,6 +26,11 @@ struct TrackLikesCluster: Identifiable {
     /// Optional: Artwork-URL für den Track (z. B. vom ersten Like übernommen).
     let trackArtworkURL: String?
 
+    /// Likes still waiting for an accept or decline.
+    var pendingCount: Int {
+        likes.filter { ($0.status ?? .pending) == .pending }.count
+    }
+
     /// Convenience: Baut ein `Track` Modell für Detail-Views.
     var asTrack: Track {
         Track(

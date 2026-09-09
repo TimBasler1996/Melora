@@ -11,7 +11,15 @@ struct DiscoverView: View {
 
     @State private var showUserSearch = false
     @State private var expandedCardId: String?
-    @State private var chatToOpen: String?
+    @State private var chatToOpen: ChatTarget?
+
+    /// A chat to push, with the peer so the thread can recover if the
+    /// conversation was deleted meanwhile.
+    private struct ChatTarget: Identifiable, Hashable {
+        let conversationId: String
+        let peerId: String
+        var id: String { conversationId }
+    }
 
     var body: some View {
         NavigationStack {
@@ -46,8 +54,8 @@ struct DiscoverView: View {
                     .accessibilityLabel("Find people")
                 }
             }
-            .navigationDestination(item: $chatToOpen) { conversationId in
-                ChatView(conversationId: conversationId)
+            .navigationDestination(item: $chatToOpen) { target in
+                ChatView(conversationId: target.conversationId, peerUserId: target.peerId)
             }
             .sheet(isPresented: $showUserSearch) {
                 UserSearchView()
@@ -352,7 +360,7 @@ struct DiscoverView: View {
             onOpenChat: {
                 Task {
                     if let id = await viewModel.conversationId(with: broadcast) {
-                        chatToOpen = id
+                        chatToOpen = ChatTarget(conversationId: id, peerId: broadcast.user.id)
                     }
                 }
             },

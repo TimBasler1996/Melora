@@ -6,10 +6,18 @@ import MapKit
 @MainActor
 final class CitySearchCompleter: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
 
+    /// A city-level completion: `display` is what the list shows
+    /// ("Berlin, Germany"), `city` is what gets stored ("Berlin").
+    struct Suggestion: Identifiable, Hashable {
+        let city: String
+        let display: String
+        var id: String { display }
+    }
+
     @Published var query: String = "" {
         didSet { completer.queryFragment = query }
     }
-    @Published var suggestions: [String] = []
+    @Published var suggestions: [Suggestion] = []
     @Published var isSearching: Bool = false
 
     private let completer = MKLocalSearchCompleter()
@@ -18,19 +26,21 @@ final class CitySearchCompleter: NSObject, ObservableObject, MKLocalSearchComple
         super.init()
         completer.delegate = self
         completer.resultTypes = .address
+        // Cities only: no streets, districts or points of interest.
+        completer.addressFilter = MKAddressFilter(including: .locality)
     }
 
     nonisolated func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         let results = completer.results
         Task { @MainActor in
             self.suggestions = results
-                .compactMap { result -> String? in
-                    let title = result.title
-                    let subtitle = result.subtitle
-                    // Filter to city-level results (subtitle typically contains country/region)
+                .compactMap { result -> Suggestion? in
+                    let title = result.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let subtitle = result.subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !title.isEmpty else { return nil }
-                    if subtitle.isEmpty { return title }
-                    return "\(title), \(subtitle)"
+                    // With the locality filter the title is the city itself.
+                    let display = subtitle.isEmpty ? title : "\(title), \(subtitle)"
+                    return Suggestion(city: title, display: display)
                 }
                 .removingDuplicates()
                 .prefix(5)
@@ -62,7 +72,7 @@ struct CitySearchFieldOnboarding: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            TextField("Search city...", text: $completer.query)
+            TextField("Which city?", text: $completer.query)
                 .font(.system(size: 16, weight: .medium, design: .rounded))
                 .foregroundColor(AppColors.primaryText)
                 .disableAutocorrection(true)
@@ -75,17 +85,17 @@ struct CitySearchFieldOnboarding: View {
 
             if isFocused && !completer.suggestions.isEmpty && completer.query.count >= 2 {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(completer.suggestions, id: \.self) { suggestion in
+                    ForEach(completer.suggestions) { suggestion in
                         Button {
-                            city = suggestion
-                            completer.query = suggestion
+                            city = suggestion.city
+                            completer.query = suggestion.city
                             isFocused = false
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "mappin.circle.fill")
                                     .font(.system(size: 14))
                                     .foregroundColor(AppColors.mutedText)
-                                Text(suggestion)
+                                Text(suggestion.display)
                                     .font(AppFonts.body())
                                     .foregroundColor(AppColors.primaryText)
                                     .lineLimit(1)
@@ -96,7 +106,7 @@ struct CitySearchFieldOnboarding: View {
                         }
                         .buttonStyle(.plain)
 
-                        if suggestion != completer.suggestions.last {
+                        if suggestion.id != completer.suggestions.last?.id {
                             Divider().background(AppColors.stroke)
                         }
                     }
@@ -119,7 +129,7 @@ struct CitySearchFieldEdit: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            TextField("Search city...", text: $completer.query)
+            TextField("Which city?", text: $completer.query)
                 .textInputAutocapitalization(.words)
                 .keyboardType(.default)
                 .focused($isFocused)
@@ -129,17 +139,17 @@ struct CitySearchFieldEdit: View {
 
             if isFocused && !completer.suggestions.isEmpty && completer.query.count >= 2 {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(completer.suggestions, id: \.self) { suggestion in
+                    ForEach(completer.suggestions) { suggestion in
                         Button {
-                            city = suggestion
-                            completer.query = suggestion
+                            city = suggestion.city
+                            completer.query = suggestion.city
                             isFocused = false
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "mappin.circle.fill")
                                     .font(.system(size: 14))
                                     .foregroundColor(AppColors.primary)
-                                Text(suggestion)
+                                Text(suggestion.display)
                                     .font(AppFonts.body())
                                     .foregroundColor(AppColors.primaryText)
                                     .lineLimit(1)
@@ -150,7 +160,7 @@ struct CitySearchFieldEdit: View {
                         }
                         .buttonStyle(.plain)
 
-                        if suggestion != completer.suggestions.last {
+                        if suggestion.id != completer.suggestions.last?.id {
                             Divider().background(AppColors.stroke)
                         }
                     }

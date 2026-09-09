@@ -116,8 +116,13 @@ final class LikesInboxViewModel: ObservableObject {
             )
         }
         
-        // Sortiert nach Zeit (neueste oben)
-        return clusters.sorted(by: { $0.lastLikeAt > $1.lastLikeAt })
+        // Tracks with something to answer first, then newest first.
+        return clusters.sorted { a, b in
+            let aPending = a.pendingCount > 0
+            let bPending = b.pendingCount > 0
+            if aPending != bPending { return aPending }
+            return a.lastLikeAt > b.lastLikeAt
+        }
     }
     
     private func loadLastSeenDate() {

@@ -12,6 +12,8 @@ final class ChatViewModel: ObservableObject {
     /// Transient error from an action (send/accept/decline). Shown as an alert
     /// instead of replacing the chat like `errorMessage` does.
     @Published var actionError: String?
+    /// The conversation document is gone (deleted by either side).
+    @Published var conversationMissing: Bool = false
 
     @Published var draft: String = ""
     @Published var isSending: Bool = false
@@ -85,12 +87,41 @@ final class ChatViewModel: ObservableObject {
         return await deleteConversation(conversationId: conversationId)
     }
 
+    /// The request was declined. `declinedByMe` tells the two sides apart.
+    var isDeclined: Bool {
+        conversation?.effectiveStatus == .rejected
+    }
+
+    var declinedByMe: Bool {
+        guard let convo = conversation, convo.effectiveStatus == .rejected,
+              let myId = currentUserId else { return false }
+        return convo.initiatorId != myId
+    }
+
+    /// Recreates a deleted conversation as a new message request and starts
+    /// listening to it.
+    func startNewChat(with peerId: String) async {
+        do {
+            let convo = try await ChatApiService.shared.createRequestConversation(with: peerId)
+            start(conversationId: convo.id)
+        } catch {
+            actionError = UserFacingError.message(for: error, fallback: "Couldn’t start a new chat. Please try again.")
+        }
+    }
+
     /// True when the conversation is a pending message request and the current
     /// user is the recipient (i.e. they need to Accept or Decline).
     var needsAcceptance: Bool {
         guard let convo = conversation, convo.effectiveStatus == .pending else { return false }
         guard let myId = Auth.auth().currentUser?.uid else { return false }
         return convo.initiatorId != myId
+    }
+
+    /// A request I started that has no message yet (recreated after a
+    /// delete): the composer stays open for exactly that first message.
+    var canSendFirstRequestMessage: Bool {
+        guard let convo = conversation, convo.effectiveStatus == .pending else { return false }
+        return convo.initiatorId == currentUserId && messages.isEmpty
     }
 
     /// True when the current user is the sender of a pending request that
@@ -106,6 +137,7 @@ final class ChatViewModel: ObservableObject {
 
         isLoading = true
         errorMessage = nil
+        conversationMissing = false
         messages = []
         conversation = nil
 
@@ -119,9 +151,11 @@ final class ChatViewModel: ObservableObject {
                 }
                 guard let snap, snap.exists, let data = snap.data() else {
                     self.isLoading = false
+                    self.conversationMissing = true
                     self.errorMessage = "This chat no longer exists."
                     return
                 }
+                self.conversationMissing = false
                 let convo = Conversation.fromFirestore(id: conversationId, data: data)
                 self.conversation = convo
                 if let convo { self.startPeerListenerIfNeeded(participantIds: convo.participantIds) }
@@ -199,10 +233,17 @@ final class ChatViewModel: ObservableObject {
         guard !text.isEmpty else { return }
         guard Auth.auth().currentUser != nil else { return }
 
-        // Block sending in pending conversations.
-        if let convo = conversation, convo.effectiveStatus == .pending {
-            actionError = "Wait for the other user to accept your request before sending more messages."
-            return
+        // A pending request carries exactly one message from its sender; the
+        // rest waits for the accept. Declined chats take nothing.
+        if let convo = conversation {
+            if convo.effectiveStatus == .rejected {
+                actionError = "This request was declined."
+                return
+            }
+            if convo.effectiveStatus == .pending, !canSendFirstRequestMessage {
+                actionError = "Wait for the other person to accept your request before sending more messages."
+                return
+            }
         }
 
         isSending = true

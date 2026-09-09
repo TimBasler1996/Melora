@@ -8,6 +8,8 @@ final class UserSearchViewModel: ObservableObject {
     @Published var searchText: String = ""
     @Published private(set) var results: [AppUser] = []
     @Published private(set) var isSearching: Bool = false
+    /// Set when the last search failed (distinct from "no results").
+    @Published private(set) var errorMessage: String?
     @Published private(set) var followingIds: Set<String> = []
 
     private lazy var db = Firestore.firestore()
@@ -51,6 +53,7 @@ final class UserSearchViewModel: ObservableObject {
         }
 
         isSearching = true
+        errorMessage = nil
 
         searchTask = Task {
             // Debounce so fast typing doesn't fire two Firestore queries per keystroke.
@@ -64,6 +67,7 @@ final class UserSearchViewModel: ObservableObject {
             } catch {
                 guard !Task.isCancelled else { return }
                 self.results = []
+                self.errorMessage = UserFacingError.message(for: error, fallback: "Couldn’t search right now. Please try again.")
             }
             self.isSearching = false
         }
@@ -82,6 +86,13 @@ final class UserSearchViewModel: ObservableObject {
             .limit(to: 20)
             .getDocuments()
 
+        // Search by lastName (prefix match)
+        let lastNameSnap = try await db.collection("users")
+            .whereField("lastNameLower", isGreaterThanOrEqualTo: lowered)
+            .whereField("lastNameLower", isLessThan: end)
+            .limit(to: 20)
+            .getDocuments()
+
         // Search by displayName (prefix match)
         let displayNameSnap = try await db.collection("users")
             .whereField("displayNameLower", isGreaterThanOrEqualTo: lowered)
@@ -89,16 +100,18 @@ final class UserSearchViewModel: ObservableObject {
             .limit(to: 20)
             .getDocuments()
 
-        // Merge results, deduplicate, exclude self and blocked users
+        // Merge results, deduplicate, exclude self, blocked and unfinished profiles
         let blockedIds = (try? await BlockService.shared.fetchBlockedIds()) ?? []
         var seen = Set<String>()
         var users: [AppUser] = []
 
-        for doc in firstNameSnap.documents + displayNameSnap.documents {
+        for doc in firstNameSnap.documents + lastNameSnap.documents + displayNameSnap.documents {
             let uid = doc.documentID
             guard uid != currentUid, !seen.contains(uid), !blockedIds.contains(uid) else { continue }
+            let user = AppUser.fromFirestore(uid: uid, data: doc.data())
+            guard user.profileCompleted == true else { continue }
             seen.insert(uid)
-            users.append(AppUser.fromFirestore(uid: uid, data: doc.data()))
+            users.append(user)
         }
 
         return users

@@ -137,7 +137,8 @@ struct SharedProfilePreviewView: View {
                     ProfileChip(text: g, icon: "person.fill")
                 }
                 if let lf = data.lookingFor, !lf.isEmpty {
-                    ProfileChip(text: lf, icon: "sparkles")
+                    // Profiles saved before the label change still say "for".
+                    ProfileChip(text: lf == "Open for all" ? "Open to all" : lf, icon: "sparkles")
                 }
                 if let mt = data.musicTaste, !mt.isEmpty {
                     ProfileChip(text: mt, icon: "music.note")
@@ -520,7 +521,8 @@ final class FollowersListViewModel: ObservableObject {
 
         var loaded: [AppUser] = []
         for id in ids {
-            if let user = try? await fetchUser(uid: id) {
+            // Unfinished or deleted profiles have nothing to show.
+            if let user = try? await fetchUser(uid: id), user.profileCompleted == true {
                 loaded.append(user)
             }
         }

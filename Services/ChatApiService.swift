@@ -152,6 +152,29 @@ actor ChatApiService {
         return try await loadConversation(ref: convoRef, id: convoId, fallbackParticipants: [receiverUserId, senderId])
     }
 
+    // MARK: - Recreate after delete
+
+    /// Starts a new message request with `peerId` when the previous
+    /// conversation was deleted. Returns the (possibly already existing)
+    /// conversation.
+    func createRequestConversation(with peerId: String) async throws -> Conversation {
+        guard let me = Auth.auth().currentUser?.uid else { throw ChatError.notAuthenticated }
+        let convoId = conversationId(for: me, and: peerId)
+        let convoRef = db.collection(conversationsCollection).document(convoId)
+
+        let snap = try await convoRef.getDocument()
+        if !snap.exists {
+            try await convoRef.setData([
+                "participantIds": [me, peerId],
+                "createdAt": FieldValue.serverTimestamp(),
+                "updatedAt": FieldValue.serverTimestamp(),
+                "status": Conversation.Status.pending.rawValue,
+                "initiatorId": me
+            ], merge: true)
+        }
+        return try await loadConversation(ref: convoRef, id: convoId, fallbackParticipants: [me, peerId])
+    }
+
     // MARK: - Status changes
 
     /// Marks an existing conversation as accepted. Used both when a like is

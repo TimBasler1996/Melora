@@ -27,7 +27,7 @@ struct ChatInboxRowView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(row.displayName ?? "Unknown user")
+                Text(row.displayName ?? "New member")
                     .font(.system(size: 16, weight: row.isUnread ? .bold : .semibold, design: .rounded))
                     .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
@@ -42,7 +42,7 @@ struct ChatInboxRowView: View {
 
             VStack(alignment: .trailing, spacing: 6) {
                 if let date = row.lastMessageAt ?? row.updatedAt {
-                    Text(date.formatted(date: .abbreviated, time: .shortened))
+                    Text(Self.relativeLabel(for: date))
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .foregroundColor(row.isUnread ? AppColors.primary : AppColors.mutedText)
                 }
@@ -84,5 +84,25 @@ struct ChatInboxRowView: View {
             Image(systemName: "person.fill")
                 .foregroundColor(.white.opacity(0.9))
         }
+    }
+}
+
+extension ChatInboxRowView {
+    /// "14:05" today, "Tue" within the last week, "12 Mar" otherwise.
+    static func relativeLabel(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            return date.formatted(date: .omitted, time: .shortened)
+        }
+        if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        }
+        if let weekAgo = calendar.date(byAdding: .day, value: -6, to: Date()), date > weekAgo {
+            return date.formatted(.dateTime.weekday(.abbreviated))
+        }
+        if calendar.isDate(date, equalTo: Date(), toGranularity: .year) {
+            return date.formatted(.dateTime.day().month(.abbreviated))
+        }
+        return date.formatted(date: .numeric, time: .omitted)
     }
 }
