@@ -25,9 +25,11 @@ Everything server-side lives in this repo and deploys with the Firebase CLI:
 - `firestore.rules`, `storage.rules` – security rules (every client write path is covered)
 - `firestore.indexes.json` – composite indexes
 - `functions/src/index.ts` – push notifications, search-field sync, cleanup jobs
+- `hosting/` – privacy policy and terms, served at https://socialsound-5fdd9.web.app
+  (linked from Settings → About via `Utils/LegalLinks.swift`)
 
     cd functions && npm install
-    firebase deploy --only firestore,storage,functions
+    firebase deploy --only firestore,storage,functions,hosting
 
 Schema reference: `Docs/Firebase_Schema.txt`.
 

@@ -10,11 +10,11 @@ Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 50
 
 - [ ] **OWN-1** Revoke and re-create the Apple push key AuthKey_6VS39MY9B2 and rotate the Spotify client secret — Both were committed to git history before being untracked.
 - [ ] **OWN-2** Enable Sign in with Apple for the app ID in the Apple developer portal and add Apple as a provider in the Firebase console — The entitlement is in the repo; the capability and provider are console settings.
-- [ ] **OWN-3** Deploy the backend: cd functions && npm install, then firebase deploy --only firestore,storage,functions — Rules, indexes and every Cloud Function (push, search fields, sweeper, deletion) only exist in the repo until deployed.
+- [ ] **OWN-3** Deploy the backend: cd functions && npm install, then firebase deploy --only firestore,storage,functions,hosting — Rules, indexes and every Cloud Function (push, search fields, sweeper, deletion) only exist in the repo until deployed.
 - [ ] **OWN-4** Build once in Xcode and run onboarding, going live, and a like with a message between two devices — The Swift changes were reviewed but not compiled; this session has no Xcode.
 - [ ] **OWN-5** Delete the seven fully merged claude/* remote branches — chat-reply-reactions-seen, cool-darwin, discover-radius-slider, fix-follow-messaging-issues, melora-design-system, melora-profile-cleanup, unified-profile-follow are ancestors of Dev3.
 - [ ] **OWN-6** Optionally purge the .p8 key and functions/.env from git history with a force push — They are untracked now but still in history; say the word and it can be done.
-- [ ] **OWN-7** Set the privacy policy, terms and support email in Utils/LegalLinks.swift — The About rows in Settings stay hidden until these URLs exist; App Store review expects a privacy policy link.
+- [ ] **OWN-7** Finish the legal pages: fill in the bracketed operator name, address, governing law and support email in hosting/privacy.html and hosting/terms.html, set supportEmail in Utils/LegalLinks.swift, then deploy hosting — The privacy policy and terms are written and the app already links to https://socialsound-5fdd9.web.app/privacy and /terms; they go live with `firebase deploy --only hosting` (included in the OWN-3 deploy). App Store review expects the privacy link to work. Decision to confirm: the pages say Melora is 18+, which the app does not enforce yet.
 
 ## Decisions taken
 
