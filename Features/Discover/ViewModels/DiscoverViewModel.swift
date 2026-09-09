@@ -200,7 +200,7 @@ final class DiscoverViewModel: ObservableObject {
     /// Grows the radius just enough to include the nearest live broadcast
     /// that is currently hidden by it.
     func widenRadiusToNearestLive() {
-        let hidden = allBroadcasts.filter { $0.isLive && !passesRadius($0) }
+        let hidden = filteredBase().filter { $0.isLive && !passesRadius($0) }
         guard let nearest = hidden.compactMap(\.distanceMeters).min() else {
             maxRadiusKm = Self.maxRadiusKmAllowed
             return
@@ -494,7 +494,9 @@ final class DiscoverViewModel: ObservableObject {
         return Double(distance) <= maxRadiusKm * 1000
     }
 
-    private func updateVisibleBroadcasts() {
+    /// Mute/block/mode filter with distances applied. `allBroadcasts` itself
+    /// is left untouched so switching modes never loses anything.
+    private func filteredBase() -> [DiscoverBroadcast] {
         var base = allBroadcasts.filter { broadcast in
             !mutedUserIds.contains(broadcast.user.id)
                 && !blockedUserIds.contains(broadcast.user.id)
@@ -506,20 +508,22 @@ final class DiscoverViewModel: ObservableObject {
             base = base.filter { followingIds.contains($0.user.id) }
         }
 
-        // Distances (only when we know where we are).
-        if let currentLocation {
-            base = base.map { broadcast in
-                var mutable = broadcast
-                if let location = broadcast.location {
-                    let target = CLLocation(latitude: location.latitude, longitude: location.longitude)
-                    mutable.distanceMeters = Int(currentLocation.distance(from: target))
-                } else {
-                    mutable.distanceMeters = nil
-                }
-                return mutable
+        // Distances only when we know where we are; otherwise none at all,
+        // so a stale "about 3 km" never outlives the location fix.
+        return base.map { broadcast in
+            var mutable = broadcast
+            if let currentLocation, let location = broadcast.location {
+                let target = CLLocation(latitude: location.latitude, longitude: location.longitude)
+                mutable.distanceMeters = Int(currentLocation.distance(from: target))
+            } else {
+                mutable.distanceMeters = nil
             }
+            return mutable
         }
-        allBroadcasts = base + allBroadcasts.filter { b in !base.contains(where: { $0.id == b.id }) }
+    }
+
+    private func updateVisibleBroadcasts() {
+        let base = filteredBase()
 
         // Live now: radius-filtered, nearest first.
         let live = base.filter(\.isLive)

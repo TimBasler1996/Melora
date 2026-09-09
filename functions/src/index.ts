@@ -138,6 +138,11 @@ async function deleteAccountData(uid: string): Promise<void> {
   await deleteQuery(db.collection("blocks").where("blockerId", "==", uid));
   await deleteQuery(db.collection("blocks").where("blockedUserId", "==", uid));
 
+  // Likes this user gave live in other users' `likesReceived`; mirrors of
+  // likes this user received live in other users' `likesGiven`.
+  await deleteQuery(db.collectionGroup("likesReceived").where("fromUserId", "==", uid));
+  await deleteQuery(db.collectionGroup("likesGiven").where("toUserId", "==", uid));
+
   const convos = await db
     .collection("conversations")
     .where("participantIds", "array-contains", uid)
@@ -209,6 +214,48 @@ export const onLikeCreated = onDocumentCreated(
         type: hasMessage ? "messageRequest" : "likeReceived",
         likeId: event.params.likeId,
         conversationId: conversationIdFor(receiverUid, data.fromUserId ?? ""),
+      },
+      apns: {payload: {aps: {sound: "default"}}},
+    };
+
+    await sendPush(receiverUid, message);
+  }
+);
+
+/**
+ * A message was attached to an existing pending like (the liker sent a
+ * message after a plain like). `onLikeCreated` did not see it and
+ * `onNewChatMessage` skips the first message of a request, so push here.
+ */
+export const onLikeMessageAttached = onDocumentUpdated(
+  "users/{userId}/likesReceived/{likeId}",
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    const beforeText = String(before.message ?? "").trim();
+    const afterText = String(after.message ?? "").trim();
+    if (beforeText.length > 0 || afterText.length === 0) return;
+    if (after.status === "rejected") return;
+
+    const receiverUid = event.params.userId;
+    const token = await getFcmToken(receiverUid, "notifyLikes");
+    if (!token) return;
+
+    const fromName: string =
+      after.fromUserDisplayName ?? (await getDisplayName(after.fromUserId ?? ""));
+
+    const message: admin.messaging.Message = {
+      token,
+      notification: {
+        title: `${fromName} sent you a message`,
+        body: truncate(afterText, 140),
+      },
+      data: {
+        type: "messageRequest",
+        likeId: event.params.likeId,
+        conversationId: conversationIdFor(receiverUid, after.fromUserId ?? ""),
       },
       apns: {payload: {aps: {sound: "default"}}},
     };

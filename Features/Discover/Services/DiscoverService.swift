@@ -54,6 +54,10 @@ final class DiscoverService {
         onNew: @escaping (Result<[BroadcastRecord], Error>) -> Void
     ) -> ListenerRegistration {
         var isFirstSnapshot = true
+        // Last known live state per document, so heartbeats (which arrive as
+        // `.modified` every 15–20 s) are not mistaken for someone going live.
+        var lastLive: [String: Bool] = [:]
+
         return recentQuery().addSnapshotListener { snapshot, error in
             if let error {
                 onNew(.failure(error))
@@ -63,13 +67,24 @@ final class DiscoverService {
 
             if isFirstSnapshot {
                 isFirstSnapshot = false
+                for doc in snapshot.documents {
+                    if let record = Self.broadcastRecord(from: doc) {
+                        lastLive[record.id] = record.isLive
+                    }
+                }
                 return
             }
 
-            let newRecords = snapshot.documentChanges
-                .filter { $0.type == .added || $0.type == .modified }
-                .compactMap { Self.broadcastRecord(from: $0.document) }
-                .filter { $0.isLive }
+            let newRecords: [BroadcastRecord] = snapshot.documentChanges.compactMap { change in
+                guard let record = Self.broadcastRecord(from: change.document) else { return nil }
+                if change.type == .removed {
+                    lastLive[record.id] = nil
+                    return nil
+                }
+                let wasLive = lastLive[record.id] ?? false
+                lastLive[record.id] = record.isLive
+                return (record.isLive && !wasLive) ? record : nil
+            }
 
             if !newRecords.isEmpty {
                 onNew(.success(newRecords))

@@ -111,6 +111,9 @@ actor LikeApiService {
             // Already liked this track. If a message is added to a plain
             // pending like, attach it so the receiver gets ONE thing to act on
             // (a message request) instead of a like *and* a request.
+            if existing.status == .rejected {
+                throw LikeError.alreadyReachedOut(name: toUser.displayName)
+            }
             let existingMessage = (existing.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             if let trimmedMessage, existingMessage.isEmpty, (existing.status ?? .pending) == .pending {
                 let update: [String: Any] = ["message": trimmedMessage]

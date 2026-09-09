@@ -42,6 +42,10 @@ final class AccountService: ObservableObject {
 
     @Published private(set) var isLinkedWithApple: Bool = false
 
+    /// Kept from the last Apple sign-in so the token can be revoked when the
+    /// account is deleted (App Review guideline 5.1.1(v)).
+    private var lastAppleAuthorizationCode: String?
+
     private var currentNonce: String?
     private var authHandle: AuthStateDidChangeListenerHandle?
 
@@ -76,7 +80,10 @@ final class AccountService: ObservableObject {
 
     /// Handle the `SignInWithAppleButton` result: link to the anonymous user,
     /// or sign into the existing account when the Apple ID is already taken.
-    func completeAppleSignIn(_ result: Result<ASAuthorization, Error>) async throws -> LinkOutcome {
+    func completeAppleSignIn(
+        _ result: Result<ASAuthorization, Error>,
+        stopping broadcast: BroadcastManager
+    ) async throws -> LinkOutcome {
         let authorization: ASAuthorization
         switch result {
         case .success(let value):
@@ -95,6 +102,9 @@ final class AccountService: ObservableObject {
             throw AccountError.missingAppleToken
         }
         currentNonce = nil
+        if let codeData = appleCredential.authorizationCode {
+            lastAppleAuthorizationCode = String(data: codeData, encoding: .utf8)
+        }
 
         let credential = OAuthProvider.appleCredential(
             withIDToken: idToken,
@@ -112,10 +122,27 @@ final class AccountService: ObservableObject {
             // This Apple ID already has a SocialSound account: switch to it.
             // Firebase hands back an updated credential for exactly this case.
             let updated = (error.userInfo[AuthErrorUserInfoUpdatedCredentialKey] as? AuthCredential) ?? credential
+            // Leaving the anonymous session: tear down what belongs to it
+            // while we still have permission to write.
+            await detachCurrentSession(stopping: broadcast)
             _ = try await Auth.auth().signIn(with: updated)
             refreshLinkState()
             return .switchedToExistingAccount
         }
+    }
+
+    /// Stops the broadcast, detaches the push token and disconnects Spotify
+    /// for the account we are about to leave.
+    private func detachCurrentSession(stopping broadcast: BroadcastManager) async {
+        if broadcast.isBroadcasting {
+            await broadcast.stopBroadcasting()
+        }
+        if let uid = Auth.auth().currentUser?.uid {
+            try? await Firestore.firestore().collection("users").document(uid).updateData([
+                "fcmToken": FieldValue.delete()
+            ])
+        }
+        SpotifyAuthManager.shared.disconnect()
     }
 
     // MARK: - Sign out (only meaningful for linked accounts)
@@ -139,6 +166,12 @@ final class AccountService: ObservableObject {
             await broadcast.stopBroadcasting()
         }
 
+        // Apple requires the Sign in with Apple token to be revoked on
+        // account deletion. Best effort: only possible with a recent code.
+        if isLinkedWithApple, let code = lastAppleAuthorizationCode {
+            try? await Auth.auth().revokeToken(withAuthorizationCode: code)
+        }
+
         try await Firestore.firestore().collection("users").document(uid).setData([
             "deletionRequestedAt": FieldValue.serverTimestamp(),
             "isBroadcasting": false,
@@ -160,7 +193,7 @@ final class AccountService: ObservableObject {
             var random: UInt8 = 0
             let status = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
             if status != errSecSuccess { random = UInt8.random(in: 0...255) }
-            if random < charset.count {
+            if Int(random) < charset.count {
                 result.append(charset[Int(random)])
                 remaining -= 1
             }

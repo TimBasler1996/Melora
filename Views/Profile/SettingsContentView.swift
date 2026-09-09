@@ -192,7 +192,7 @@ struct SettingsContentView: View {
         isLinking = true
         defer { isLinking = false }
         do {
-            switch try await account.completeAppleSignIn(result) {
+            switch try await account.completeAppleSignIn(result, stopping: broadcast) {
             case .linked:
                 accountMessage = "Your profile is now kept with your Apple ID."
             case .switchedToExistingAccount:

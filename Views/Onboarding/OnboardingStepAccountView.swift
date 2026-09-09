@@ -7,6 +7,7 @@ import AuthenticationServices
 struct OnboardingStepAccountView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     @StateObject private var account = AccountService.shared
+    @EnvironmentObject private var broadcast: BroadcastManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -31,7 +32,7 @@ struct OnboardingStepAccountView: View {
             SignInWithAppleButton(.continue) { request in
                 account.prepareAppleRequest(request)
             } onCompletion: { result in
-                Task { await viewModel.completeAppleSignIn(result, using: account) }
+                Task { await viewModel.completeAppleSignIn(result, using: account, stopping: broadcast) }
             }
             .signInWithAppleButtonStyle(.white)
             .frame(height: 54)

@@ -125,13 +125,17 @@ final class OnboardingViewModel: ObservableObject {
         didFinish = true
     }
 
-    func completeAppleSignIn(_ result: Result<ASAuthorization, Error>, using account: AccountService) async {
+    func completeAppleSignIn(
+        _ result: Result<ASAuthorization, Error>,
+        using account: AccountService,
+        stopping broadcast: BroadcastManager
+    ) async {
         accountErrorMessage = nil
         isLinkingAccount = true
         defer { isLinkingAccount = false }
 
         do {
-            _ = try await account.completeAppleSignIn(result)
+            _ = try await account.completeAppleSignIn(result, stopping: broadcast)
             didFinish = true
         } catch AccountService.AccountError.cancelled {
             // User backed out of the Apple sheet; stay on the step.

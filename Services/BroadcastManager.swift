@@ -47,6 +47,11 @@ final class BroadcastManager: ObservableObject {
     private var idlePolls = 0
     private static let maxIdlePolls = 40 // ≈ 10 minutes at 15s
 
+    /// Whether the Discover document was written in this broadcast session.
+    /// The first write stamps `broadcastedAt`, even if it happens after the
+    /// start (the track may not be known yet when the toggle flips).
+    private var hasWrittenBroadcastDoc = false
+
     // MARK: - Init
 
     init(userService: UserApiService = .shared) {
@@ -130,6 +135,7 @@ final class BroadcastManager: ObservableObject {
 
         isBroadcasting = true
         idlePolls = 0
+        hasWrittenBroadcastDoc = false
         broadcastStartedAt = Date()
         UserDefaults.standard.set(broadcastStartedAt, forKey: broadcastStartKey)
 
@@ -329,7 +335,7 @@ final class BroadcastManager: ObservableObject {
             payload["longitude"] = location.longitude
         }
 
-        if isNew {
+        if isNew || !hasWrittenBroadcastDoc {
             payload["broadcastedAt"] = FieldValue.serverTimestamp()
         }
 
@@ -337,6 +343,7 @@ final class BroadcastManager: ObservableObject {
             try await db.collection(broadcastsCollection)
                 .document(uid)
                 .setData(payload, merge: true)
+            hasWrittenBroadcastDoc = true
         } catch {
             errorMessage = "Broadcast update failed: \(error.localizedDescription)"
         }
