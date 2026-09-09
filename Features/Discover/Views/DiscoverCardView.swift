@@ -11,6 +11,8 @@ struct DiscoverCardView: View {
     let onMessage: (String) -> Void
     let onViewProfile: () -> Void
     let onToggleFollow: () -> Void
+    /// Opens the conversation once a message has been sent.
+    var onOpenChat: () -> Void = {}
 
     var hasLiked: Bool = false
     var hasMessaged: Bool = false
@@ -18,7 +20,6 @@ struct DiscoverCardView: View {
 
     @Environment(\.openURL) private var openURL
 
-    @State private var isLiked: Bool = false
     @State private var showHeartAnimation: Bool = false
     @State private var showMessageField: Bool = false
     @State private var messageText: String = ""
@@ -74,9 +75,6 @@ struct DiscoverCardView: View {
                 heartAnimationOverlay
             }
         }
-        .onAppear {
-            isLiked = hasLiked
-        }
         .onChange(of: isExpanded) { _, newValue in
             if !newValue {
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
@@ -105,12 +103,23 @@ struct DiscoverCardView: View {
                     .foregroundColor(.white.opacity(0.7))
                     .lineLimit(1)
 
-                if let distance = broadcast.distanceMeters {
-                    let distStr = Self.formatDistance(distance)
-                    Text(distStr == "nearby" ? "Nearby" : "\(distStr) away")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.5))
+                HStack(spacing: 6) {
+                    if broadcast.isLive {
+                        Circle()
+                            .fill(AppColors.live)
+                            .frame(width: 6, height: 6)
+                        Text("Live")
+                            .foregroundColor(AppColors.live)
+                    } else {
+                        Text("Live \(broadcast.lastSeenText)")
+                            .foregroundColor(.white.opacity(0.5))
+                    }
+                    if let distance = broadcast.distanceMeters {
+                        Text("· \(Self.formatDistance(distance))")
+                            .foregroundColor(.white.opacity(0.5))
+                    }
                 }
+                .font(.system(size: 12, weight: .medium, design: .rounded))
             }
 
             Spacer(minLength: 0)
@@ -140,19 +149,20 @@ struct DiscoverCardView: View {
 
     private var actionButtonsRow: some View {
         HStack(spacing: 0) {
-            // 1. Like
+            // 1. Like — state comes from the view model so a failed like
+            // rolls the heart back instead of leaving it red.
             actionButton(
-                icon: isLiked ? "heart.fill" : "heart",
-                label: "Like",
-                color: isLiked ? .red : .white
+                icon: hasLiked ? "heart.fill" : "heart",
+                label: hasLiked ? "Liked" : "Like",
+                color: hasLiked ? .red : .white
             ) {
                 handleLikeAction()
             }
 
-            // 2. Message
+            // 2. Message → after sending, becomes "Open chat".
             actionButton(
-                icon: hasMessaged ? "paperplane.fill" : "paperplane",
-                label: "Message",
+                icon: hasMessaged ? "bubble.left.and.bubble.right.fill" : "paperplane",
+                label: hasMessaged ? "Open chat" : "Message",
                 color: hasMessaged ? AppColors.live : .white
             ) {
                 handleMessageAction()
@@ -262,12 +272,11 @@ struct DiscoverCardView: View {
     // MARK: - Actions
 
     private func handleLikeAction() {
-        guard !isLiked else { return }
+        guard !hasLiked else { return }
 
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-            isLiked = true
             showHeartAnimation = true
         }
 
@@ -285,7 +294,10 @@ struct DiscoverCardView: View {
     }
 
     private func handleMessageAction() {
-        guard !hasMessaged else { return }
+        if hasMessaged {
+            onOpenChat()
+            return
+        }
         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
             showMessageField.toggle()
         }
@@ -423,10 +435,16 @@ struct DiscoverCardView: View {
         return a.isEmpty ? "Unknown artist" : a
     }
 
+    /// Distance bands, never exact meters: positions are fuzzed to a ~275 m
+    /// grid before they are shared, and a band is all anyone needs.
     static func formatDistance(_ meters: Int) -> String {
-        if meters < 10 { return "nearby" }
-        if meters < 1000 { return "\(meters)m" }
+        if meters < 500 { return "under 500 m" }
+        if meters < 1000 { return "under 1 km" }
         let km = Double(meters) / 1000.0
-        return String(format: "%.1f km", km)
+        if km < 10 {
+            let half = (km * 2).rounded() / 2
+            return half == half.rounded() ? "about \(Int(half)) km" : String(format: "about %.1f km", half)
+        }
+        return "about \(Int(km.rounded())) km"
     }
 }

@@ -50,6 +50,20 @@ class AppDelegate: NSObject, UIApplicationDelegate, MessagingDelegate, UNUserNot
         completionHandler([.banner, .sound, .badge])
     }
 
+    // MARK: - Notification taps → in-app navigation
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        Task { @MainActor in
+            AppRouter.shared.handleNotification(userInfo: userInfo)
+        }
+        completionHandler()
+    }
+
     // MARK: - APNs token forwarding
 
     func application(

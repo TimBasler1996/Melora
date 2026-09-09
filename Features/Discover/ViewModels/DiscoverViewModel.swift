@@ -12,7 +12,16 @@ enum DiscoverMode: String, CaseIterable, Identifiable {
 @MainActor
 final class DiscoverViewModel: ObservableObject {
 
+    /// People broadcasting right now, inside the radius, sorted by distance.
     @Published private(set) var visibleBroadcasts: [DiscoverBroadcast] = []
+
+    /// People who were live in the last 24 h but aren't right now. Shown so
+    /// Discover has something to offer in a quiet moment; not radius-filtered.
+    @Published private(set) var recentBroadcasts: [DiscoverBroadcast] = []
+
+    /// Live broadcasts hidden only because they are outside the radius.
+    @Published private(set) var liveOutsideRadiusCount: Int = 0
+
     @Published var isLoading: Bool = false
     @Published var isSendingLike: Bool = false
     @Published var errorMessage: String?
@@ -98,6 +107,8 @@ final class DiscoverViewModel: ObservableObject {
         blockListener?.remove()
     }
 
+    // MARK: - Listening
+
     func startListening() {
         guard !isListening else { return }
         guard !isRunningInPreview else { return }
@@ -126,9 +137,8 @@ final class DiscoverViewModel: ObservableObject {
         }
 
         // The snapshot listener is the single real-time source of truth. Stale
-        // documents are hidden client-side (`maxBroadcastAge`) and swept
-        // server-side by the `expireStaleBroadcasts` Cloud Function, so no
-        // polling fallback is needed.
+        // documents are demoted to "recently live" client-side and swept
+        // server-side by the `expireStaleBroadcasts` Cloud Function.
         listener = service.listenToBroadcasts { [weak self] result in
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -138,6 +148,7 @@ final class DiscoverViewModel: ObservableObject {
                     self.errorMessage = error.localizedDescription
                     self.allBroadcasts = []
                     self.visibleBroadcasts = []
+                    self.recentBroadcasts = []
                     // Detach everything so Retry / the next appear starts clean
                     // instead of stacking a second set of listeners.
                     self.stopListening()
@@ -171,7 +182,7 @@ final class DiscoverViewModel: ObservableObject {
             await handleBroadcastRecords(records)
             errorMessage = nil
         } catch {
-            actionError = "Couldn’t refresh broadcasts. Please try again."
+            actionError = "Couldn’t refresh. Please try again."
         }
     }
 
@@ -183,6 +194,22 @@ final class DiscoverViewModel: ObservableObject {
         }
         updateVisibleBroadcasts()
     }
+
+    // MARK: - Radius helpers
+
+    /// Grows the radius just enough to include the nearest live broadcast
+    /// that is currently hidden by it.
+    func widenRadiusToNearestLive() {
+        let hidden = allBroadcasts.filter { $0.isLive && !passesRadius($0) }
+        guard let nearest = hidden.compactMap(\.distanceMeters).min() else {
+            maxRadiusKm = Self.maxRadiusKmAllowed
+            return
+        }
+        let km = ceil(Double(nearest) / 1000) + 1
+        maxRadiusKm = min(max(km, Self.minRadiusKm), Self.maxRadiusKmAllowed)
+    }
+
+    // MARK: - Dismiss / mute / block
 
     func requestDismiss(for broadcast: DiscoverBroadcast) {
         dismissTarget = broadcast
@@ -211,12 +238,21 @@ final class DiscoverViewModel: ObservableObject {
         Task {
             do {
                 try await BlockService.shared.blockUser(userId: broadcast.user.id)
+                // Any chat with them is closed too, so no unread badge lingers
+                // on a conversation the user can no longer see.
+                let convoId = await chatService.conversationId(for: broadcast.user.id, and: service.currentUserId() ?? "")
+                try? await chatService.deleteConversation(conversationId: convoId)
             } catch {
                 actionError = "Couldn’t block \(broadcast.user.displayName). Please try again."
             }
         }
     }
 
+    // MARK: - Like / message
+
+    /// Sends a like (optionally with a message). The heart is shown
+    /// optimistically and rolled back if the like fails, so the card never
+    /// claims a like that didn't happen.
     func sendLike(
         for broadcast: DiscoverBroadcast,
         from currentUser: AppUser?,
@@ -227,6 +263,10 @@ final class DiscoverViewModel: ObservableObject {
         guard service.currentUserId() != nil else {
             throw NSError(domain: "Discover", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
         }
+
+        let key = Self.interactionKey(for: broadcast)
+        let wasLiked = likedBroadcastIds.contains(key)
+        likedBroadcastIds.insert(key)
 
         let receiverUser = AppUser(
             uid: broadcast.user.id,
@@ -243,25 +283,25 @@ final class DiscoverViewModel: ObservableObject {
             artworkURL: broadcast.track.artworkURLValue
         )
 
-        let like = try await likeService.likeBroadcastTrack(
-            fromUser: currentUser,
-            toUser: receiverUser,
-            track: track,
-            sessionLocation: nil,
-            placeLabel: nil,
-            message: message
-        )
-
-        let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let key = Self.interactionKey(for: broadcast)
-
-        // Mark this broadcast as liked (the like itself succeeded above).
-        likedBroadcastIds.insert(key)
+        let like: TrackLike
+        do {
+            like = try await likeService.likeBroadcastTrack(
+                fromUser: currentUser,
+                toUser: receiverUser,
+                track: track,
+                sessionLocation: nil,
+                placeLabel: nil,
+                message: message
+            )
+        } catch {
+            if !wasLiked { likedBroadcastIds.remove(key) }
+            throw error
+        }
         saveLikedBroadcastsToCache()
 
+        let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedMessage.isEmpty {
             // Deliver the typed message into the (new or existing) conversation.
-            // This is what the user actually cares about, so failures surface.
             try await chatService.deliverLikeMessage(
                 like: like,
                 text: trimmedMessage,
@@ -276,6 +316,22 @@ final class DiscoverViewModel: ObservableObject {
                 receiverUserId: broadcast.user.id
             )
         }
+    }
+
+    /// Turns an error from `sendLike` into the alert text. Our own errors
+    /// carry a user-facing explanation; anything else gets the fallback.
+    func presentActionError(_ error: Error, fallback: String) {
+        if error is LikeApiService.LikeError || error is ChatApiService.ChatError {
+            actionError = error.localizedDescription
+        } else {
+            actionError = fallback
+        }
+    }
+
+    /// The conversation id for a broadcaster, so the card can offer "Open chat".
+    func conversationId(with broadcast: DiscoverBroadcast) async -> String? {
+        guard let me = service.currentUserId() else { return nil }
+        return await chatService.conversationId(for: me, and: broadcast.user.id)
     }
 
     /// Likes and messages are per broadcaster *and* track: a new song from the
@@ -323,45 +379,41 @@ final class DiscoverViewModel: ObservableObject {
                 : "Couldn’t follow \(broadcast.user.displayName). Please try again."
         }
     }
-    
+
     // MARK: - Cache Management
-    
+
     private func loadLikedBroadcastsFromCache() {
         guard let uid = service.currentUserId() else { return }
-        let defaults = UserDefaults.standard
-        let key = "discover.likedBroadcasts.\(uid)"
-        let cached = defaults.stringArray(forKey: key) ?? []
+        let cached = UserDefaults.standard.stringArray(forKey: "discover.likedBroadcasts.\(uid)") ?? []
         likedBroadcastIds = Set(cached)
     }
-    
+
     private func saveLikedBroadcastsToCache() {
         guard let uid = service.currentUserId() else { return }
-        let defaults = UserDefaults.standard
-        let key = "discover.likedBroadcasts.\(uid)"
-        defaults.set(Array(likedBroadcastIds), forKey: key)
+        UserDefaults.standard.set(Array(likedBroadcastIds), forKey: "discover.likedBroadcasts.\(uid)")
     }
-    
+
     private func loadMessagedBroadcastsFromCache() {
         guard let uid = service.currentUserId() else { return }
-        let defaults = UserDefaults.standard
-        let key = "discover.messagedBroadcasts.\(uid)"
-        let cached = defaults.stringArray(forKey: key) ?? []
+        let cached = UserDefaults.standard.stringArray(forKey: "discover.messagedBroadcasts.\(uid)") ?? []
         messagedBroadcastIds = Set(cached)
     }
-    
+
     private func saveMessagedBroadcastsToCache() {
         guard let uid = service.currentUserId() else { return }
-        let defaults = UserDefaults.standard
-        let key = "discover.messagedBroadcasts.\(uid)"
-        defaults.set(Array(messagedBroadcastIds), forKey: key)
+        UserDefaults.standard.set(Array(messagedBroadcastIds), forKey: "discover.messagedBroadcasts.\(uid)")
     }
 
     func selectBroadcast(_ broadcast: DiscoverBroadcast) {
         selectedBroadcast = broadcast
     }
 
-    /// Broadcasts older than this are considered stale and hidden.
-    private static let maxBroadcastAge: TimeInterval = 5 * 60 // 5 minutes
+    // MARK: - Records → broadcasts
+
+    /// A live broadcast not refreshed within this window is shown as recent.
+    private static let maxLiveAge: TimeInterval = 5 * 60
+    /// How many recently-live rows to keep.
+    private static let maxRecentRows = 20
 
     private func handleBroadcastRecords(_ records: [DiscoverService.BroadcastRecord]) async {
         let currentUserId = service.currentUserId()
@@ -371,10 +423,8 @@ final class DiscoverViewModel: ObservableObject {
             if mutedUserIds.contains(record.userId) { return false }
             if blockedUserIds.contains(record.userId) { return false }
             if mutedTrackIds.contains(record.trackId) { return false }
-            // Hide stale broadcasts (not updated recently)
             let age = now.timeIntervalSince(record.updatedAt ?? record.broadcastedAt)
-            if age > Self.maxBroadcastAge { return false }
-            return true
+            return age <= DiscoverService.recentWindow
         }
 
         snapshotGeneration += 1
@@ -398,11 +448,8 @@ final class DiscoverViewModel: ObservableObject {
                 spotifyTrackURL: record.spotifyTrackURL
             )
 
-            let distanceMeters: Int? = {
-                guard let currentLocation, let location = record.location else { return nil }
-                let target = CLLocation(latitude: location.latitude, longitude: location.longitude)
-                return Int(currentLocation.distance(from: target))
-            }()
+            let lastUpdate = record.updatedAt ?? record.broadcastedAt
+            let isLive = record.isLive && now.timeIntervalSince(lastUpdate) <= Self.maxLiveAge
 
             return DiscoverBroadcast(
                 id: record.id,
@@ -410,7 +457,9 @@ final class DiscoverViewModel: ObservableObject {
                 track: track,
                 broadcastedAt: record.broadcastedAt,
                 location: record.location,
-                distanceMeters: distanceMeters
+                distanceMeters: nil,
+                isLive: isLive,
+                lastSeenAt: isLive ? lastUpdate : (record.endedAt ?? lastUpdate)
             )
         }
 
@@ -438,10 +487,15 @@ final class DiscoverViewModel: ObservableObject {
         }
     }
 
-    private func updateVisibleBroadcasts() {
-        let locationAvailable = currentLocation != nil
+    private func passesRadius(_ broadcast: DiscoverBroadcast) -> Bool {
+        // Broadcasts without a known distance stay visible: we can't tell
+        // whether they're nearby, and hiding them silently would feel broken.
+        guard let distance = broadcast.distanceMeters else { return true }
+        return Double(distance) <= maxRadiusKm * 1000
+    }
 
-        var updated = allBroadcasts.filter { broadcast in
+    private func updateVisibleBroadcasts() {
+        var base = allBroadcasts.filter { broadcast in
             !mutedUserIds.contains(broadcast.user.id)
                 && !blockedUserIds.contains(broadcast.user.id)
                 && !mutedTrackIds.contains(broadcast.track.id)
@@ -449,51 +503,54 @@ final class DiscoverViewModel: ObservableObject {
 
         // In friends mode, only show broadcasts from followed users
         if discoverMode == .friends {
-            updated = updated.filter { followingIds.contains($0.user.id) }
+            base = base.filter { followingIds.contains($0.user.id) }
         }
 
+        // Distances (only when we know where we are).
         if let currentLocation {
-            updated = updated.map { broadcast in
+            base = base.map { broadcast in
                 var mutable = broadcast
                 if let location = broadcast.location {
                     let target = CLLocation(latitude: location.latitude, longitude: location.longitude)
-                    let distance = currentLocation.distance(from: target)
-                    mutable.distanceMeters = Int(distance)
+                    mutable.distanceMeters = Int(currentLocation.distance(from: target))
                 } else {
                     mutable.distanceMeters = nil
                 }
                 return mutable
             }
-
-            // Filter to broadcasts within the configured search radius.
-            // Broadcasts without a known location stay visible (we can't tell
-            // whether they're nearby, and excluding them silently would feel broken).
-            let maxMeters = maxRadiusKm * 1000
-            updated = updated.filter { broadcast in
-                guard let distance = broadcast.distanceMeters else { return true }
-                return Double(distance) <= maxMeters
-            }
-
-            updated.sort { lhs, rhs in
-                let lhsDistance = lhs.distanceMeters ?? Int.max
-                let rhsDistance = rhs.distanceMeters ?? Int.max
-                if lhsDistance == rhsDistance {
-                    return lhs.broadcastedAt > rhs.broadcastedAt
-                }
-                return lhsDistance < rhsDistance
-            }
-        } else if !locationAvailable {
-            updated.sort { lhs, rhs in
-                lhs.broadcastedAt > rhs.broadcastedAt
-            }
         }
+        allBroadcasts = base + allBroadcasts.filter { b in !base.contains(where: { $0.id == b.id }) }
 
-        visibleBroadcasts = updated
+        // Live now: radius-filtered, nearest first.
+        let live = base.filter(\.isLive)
+        var visible = live
+        if currentLocation != nil {
+            visible = live.filter(passesRadius)
+            liveOutsideRadiusCount = live.count - visible.count
+            visible.sort { lhs, rhs in
+                let l = lhs.distanceMeters ?? Int.max
+                let r = rhs.distanceMeters ?? Int.max
+                if l == r { return lhs.broadcastedAt > rhs.broadcastedAt }
+                return l < r
+            }
+        } else {
+            liveOutsideRadiusCount = 0
+            visible.sort { $0.broadcastedAt > $1.broadcastedAt }
+        }
+        visibleBroadcasts = visible
+
+        // Recently live: most recent first, not radius-filtered.
+        recentBroadcasts = Array(
+            base.filter { !$0.isLive }
+                .sorted { $0.lastSeenAt > $1.lastSeenAt }
+                .prefix(Self.maxRecentRows)
+        )
     }
 
     private func removeBroadcast(_ broadcast: DiscoverBroadcast) {
         allBroadcasts.removeAll { $0.id == broadcast.id }
         visibleBroadcasts.removeAll { $0.id == broadcast.id }
+        recentBroadcasts.removeAll { $0.id == broadcast.id }
         dismissTarget = nil
     }
 
@@ -501,12 +558,8 @@ final class DiscoverViewModel: ObservableObject {
         guard mutedUserIds.isEmpty && mutedTrackIds.isEmpty else { return }
         guard let uid = service.currentUserId() else { return }
         let defaults = UserDefaults.standard
-        let userKey = "discover.mutedUsers.\(uid)"
-        let trackKey = "discover.mutedTracks.\(uid)"
-        let users = defaults.stringArray(forKey: userKey) ?? []
-        let tracks = defaults.stringArray(forKey: trackKey) ?? []
-        mutedUserIds = Set(users)
-        mutedTrackIds = Set(tracks)
+        mutedUserIds = Set(defaults.stringArray(forKey: "discover.mutedUsers.\(uid)") ?? [])
+        mutedTrackIds = Set(defaults.stringArray(forKey: "discover.mutedTracks.\(uid)") ?? [])
     }
 
     private func persistMutedPreferences() {

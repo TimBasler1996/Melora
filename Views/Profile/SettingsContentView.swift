@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 import FirebaseAuth
 
 struct SettingsContentView: View {
@@ -12,7 +13,12 @@ struct SettingsContentView: View {
     @AppStorage("settings.notify.newMessages") private var notifyMessages = true
     @AppStorage("settings.notify.newFollowers") private var notifyFollowers = true
 
+    @StateObject private var account = AccountService.shared
     @State private var showSignOutConfirm = false
+    @State private var showDeleteConfirm = false
+    @State private var showDeleteFinalConfirm = false
+    @State private var isLinking = false
+    @State private var accountMessage: String?
 
     var body: some View {
         List {
@@ -80,13 +86,74 @@ struct SettingsContentView: View {
             }
 
             // MARK: - Account
-            Section("Account") {
-                Button(role: .destructive) {
-                    showSignOutConfirm = true
-                } label: {
-                    Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+            Section {
+                if account.isLinkedWithApple {
+                    HStack {
+                        Label("Signed in with Apple", systemImage: "checkmark.seal.fill")
+                        Spacer()
+                        Text("Kept")
+                            .font(AppFonts.caption())
+                            .foregroundColor(AppColors.secondaryText)
+                    }
+
+                    Button {
+                        showSignOutConfirm = true
+                    } label: {
+                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Your profile lives only on this phone. Sign in with Apple to keep it if you reinstall or switch devices.")
+                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .foregroundColor(AppColors.secondaryText)
+
+                        SignInWithAppleButton(.continue) { request in
+                            account.prepareAppleRequest(request)
+                        } onCompletion: { result in
+                            Task { await linkWithApple(result) }
+                        }
+                        .signInWithAppleButtonStyle(.white)
+                        .frame(height: 44)
+                        .clipShape(Capsule())
+                        .disabled(isLinking)
+                    }
+                    .padding(.vertical, 4)
                 }
+
+                if let accountMessage {
+                    Text(accountMessage)
+                        .font(AppFonts.caption())
+                        .foregroundColor(AppColors.secondaryText)
+                }
+
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Label("Delete profile and data", systemImage: "trash")
+                }
+            } header: {
+                Text("Account")
+            } footer: {
+                Text(account.isLinkedWithApple
+                     ? "Signing out keeps your profile; sign in with Apple again to get it back."
+                     : "Deleting removes your profile, photos, likes, chats and followers for good.")
             }
+        }
+        .confirmationDialog("Delete your profile?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete everything", role: .destructive) {
+                showDeleteFinalConfirm = true
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes your profile, photos, likes, chats and followers. It cannot be undone.")
+        }
+        .alert("Really delete?", isPresented: $showDeleteFinalConfirm) {
+            Button("Delete my profile", role: .destructive) {
+                Task { await deleteProfile() }
+            }
+            Button("Keep it", role: .cancel) {}
+        } message: {
+            Text("There is no way to recover a deleted profile.")
         }
         .scrollContentBackground(.hidden)
         .melScreenBackground()
@@ -107,15 +174,42 @@ struct SettingsContentView: View {
             if newValue { requestNotificationPermission() }
             syncNotificationPreference("notifyMessages", newValue)
         }
-        .confirmationDialog("Sign Out", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
+        .confirmationDialog("Sign out?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
-                // Tears down the session and provisions a fresh anonymous
-                // user; the app root reacts to the auth change.
-                Task { await FirebaseAuthBootstrap.signOut(stopping: broadcast) }
+                // Safe for Apple-linked accounts: signing in again restores everything.
+                Task { await account.signOut(stopping: broadcast) }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Are you sure you want to sign out?")
+            Text("You’ll start with an empty profile until you sign in with Apple again.")
+        }
+    }
+
+    // MARK: - Account actions
+
+    private func linkWithApple(_ result: Result<ASAuthorization, Error>) async {
+        accountMessage = nil
+        isLinking = true
+        defer { isLinking = false }
+        do {
+            switch try await account.completeAppleSignIn(result) {
+            case .linked:
+                accountMessage = "Your profile is now kept with your Apple ID."
+            case .switchedToExistingAccount:
+                accountMessage = "Welcome back — switched to the profile linked to your Apple ID."
+            }
+        } catch AccountService.AccountError.cancelled {
+            // Nothing to say.
+        } catch {
+            accountMessage = "Couldn’t link your Apple ID. Please try again."
+        }
+    }
+
+    private func deleteProfile() async {
+        do {
+            try await AccountService.shared.deleteProfile(stopping: broadcast)
+        } catch {
+            accountMessage = "Couldn’t delete your profile right now. Please try again."
         }
     }
 

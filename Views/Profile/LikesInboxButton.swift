@@ -13,6 +13,7 @@ struct LikesInboxButton: View {
     let user: AppUser
 
     @StateObject private var badgeVM = LikesBadgeViewModel()
+    @EnvironmentObject private var router: AppRouter
     @State private var showInbox = false
 
     var body: some View {
@@ -42,6 +43,10 @@ struct LikesInboxButton: View {
         .buttonStyle(.plain)
         .onAppear {
             badgeVM.startListening(userId: user.uid)
+            consumeRouterRequest()
+        }
+        .onChange(of: router.showLikesInbox) { _, _ in
+            consumeRouterRequest()
         }
         .onDisappear {
             badgeVM.stopListening()
@@ -56,6 +61,13 @@ struct LikesInboxButton: View {
             }
         }
         .accessibilityLabel("Likes inbox")
+    }
+
+    /// A notification tap (or a profile stat) asked for the inbox.
+    private func consumeRouterRequest() {
+        guard router.showLikesInbox else { return }
+        router.showLikesInbox = false
+        showInbox = true
     }
 
     private var badgeText: String {

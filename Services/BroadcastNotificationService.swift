@@ -150,8 +150,10 @@ final class BroadcastNotificationService: ObservableObject {
             // Skip own broadcasts
             if let currentUserId, record.userId == currentUserId { continue }
 
-            // Skip already notified
-            if notifiedBroadcastIds.contains(record.id) { continue }
+            // Skip already notified. Keyed per broadcast *session* so the same
+            // person going live again tomorrow is announced again.
+            let notifyKey = "\(record.id)_\(Int(record.broadcastedAt.timeIntervalSince1970))"
+            if notifiedBroadcastIds.contains(notifyKey) { continue }
 
             let isFriend = followingIds.contains(record.userId)
             let distance = calculateDistance(to: record.location)
@@ -180,7 +182,7 @@ final class BroadcastNotificationService: ObservableObject {
                 body: "\"\(record.trackTitle)\" by \(record.trackArtist)"
             )
 
-            notifiedBroadcastIds.insert(record.id)
+            notifiedBroadcastIds.insert(notifyKey)
         }
 
         pruneNotifiedIds()

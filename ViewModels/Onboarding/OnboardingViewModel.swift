@@ -1,4 +1,5 @@
 import Foundation
+import AuthenticationServices
 import FirebaseAuth
 import UIKit
 
@@ -9,8 +10,9 @@ final class OnboardingViewModel: ObservableObject {
 
     @Published var stepIndex: Int = 1
 
-    var progressText: String { "\(stepIndex)/3" }
-    var progressValue: Double { Double(stepIndex) / 3.0 }
+    static let stepCount = 4
+    var progressText: String { "\(stepIndex)/\(Self.stepCount)" }
+    var progressValue: Double { Double(stepIndex) / Double(Self.stepCount) }
 
     // MARK: - Step 1: Basics
 
@@ -41,6 +43,11 @@ final class OnboardingViewModel: ObservableObject {
     @Published var isFinishing: Bool = false
     @Published var finishErrorMessage: String?
     @Published var didFinish: Bool = false
+
+    // MARK: - Step 4: Keep your profile (Sign in with Apple, optional)
+
+    @Published var isLinkingAccount: Bool = false
+    @Published var accountErrorMessage: String?
 
     /// Lazy so SwiftUI previews can construct the view model without a
     /// configured Firebase app (the service touches Firestore/Storage on init).
@@ -107,8 +114,30 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     func goBack() {
-        guard stepIndex > 1 else { return }
+        // Step 4 comes after the profile was written; there is nothing to go back to.
+        guard stepIndex > 1, stepIndex < 4 else { return }
         stepIndex -= 1
+    }
+
+    // MARK: - Step 4: account
+
+    func skipAccountStep() {
+        didFinish = true
+    }
+
+    func completeAppleSignIn(_ result: Result<ASAuthorization, Error>, using account: AccountService) async {
+        accountErrorMessage = nil
+        isLinkingAccount = true
+        defer { isLinkingAccount = false }
+
+        do {
+            _ = try await account.completeAppleSignIn(result)
+            didFinish = true
+        } catch AccountService.AccountError.cancelled {
+            // User backed out of the Apple sheet; stay on the step.
+        } catch {
+            accountErrorMessage = "Couldn’t link your Apple ID. You can try again later in Settings."
+        }
     }
 
     // MARK: - Step 3: Spotify connect
@@ -206,7 +235,8 @@ final class OnboardingViewModel: ObservableObject {
 
             try await profileService.markCompleted(uid: uid)
 
-            didFinish = true
+            // Profile is complete. One more (skippable) step: keep it safe.
+            stepIndex = 4
         } catch {
             finishErrorMessage = error.localizedDescription
         }

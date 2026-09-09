@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 struct DiscoverView: View {
 
@@ -6,16 +7,18 @@ struct DiscoverView: View {
 
     @EnvironmentObject private var currentUserStore: CurrentUserStore
     @EnvironmentObject private var locationService: LocationService
+    @EnvironmentObject private var router: AppRouter
 
     @State private var showUserSearch = false
     @State private var expandedCardId: String?
+    @State private var chatToOpen: String?
 
     var body: some View {
         NavigationStack {
             ZStack {
                 VStack(spacing: 0) {
                     modePickerBar
-                    radiusSlider
+                    locationBar
                     content
                 }
             }
@@ -36,6 +39,9 @@ struct DiscoverView: View {
                     }
                     .accessibilityLabel("Find people")
                 }
+            }
+            .navigationDestination(item: $chatToOpen) { conversationId in
+                ChatView(conversationId: conversationId)
             }
             .sheet(isPresented: $showUserSearch) {
                 UserSearchView()
@@ -65,10 +71,10 @@ struct DiscoverView: View {
                 titleVisibility: .visible
             ) {
                 if let target = viewModel.dismissTarget {
-                    Button("Not interested in this song") {
+                    Button("Hide this song") {
                         viewModel.muteTrack(for: target)
                     }
-                    Button("Not interested in this user", role: .destructive) {
+                    Button("Hide \(target.user.displayName)", role: .destructive) {
                         viewModel.muteUser(for: target)
                     }
                     Button("Block \(target.user.displayName)", role: .destructive) {
@@ -78,9 +84,11 @@ struct DiscoverView: View {
                 Button("Cancel", role: .cancel) {
                     viewModel.cancelDismiss()
                 }
+            } message: {
+                Text("Hidden songs and people can be restored in Settings.")
             }
             .alert(
-                "Something went wrong",
+                "Couldn’t do that",
                 isPresented: Binding(
                     get: { viewModel.actionError != nil },
                     set: { if !$0 { viewModel.actionError = nil } }
@@ -93,6 +101,7 @@ struct DiscoverView: View {
             .onAppear {
                 guard !isRunningInPreview else { return }
                 locationService.requestAuthorizationIfNeeded()
+                viewModel.updateCurrentLocation(locationService.currentLocationPoint)
                 viewModel.startListening()
             }
             .onDisappear {
@@ -104,6 +113,8 @@ struct DiscoverView: View {
         }
     }
 
+    // MARK: - Top controls
+
     private var modePickerBar: some View {
         Picker("Mode", selection: $viewModel.discoverMode) {
             ForEach(DiscoverMode.allCases) { mode in
@@ -114,6 +125,65 @@ struct DiscoverView: View {
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.top, 8)
         .padding(.bottom, 4)
+    }
+
+    private var locationDenied: Bool {
+        locationService.authorizationStatus == .denied || locationService.authorizationStatus == .restricted
+    }
+
+    /// Radius slider when we know where the user is; an honest explanation
+    /// when we don't. A slider that filters nothing is worse than none.
+    @ViewBuilder
+    private var locationBar: some View {
+        if locationDenied {
+            locationDeniedBanner
+        } else if locationService.currentLocationPoint == nil {
+            HStack(spacing: 8) {
+                ProgressView().tint(.white).scaleEffect(0.8)
+                Text("Finding your location…")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.65))
+                Spacer()
+            }
+            .padding(.horizontal, AppLayout.screenPadding)
+            .padding(.vertical, 10)
+        } else {
+            radiusSlider
+        }
+    }
+
+    private var locationDeniedBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "location.slash.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white.opacity(0.8))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Location is off")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                Text("Turn it on to see who is near you and how far away they are.")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.65))
+            }
+
+            Spacer()
+
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Capsule().fill(AppColors.primary))
+        }
+        .padding(14)
+        .melCard(cornerRadius: 14)
+        .padding(.horizontal, AppLayout.screenPadding)
+        .padding(.vertical, 8)
     }
 
     private var radiusSlider: some View {
@@ -149,26 +219,27 @@ struct DiscoverView: View {
     }
 
     private func formatRadius(_ km: Double) -> String {
-        let rounded = Int(km.rounded())
-        return "\(rounded) km"
+        "\(Int(km.rounded())) km"
     }
+
+    // MARK: - Content
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.isLoading && viewModel.visibleBroadcasts.isEmpty {
+        if viewModel.isLoading && viewModel.visibleBroadcasts.isEmpty && viewModel.recentBroadcasts.isEmpty {
             VStack(spacing: 16) {
                 Spacer()
                 ProgressView()
                     .tint(.white)
                     .scaleEffect(1.2)
-                Text("Loading broadcasts…")
+                Text("Looking for people…")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundColor(.white.opacity(0.7))
                 Spacer()
             }
         } else if let error = viewModel.errorMessage {
             VStack(spacing: 12) {
-                Text("Couldn’t load broadcasts")
+                Text("Couldn’t load Discover")
                     .font(AppFonts.headline())
                     .foregroundColor(.white)
 
@@ -188,86 +259,25 @@ struct DiscoverView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .padding(.horizontal, AppLayout.screenPadding)
-        } else if viewModel.visibleBroadcasts.isEmpty {
-            if viewModel.discoverMode == .friends {
-                friendsEmptyState
-            } else {
-                VStack(spacing: 16) {
-                    Image(systemName: "antenna.radiowaves.left.and.right")
-                        .font(.system(size: 44))
-                        .foregroundColor(.white.opacity(0.3))
-
-                    Text("No one is live right now")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-
-                    Text("When someone nearby starts broadcasting, they'll show up here.")
-                        .font(AppFonts.footnote())
-                        .foregroundColor(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 28)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .padding(.top, 60)
-            }
+        } else if viewModel.discoverMode == .friends && viewModel.followingIds.isEmpty {
+            friendsEmptyState
         } else {
             ScrollView {
                 VStack(spacing: 20) {
-                    ForEach(viewModel.visibleBroadcasts) { broadcast in
-                        DiscoverCardView(
-                            broadcast: broadcast,
-                            isExpanded: Binding(
-                                get: { expandedCardId == broadcast.id },
-                                set: { newValue in
-                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                        expandedCardId = newValue ? broadcast.id : nil
-                                    }
-                                }
-                            ),
-                            onDismiss: {
-                                viewModel.requestDismiss(for: broadcast)
-                            },
-                            onLikeTrack: {
-                                Task {
-                                    do {
-                                        try await viewModel.sendLike(
-                                            for: broadcast,
-                                            from: currentUserStore.user,
-                                            message: nil
-                                        )
-                                    } catch {
-                                        viewModel.actionError = "Couldn’t send your like. Please try again."
-                                    }
-                                }
-                            },
-                            onMessage: { message in
-                                Task {
-                                    do {
-                                        try await viewModel.sendLike(
-                                            for: broadcast,
-                                            from: currentUserStore.user,
-                                            message: message
-                                        )
-                                    } catch {
-                                        viewModel.actionError = "Couldn’t send your message. Please try again."
-                                    }
-                                }
-                            },
-                            onViewProfile: {
-                                viewModel.selectBroadcast(broadcast)
-                            },
-                            onToggleFollow: {
-                                Task { await viewModel.toggleFollow(broadcast) }
-                            },
-                            hasLiked: viewModel.isLiked(broadcast),
-                            hasMessaged: viewModel.hasMessage(broadcast),
-                            isFollowing: viewModel.isFollowing(broadcast)
-                        )
-                        .padding(.horizontal, max(AppLayout.screenPadding, 20))
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .top).combined(with: .opacity),
-                            removal: .opacity
-                        ))
+                    if viewModel.visibleBroadcasts.isEmpty {
+                        nobodyLiveCard
+                    } else {
+                        sectionHeader("Live now", count: viewModel.visibleBroadcasts.count)
+                        ForEach(viewModel.visibleBroadcasts) { broadcast in
+                            card(for: broadcast)
+                        }
+                    }
+
+                    if !viewModel.recentBroadcasts.isEmpty {
+                        sectionHeader("Recently live", count: viewModel.recentBroadcasts.count)
+                        ForEach(viewModel.recentBroadcasts) { broadcast in
+                            card(for: broadcast)
+                        }
                     }
                 }
                 .padding(.vertical, 18)
@@ -281,6 +291,137 @@ struct DiscoverView: View {
         }
     }
 
+    private func sectionHeader(_ title: String, count: Int) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundColor(.white.opacity(0.6))
+            Spacer()
+            Text("\(count)")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(.white.opacity(0.4))
+                .monospacedDigit()
+        }
+        .padding(.horizontal, max(AppLayout.screenPadding, 20))
+    }
+
+    private func card(for broadcast: DiscoverBroadcast) -> some View {
+        DiscoverCardView(
+            broadcast: broadcast,
+            isExpanded: Binding(
+                get: { expandedCardId == broadcast.id },
+                set: { newValue in
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        expandedCardId = newValue ? broadcast.id : nil
+                    }
+                }
+            ),
+            onDismiss: {
+                viewModel.requestDismiss(for: broadcast)
+            },
+            onLikeTrack: {
+                Task {
+                    do {
+                        try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: nil)
+                    } catch {
+                        viewModel.presentActionError(error, fallback: "Couldn’t send your like. Please try again.")
+                    }
+                }
+            },
+            onMessage: { message in
+                Task {
+                    do {
+                        try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: message)
+                    } catch {
+                        viewModel.presentActionError(error, fallback: "Couldn’t send your message. Please try again.")
+                    }
+                }
+            },
+            onViewProfile: {
+                viewModel.selectBroadcast(broadcast)
+            },
+            onToggleFollow: {
+                Task { await viewModel.toggleFollow(broadcast) }
+            },
+            onOpenChat: {
+                Task {
+                    if let id = await viewModel.conversationId(with: broadcast) {
+                        chatToOpen = id
+                    }
+                }
+            },
+            hasLiked: viewModel.isLiked(broadcast),
+            hasMessaged: viewModel.hasMessage(broadcast),
+            isFollowing: viewModel.isFollowing(broadcast)
+        )
+        .padding(.horizontal, max(AppLayout.screenPadding, 20))
+        .transition(.asymmetric(
+            insertion: .move(edge: .top).combined(with: .opacity),
+            removal: .opacity
+        ))
+    }
+
+    // MARK: - Empty states
+
+    /// Shown at the top of the feed when nobody is live within the radius.
+    /// Tells the truth about *why* and offers the one action that helps.
+    private var nobodyLiveCard: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "antenna.radiowaves.left.and.right")
+                .font(.system(size: 36))
+                .foregroundColor(.white.opacity(0.35))
+
+            if viewModel.liveOutsideRadiusCount > 0 {
+                Text("Nobody is live within \(formatRadius(viewModel.maxRadiusKm))")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                Text(viewModel.liveOutsideRadiusCount == 1
+                     ? "1 person is live a bit further away."
+                     : "\(viewModel.liveOutsideRadiusCount) people are live a bit further away.")
+                    .font(AppFonts.footnote())
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+
+                Button {
+                    viewModel.widenRadiusToNearestLive()
+                } label: {
+                    Label("Widen radius", systemImage: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
+                        .background(AppColors.primary)
+                        .clipShape(Capsule())
+                }
+            } else {
+                Text(viewModel.discoverMode == .friends ? "None of your friends are live" : "No one is live right now")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                Text("Go live yourself: the moment someone nearby starts playing, they show up here and you get notified.")
+                    .font(AppFonts.footnote())
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+
+                Button {
+                    router.goLive()
+                } label: {
+                    Label("Go live", systemImage: "dot.radiowaves.left.and.right")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
+                        .background(AppColors.live)
+                        .clipShape(Capsule())
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
+        .padding(.horizontal, 20)
+        .melCard(cornerRadius: 18)
+        .padding(.horizontal, max(AppLayout.screenPadding, 20))
+    }
+
     private var friendsEmptyState: some View {
         VStack(spacing: 16) {
             Spacer()
@@ -289,27 +430,15 @@ struct DiscoverView: View {
                 .font(.system(size: 44))
                 .foregroundColor(.white.opacity(0.3))
 
-            if viewModel.followingIds.isEmpty {
-                Text("You're not following anyone yet")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
+            Text("You're not following anyone yet")
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
 
-                Text("Follow people to see their broadcasts here.")
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 28)
-            } else {
-                Text("None of your friends are live")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-
-                Text("When someone you follow starts broadcasting, they'll show up here.")
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 28)
-            }
+            Text("Follow people to see their broadcasts here.")
+                .font(AppFonts.footnote())
+                .foregroundColor(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 28)
 
             Button {
                 showUserSearch = true
@@ -336,5 +465,5 @@ struct DiscoverView: View {
     DiscoverView()
         .environmentObject(CurrentUserStore())
         .environmentObject(LocationService())
+        .environmentObject(AppRouter.shared)
 }
-

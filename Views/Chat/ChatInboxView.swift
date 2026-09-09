@@ -10,7 +10,10 @@ import SwiftUI
 struct ChatInboxView: View {
 
     @StateObject private var vm = ChatInboxViewModel()
+    @EnvironmentObject private var router: AppRouter
     @State private var chatToDelete: ChatInboxRow?
+    /// Conversation pushed from a notification tap or a Discover "Open chat".
+    @State private var routedConversationId: String?
 
     var body: some View {
         NavigationStack {
@@ -21,7 +24,16 @@ struct ChatInboxView: View {
             .navigationTitle("Chats")
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .onAppear { vm.startListening() }
+            .navigationDestination(item: $routedConversationId) { conversationId in
+                ChatView(conversationId: conversationId)
+            }
+            .onAppear {
+                vm.startListening()
+                consumeRoutedConversation()
+            }
+            .onChange(of: router.pendingConversationId) { _, _ in
+                consumeRoutedConversation()
+            }
             .onDisappear { vm.stopListening() }
             .refreshable { vm.reloadOnce() }
         }
@@ -128,6 +140,12 @@ struct ChatInboxView: View {
                 Text("The conversation is removed for both of you.")
             }
         }
+    }
+
+    private func consumeRoutedConversation() {
+        guard let id = router.pendingConversationId else { return }
+        router.pendingConversationId = nil
+        routedConversationId = id
     }
 
     /// A chat row with a long-press menu. (Swipe actions only work inside

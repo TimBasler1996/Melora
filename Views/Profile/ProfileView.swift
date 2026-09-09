@@ -171,10 +171,22 @@ struct ProfileView: View {
         if let draft = viewModel.draft {
             VStack(spacing: 18) {
                 editHeader(draft: draft)
+
+                if let saveError = viewModel.saveError {
+                    saveErrorBanner(saveError)
+                }
+
                 basicsSection(draft: draft)
                 photoEditorSection(draft: draft)
 
                 VStack(spacing: 14) {
+                    if viewModel.hasDraftChanges, let hint = viewModel.validationMessage {
+                        Text(hint)
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundColor(AppColors.secondaryText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
                     // Save button
                     Button {
                         Task {
@@ -195,18 +207,17 @@ struct ProfileView: View {
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                                .fill(viewModel.hasDraftChanges && !viewModel.isSaving ? AppColors.primary : AppColors.primary.opacity(0.5))
+                                .fill(viewModel.canSave ? AppColors.primary : AppColors.primary.opacity(0.5))
                         )
                         .foregroundColor(.white)
-                        .shadow(color: viewModel.hasDraftChanges ? AppColors.primary.opacity(0.3) : .clear, radius: 12, x: 0, y: 6)
+                        .shadow(color: viewModel.canSave ? AppColors.primary.opacity(0.3) : .clear, radius: 12, x: 0, y: 6)
                     }
-                    .disabled(viewModel.isSaving || !viewModel.hasDraftChanges)
-                    
-                    // Discard button
+                    .disabled(!viewModel.canSave)
+
+                    // Discard button — same confirmation as leaving via the picker.
                     Button {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        viewModel.discardDraft()
-                        mode = .preview
+                        showDiscardAlert = true
                     } label: {
                         Text("Discard Changes")
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
@@ -676,6 +687,37 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 48)
+    }
+
+    /// Inline save failure: the editor stays, the draft stays, Retry is one tap.
+    private func saveErrorBanner(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.orange)
+
+            Text(message)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundColor(AppColors.primaryText)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if viewModel.validationMessage == nil {
+                Button("Retry") {
+                    Task {
+                        let didSave = await viewModel.saveDraftChanges()
+                        if didSave { mode = .preview }
+                    }
+                }
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(AppColors.primary))
+                .disabled(viewModel.isSaving)
+            }
+        }
+        .padding(14)
+        .melCard(cornerRadius: 14)
     }
 
     private func errorState(_ message: String) -> some View {

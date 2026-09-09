@@ -64,6 +64,7 @@ struct SocialSoundApp: App {
             .onChange(of: onboardingState.authUid) { _, uid in
                 restartUserScopedServices(uid: uid)
             }
+            .environmentObject(AppRouter.shared)
             .environmentObject(spotifyAuth)
             .environmentObject(broadcast)
             .environmentObject(locationService)

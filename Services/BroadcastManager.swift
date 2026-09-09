@@ -70,6 +70,12 @@ final class BroadcastManager: ObservableObject {
         self.locationService = service
     }
 
+    /// The position we are willing to share: snapped to a ~275 m grid so the
+    /// precise fix never leaves the device.
+    private var sharedLocation: LocationPoint? {
+        locationService?.currentLocation?.fuzzed()
+    }
+
     /// Fed by NowPlayingView while it is on screen; the internal poll covers
     /// the rest of the time.
     func updateCurrentTrack(_ track: Track?) {
@@ -138,7 +144,7 @@ final class BroadcastManager: ObservableObject {
         }
 
         // 2) Discover document (needs a track; created as soon as one is known).
-        await upsertBroadcast(uid: uid, track: currentTrack, location: locationService?.currentLocation, isNew: true)
+        await upsertBroadcast(uid: uid, track: currentTrack, location: sharedLocation, isNew: true)
 
         // 3) Periodic sync loops.
         startLocationSync(uid: uid)
@@ -208,7 +214,7 @@ final class BroadcastManager: ObservableObject {
 
     private func syncLocation(uid: String) async {
         guard isBroadcasting else { return }
-        guard let loc = locationService?.currentLocation else { return }
+        guard let loc = sharedLocation else { return }
 
         await withCheckedContinuation { cont in
             userService.updateLastLocation(uid: uid, location: loc) { err in
@@ -257,7 +263,7 @@ final class BroadcastManager: ObservableObject {
             }
         }
 
-        await upsertBroadcast(uid: uid, track: currentTrack, location: locationService?.currentLocation, isNew: false)
+        await upsertBroadcast(uid: uid, track: currentTrack, location: sharedLocation, isNew: false)
     }
 
     // MARK: - Firestore
@@ -283,10 +289,17 @@ final class BroadcastManager: ObservableObject {
             }
         }
 
+        // Keep the document so Discover can show "recently live" for a day;
+        // the `expireStaleBroadcasts` function removes it after that.
         do {
-            try await db.collection(broadcastsCollection).document(uid).delete()
+            try await db.collection(broadcastsCollection).document(uid).setData([
+                "userId": uid,
+                "isLive": false,
+                "endedAt": FieldValue.serverTimestamp(),
+                "updatedAt": FieldValue.serverTimestamp()
+            ], merge: true)
         } catch {
-            errorMessage = "Broadcast cleanup failed: \(error.localizedDescription)"
+            errorMessage = "Couldn’t end your broadcast cleanly. It will expire on its own."
         }
     }
 
@@ -306,6 +319,8 @@ final class BroadcastManager: ObservableObject {
             "trackAlbum": track.album as Any,
             "trackArtworkURL": track.artworkURL?.absoluteString as Any,
             "spotifyTrackURL": "https://open.spotify.com/track/\(track.id)",
+            "isLive": true,
+            "endedAt": FieldValue.delete(),
             "updatedAt": FieldValue.serverTimestamp()
         ]
 

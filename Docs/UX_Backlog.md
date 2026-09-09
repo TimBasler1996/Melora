@@ -4,22 +4,22 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4
+Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 14
 
-## Decisions needed first
+## Decisions taken
 
-- **UX-01** Give Discover something to show when nobody is live — Product decision on how long a past broadcast may be shown.
-- **UX-06** Bring the Discover card back to the guideline — Design decision.
-- **UX-08** Decide the account model: Sign in with Apple or explicit 'Delete profile' — Founder decision; Apple review expects account deletion for any created account.
-- **UX-16** Define and show what a declined request looks like to the sender — Product decision: should the sender learn about a decline at all?
-- **UX-27** Reconsider asking for a last name — Product decision.
-- **UX-31** Server-side nearby notifications — UX-10 and a privacy decision on storing user locations server-side.
+- **UX-01** Give Discover something to show when nobody is live — Decided: ended broadcasts stay visible as 'Recently live' for 24 h (no distance filter), then are deleted.
+- **UX-06** Bring the Discover card back to the guideline — Decided: rebuild the card to the guideline later (P2); the compact card stays for now.
+- **UX-08** Decide the account model: Sign in with Apple or explicit 'Delete profile' — Decided: Sign in with Apple, linked to the anonymous uid (last onboarding step + Settings). 'Sign out' only for linked accounts; everyone gets 'Delete profile and data' with a double confirmation.
+- **UX-16** Define and show what a declined request looks like to the sender — Decided: the sender is never told about a decline. Declined pairs can't like or message again; they see 'You've already reached out to X'.
+- **UX-27** Reconsider asking for a last name — Decided: keep last name for now (used in the denormalised display name); revisit with the card redesign.
+- **UX-31** Server-side nearby notifications — Decided: later. Locations are now fuzzed to a ~275 m grid, which makes a server-side matcher acceptable when it is built.
 
 ## Suggested order of work
 
-1. Decide the account model (UX-08) and the declined-request policy (UX-16); everything in the loop epic depends on them.
-2. Ship the P0 items: Discover fallback, location fuzzing, like rollback, like+message reconciliation, push routing, editor save/validation.
-3. Then the P1 items epic by epic, starting with the loop and Discover.
+1. Done: account model (UX-08), declined-request policy (UX-16), and the P0 set except the remaining P1/P2 work.
+2. Next: P1 items epic by epic — blocked/hidden lists, report, welcome screen, Spotify step honesty, inbox fixes.
+3. Then P2 polish, starting with the Discover card redesign.
 
 ## Discover & cold start
 
@@ -27,39 +27,40 @@ _Discover is the reason the app exists and today it is empty for almost every ne
 
 ### UX-01 · Give Discover something to show when nobody is live
 
-**P0 · before launch** · effort large (1–2 weeks)
+**P0 · before launch** · effort large (1–2 weeks) · **Done**
 
 - **Problem:** Only people live within the radius in the last five minutes appear. A new user in a new city sees an empty feed and leaves.
 - **Fix:** Add a 'Recently live near you' section (last 24 h, faded, no distance), widen the default radius automatically until there are results, and make the empty state a call to action: go live and get notified when someone is near.
-- **Needs:** Product decision on how long a past broadcast may be shown.
+- **Needs:** Decided: ended broadcasts stay visible as 'Recently live' for 24 h (no distance filter), then are deleted.
 
 ### UX-02 · Add a location-denied state and disable the radius slider without location
 
-**P0 · before launch** · effort small (≤1 day)
+**P0 · before launch** · effort small (≤1 day) · **Done**
 
 - **Problem:** With location denied the slider looks live but filters nothing, cards show no distance and the empty state blames other users.
 - **Fix:** Dedicated state 'Turn on location to see who is near you' with an Open Settings button; hide the slider until a location exists.
 
 ### UX-03 · Make the empty state respect the radius
 
-**P0 · before launch** · effort small (≤1 day)
+**P0 · before launch** · effort small (≤1 day) · **Done**
 
 - **Problem:** With a 5 km radius and people live at 30 km the user reads 'No one is live right now'.
 - **Fix:** When broadcasts exist outside the radius say 'Nobody live within 5 km' with a one-tap 'Widen radius' action.
 
 ### UX-04 · Turn the message button into 'Open chat' after sending
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** After a message is sent the paperplane turns green and further taps silently do nothing.
 - **Fix:** Replace the button with 'Open chat' that opens the pending conversation, or show a 'Request sent' chip on the card.
 
 ### UX-05 · Let users undo 'Not interested' and see what they hid
 
-**P1 · next** · effort medium (2–4 days)
+**P1 · next** · effort medium (2–4 days) · **Partly done**
 
 - **Problem:** Muting a song hides it for every future broadcaster forever, muting a person is permanent, and neither is visible or reversible anywhere.
 - **Fix:** Undo toast right after muting; 'Hidden songs and people' list in Settings; consider making song mutes session-only.
+- **Progress:** Dialog copy now says hidden songs/people can be restored in Settings; the Settings list itself is still open.
 
 ### UX-06 · Bring the Discover card back to the guideline
 
@@ -67,7 +68,7 @@ _Discover is the reason the app exists and today it is empty for almost every ne
 
 - **Problem:** The guideline asks for a dominant hero photo with name, age, city and distance; the shipped card is a small avatar row without age or city.
 - **Fix:** Decide: either update the guideline or rebuild the card with hero photo, name + age, track large, artist small, city, distance.
-- **Needs:** Design decision.
+- **Needs:** Decided: rebuild the card to the guideline later (P2); the compact card stays for now.
 
 ### UX-07 · Hide incomplete or ghost profiles from Discover and follower lists
 
@@ -82,15 +83,15 @@ _Anonymous auth, exact locations and no report path are launch blockers for a da
 
 ### UX-08 · Decide the account model: Sign in with Apple or explicit 'Delete profile'
 
-**P0 · before launch** · effort medium (2–4 days)
+**P0 · before launch** · effort medium (2–4 days) · **Done**
 
 - **Problem:** Auth is anonymous. Reinstalling or tapping Sign out loses profile, photos, followers, likes and every chat forever, and the dialog only says 'Are you sure?'.
 - **Fix:** Preferred: link Sign in with Apple to the anonymous uid so the account survives reinstall. Minimum: rename the action to 'Delete profile', explain exactly what is lost, require a second confirmation.
-- **Needs:** Founder decision; Apple review expects account deletion for any created account.
+- **Needs:** Decided: Sign in with Apple, linked to the anonymous uid (last onboarding step + Settings). 'Sign out' only for linked accounts; everyone gets 'Delete profile and data' with a double confirmation.
 
 ### UX-09 · Actually delete or tombstone the data when a profile is deleted
 
-**P0 · before launch** · effort medium (2–4 days)
+**P0 · before launch** · effort medium (2–4 days) · **Done**
 
 - **Problem:** After sign-out the old user document, photos, follow edges and conversations remain; followers still see a ghost that can never reply.
 - **Fix:** Cloud Function on delete: remove the user doc, storage photos, follows in both directions, and mark conversations as closed for the other participant.
@@ -98,7 +99,7 @@ _Anonymous auth, exact locations and no report path are launch blockers for a da
 
 ### UX-10 · Fuzz location and show distance bands
 
-**P0 · before launch** · effort small (≤1 day)
+**P0 · before launch** · effort small (≤1 day) · **Done**
 
 - **Problem:** Exact coordinates are stored and distance is shown in meters, so anyone can pinpoint where a person is standing.
 - **Fix:** Round stored positions to a ~250 m grid and show 'under 500 m', '1 km', '3 km' instead of exact meters.
@@ -119,7 +120,7 @@ _Anonymous auth, exact locations and no report path are launch blockers for a da
 
 ### UX-13 · Blocking from Discover should also close the chat and clear the badge
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** Blocking from Discover leaves an unread badge lit on a conversation that is no longer visible.
 - **Fix:** Delete the conversation on block (as the chat menu does) and exclude blocked users from the unread count.
@@ -137,29 +138,29 @@ _Both sides of an interaction need to see the same truth at every step._
 
 ### UX-15 · Roll the heart back when a like fails
 
-**P0 · before launch** · effort small (≤1 day)
+**P0 · before launch** · effort small (≤1 day) · **Done**
 
 - **Problem:** The heart turns red before the write; on failure it stays red and the card refuses further taps, so the like never happened and cannot be retried.
 - **Fix:** Reset the card state on failure and let the tap fire again; keep the burst animation immediate.
 
 ### UX-16 · Define and show what a declined request looks like to the sender
 
-**P0 · before launch** · effort medium (2–4 days)
+**P0 · before launch** · effort medium (2–4 days) · **Done**
 
 - **Problem:** A declined request simply disappears from 'Waiting for response'; the Discover card still shows the sent state; a retry produces 'Please try again' which can never work.
 - **Fix:** Keep a quiet 'Not accepted' row (or none, but say so once), reflect it on the Discover card, and show the honest reason instead of a retry prompt. Don't create a fresh like for a declined pair.
-- **Needs:** Product decision: should the sender learn about a decline at all?
+- **Needs:** Decided: the sender is never told about a decline. Declined pairs can't like or message again; they see 'You've already reached out to X'.
 
 ### UX-17 · Reconcile 'like first, then message' into one thing to act on
 
-**P0 · before launch** · effort medium (2–4 days)
+**P0 · before launch** · effort medium (2–4 days) · **Done**
 
 - **Problem:** The recipient gets a pending like in the Likes inbox and a message request in Chats from the same person. Ignoring the like silently deletes the unread message.
 - **Fix:** Attach the message to the existing like so it moves to Message Requests, or show 'also sent you a message → open request' on the like row; never let Ignore delete an unread message.
 
 ### UX-18 · Route push notifications to the right screen
 
-**P0 · before launch** · effort medium (2–4 days)
+**P0 · before launch** · effort medium (2–4 days) · **Done**
 
 - **Problem:** Every push opens whatever tab was last open.
 - **Fix:** Handle notification taps: like → Likes inbox, message or request → that conversation, accepted → that chat.
@@ -230,7 +231,7 @@ _The first ninety seconds decide whether the profile gets finished._
 
 - **Problem:** Last name is required but the app only ever shows 'First Last' in a few denormalised places; dating-style apps show first names.
 - **Fix:** Make last name optional or drop it, show first name everywhere.
-- **Needs:** Product decision.
+- **Needs:** Decided: keep last name for now (used in the denormalised display name); revisit with the card redesign.
 
 ## Now tab & going live
 
@@ -263,7 +264,7 @@ _Going live is the first action of the loop; it must feel safe and understood._
 
 - **Problem:** 'Someone nearby is live' only works while the app is running because it is computed on the device.
 - **Fix:** A function that matches new broadcasts against recent user locations and pushes; depends on the location-precision decision.
-- **Needs:** UX-10 and a privacy decision on storing user locations server-side.
+- **Needs:** Decided: later. Locations are now fuzzed to a ~275 m grid, which makes a server-side matcher acceptable when it is built.
 
 ## Profile
 
@@ -271,14 +272,14 @@ _Editing must never lose work or lock the user out._
 
 ### UX-32 · Keep the editor on screen when a save fails; validate before uploading
 
-**P0 · before launch** · effort medium (2–4 days)
+**P0 · before launch** · effort medium (2–4 days) · **Done**
 
 - **Problem:** A failed save replaces the editor with a grey sentence, no retry; the only exit discards everything although name and city were already written.
 - **Fix:** Inline error banner with Retry above the still-visible editor, keep the draft, check the 2–5 photo rule and required fields locally before any upload.
 
 ### UX-33 · Validate required fields in the editor
 
-**P0 · before launch** · effort small (≤1 day)
+**P0 · before launch** · effort small (≤1 day) · **Done**
 
 - **Problem:** Saving with an empty name or city succeeds and sends the user back through onboarding on the next launch.
 - **Fix:** Disable Save and show why when first name, last name, city or gender is empty, matching the onboarding rules.
@@ -292,10 +293,11 @@ _Editing must never lose work or lock the user out._
 
 ### UX-35 · Explain photo rules in the editor and fix re-picking
 
-**P1 · next** · effort small (≤1 day)
+**P1 · next** · effort small (≤1 day) · **Partly done**
 
 - **Problem:** Min 2 / max 5 only surfaces as an error after upload; removing a photo then picking the same one again does nothing; Discard asks in one place and not the other.
 - **Fix:** Subtitle '2–5 photos · first is your profile picture', a live counter, disable X on the last two, clear the picker on remove, confirm Discard consistently.
+- **Progress:** Discard now confirms; photo-rule hint shows before saving. Re-pick and counter still open.
 
 ### UX-36 · Friendly load errors with Retry on own and other profiles
 

@@ -9,6 +9,10 @@ final class DiscoverService {
     private let broadcastsCollection = "broadcasts"
     private let usersCollection = "users"
 
+    /// Broadcasts older than this are not loaded at all. Ended broadcasts
+    /// inside the window are shown as "recently live".
+    static let recentWindow: TimeInterval = 24 * 60 * 60
+
     struct BroadcastRecord: Identifiable, Equatable {
         let id: String
         let userId: String
@@ -20,14 +24,17 @@ final class DiscoverService {
         let spotifyTrackURL: String?
         let broadcastedAt: Date
         let updatedAt: Date?
+        let endedAt: Date?
+        /// Set to `false` when the broadcaster stopped or the sweeper expired it.
+        let isLive: Bool
         let location: LocationPoint?
     }
 
+    /// Live + recently ended broadcasts of the last 24 hours.
     func listenToBroadcasts(
         onChange: @escaping (Result<[BroadcastRecord], Error>) -> Void
     ) -> ListenerRegistration {
-        let query = db.collection(broadcastsCollection)
-        return query.addSnapshotListener { snapshot, error in
+        return recentQuery().addSnapshotListener { snapshot, error in
             if let error {
                 onChange(.failure(error))
                 return
@@ -41,13 +48,13 @@ final class DiscoverService {
         }
     }
 
-    /// Listens only for newly added broadcasts (ignores initial snapshot and modifications).
+    /// Listens for broadcasts that *go live*: newly added live docs and docs
+    /// that flip back to live (a user starting again reuses their document).
     func listenToNewBroadcasts(
         onNew: @escaping (Result<[BroadcastRecord], Error>) -> Void
     ) -> ListenerRegistration {
         var isFirstSnapshot = true
-        let query = db.collection(broadcastsCollection)
-        return query.addSnapshotListener { snapshot, error in
+        return recentQuery().addSnapshotListener { snapshot, error in
             if let error {
                 onNew(.failure(error))
                 return
@@ -60,8 +67,9 @@ final class DiscoverService {
             }
 
             let newRecords = snapshot.documentChanges
-                .filter { $0.type == .added }
+                .filter { $0.type == .added || $0.type == .modified }
                 .compactMap { Self.broadcastRecord(from: $0.document) }
+                .filter { $0.isLive }
 
             if !newRecords.isEmpty {
                 onNew(.success(newRecords))
@@ -69,10 +77,16 @@ final class DiscoverService {
         }
     }
 
-    /// One-shot fetch of all current broadcasts (used as polling fallback).
+    /// One-shot fetch (pull-to-refresh).
     func fetchBroadcastsOnce() async throws -> [BroadcastRecord] {
-        let snapshot = try await db.collection(broadcastsCollection).getDocuments()
+        let snapshot = try await recentQuery().getDocuments()
         return snapshot.documents.compactMap { Self.broadcastRecord(from: $0) }
+    }
+
+    private func recentQuery() -> Query {
+        let cutoff = Date().addingTimeInterval(-Self.recentWindow)
+        return db.collection(broadcastsCollection)
+            .whereField("updatedAt", isGreaterThan: Timestamp(date: cutoff))
     }
 
     func fetchDiscoverUser(userId: String) async throws -> DiscoverUser? {
@@ -115,7 +129,6 @@ final class DiscoverService {
         )
     }
 
-
     static func broadcastRecord(from doc: QueryDocumentSnapshot) -> BroadcastRecord? {
         let data = doc.data()
 
@@ -124,21 +137,11 @@ final class DiscoverService {
         guard let trackTitle = data["trackTitle"] as? String else { return nil }
         guard let trackArtist = data["trackArtist"] as? String else { return nil }
 
-        let trackAlbum = data["trackAlbum"] as? String
-        let trackArtworkURL = data["trackArtworkURL"] as? String
-        let spotifyTrackURL = data["spotifyTrackURL"] as? String
-
-        let broadcastedAt: Date = {
-            if let ts = data["broadcastedAt"] as? Timestamp { return ts.dateValue() }
-            if let date = data["broadcastedAt"] as? Date { return date }
-            return Date()
-        }()
-
-        let updatedAt: Date? = {
-            if let ts = data["updatedAt"] as? Timestamp { return ts.dateValue() }
-            if let date = data["updatedAt"] as? Date { return date }
+        func date(_ key: String) -> Date? {
+            if let ts = data[key] as? Timestamp { return ts.dateValue() }
+            if let d = data[key] as? Date { return d }
             return nil
-        }()
+        }
 
         let location: LocationPoint? = {
             if let geopoint = data["location"] as? GeoPoint {
@@ -157,11 +160,13 @@ final class DiscoverService {
             trackId: trackId,
             trackTitle: trackTitle,
             trackArtist: trackArtist,
-            trackAlbum: trackAlbum,
-            trackArtworkURL: trackArtworkURL,
-            spotifyTrackURL: spotifyTrackURL,
-            broadcastedAt: broadcastedAt,
-            updatedAt: updatedAt,
+            trackAlbum: data["trackAlbum"] as? String,
+            trackArtworkURL: data["trackArtworkURL"] as? String,
+            spotifyTrackURL: data["spotifyTrackURL"] as? String,
+            broadcastedAt: date("broadcastedAt") ?? Date(),
+            updatedAt: date("updatedAt"),
+            endedAt: date("endedAt"),
+            isLive: (data["isLive"] as? Bool) ?? true,
             location: location
         )
     }

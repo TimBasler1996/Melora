@@ -17,7 +17,10 @@ final class ProfileViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var isSaving: Bool = false
     @Published var saveSucceeded: Bool = false
+    /// Load failure: replaces the content.
     @Published var errorMessage: String?
+    /// Save failure: shown inline above the still-editable form.
+    @Published var saveError: String?
 
     // MARK: - Profile Data
 
@@ -59,6 +62,33 @@ final class ProfileViewModel: ObservableObject {
     }
 
     // MARK: - Computed
+
+    /// Why the draft can't be saved yet, in the user's words. `nil` = valid.
+    /// Mirrors the onboarding rules so a save can never lock the user out.
+    var validationMessage: String? {
+        guard let draft else { return nil }
+        let first = draft.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let last = draft.lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let city = draft.city.trimmingCharacters(in: .whitespacesAndNewlines)
+        let gender = draft.gender.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if first.count < 2 { return "Add your first name." }
+        if last.count < 2 { return "Add your last name." }
+        if city.count < 2 { return "Add your city." }
+        if gender.isEmpty { return "Choose a gender." }
+
+        let photoCount = zip(draft.photoURLs, draft.selectedImages)
+            .filter { url, image in image != nil || !url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .count
+        if photoCount < ProfileViewModel.minPhotoCount {
+            return "Keep at least \(ProfileViewModel.minPhotoCount) photos on your profile."
+        }
+        return nil
+    }
+
+    var canSave: Bool {
+        hasDraftChanges && validationMessage == nil && !isSaving
+    }
 
     var hasDraftChanges: Bool {
         guard let draft, let snapshot = draftSnapshot else { return false }
@@ -152,7 +182,7 @@ final class ProfileViewModel: ObservableObject {
         draft = nil
         draftSnapshot = nil
         saveSucceeded = false
-        errorMessage = nil
+        saveError = nil
     }
 
     // MARK: - Saving
@@ -165,9 +195,16 @@ final class ProfileViewModel: ObservableObject {
             return false
         }
 
+        // Validate locally before a single byte is uploaded, so a failed
+        // save never leaves half the profile written.
+        if let problem = validationMessage {
+            saveError = problem
+            return false
+        }
+
         isSaving = true
         saveSucceeded = false
-        errorMessage = nil
+        saveError = nil
 
         do {
             let trimmedLookingFor = currentDraft.lookingFor.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -252,10 +289,22 @@ final class ProfileViewModel: ObservableObject {
             isSaving = false
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            // Keep the draft and the editor on screen; the banner offers Retry.
+            saveError = Self.friendlySaveError(error)
             isSaving = false
             return false
         }
+    }
+
+    private static func friendlySaveError(_ error: Error) -> String {
+        if error is URLError {
+            return "You seem to be offline. Your edits are kept — try again when you’re connected."
+        }
+        let text = error.localizedDescription
+        if text.lowercased().contains("permission") {
+            return "Couldn’t save your profile. Please try again in a moment."
+        }
+        return "Couldn’t save your profile. Your edits are kept — try again."
     }
 
     // MARK: - Spotify

@@ -35,26 +35,33 @@ service cloud.firestore {
       allow create, update: if isOwner(uid);
       allow delete: if false;
 
-      // Likes this user received. Written by the liker, updated by the owner.
+      // Likes this user received. Written by the liker, status set by the
+      // owner. The liker may attach a message to a still-pending like.
       match /likesReceived/{likeId} {
         allow read: if isOwner(uid) || resource.data.fromUserId == me();
         allow create: if signedIn()
           && request.resource.data.fromUserId == me()
           && request.resource.data.toUserId == uid
           && me() != uid;
-        allow update: if isOwner(uid)
-          && changedKeys().hasOnly(['status', 'respondedAt']);
+        allow update: if (isOwner(uid)
+            && changedKeys().hasOnly(['status', 'respondedAt']))
+          || (resource.data.fromUserId == me()
+            && resource.data.get('status', 'pending') == 'pending'
+            && changedKeys().hasOnly(['message']));
         allow delete: if false;
       }
 
       // Mirror of likes this user gave. Written by the owner; the receiver may
-      // only flip the status.
+      // only flip the status, the owner may only attach a message.
       match /likesGiven/{likeId} {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid)
           && request.resource.data.fromUserId == uid;
-        allow update: if resource.data.toUserId == me()
-          && changedKeys().hasOnly(['status', 'respondedAt']);
+        allow update: if (resource.data.toUserId == me()
+            && changedKeys().hasOnly(['status', 'respondedAt']))
+          || (isOwner(uid)
+            && resource.data.get('status', 'pending') == 'pending'
+            && changedKeys().hasOnly(['message']));
         allow delete: if false;
       }
     }

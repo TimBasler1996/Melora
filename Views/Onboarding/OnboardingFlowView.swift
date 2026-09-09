@@ -43,8 +43,8 @@ struct OnboardingFlowView: View {
                                 .fill(AppColors.surfaceElevated)
                         )
                 }
-                .opacity(viewModel.stepIndex == 1 ? 0 : 1)
-                .disabled(viewModel.stepIndex == 1)
+                .opacity(viewModel.stepIndex == 1 || viewModel.stepIndex == 4 ? 0 : 1)
+                .disabled(viewModel.stepIndex == 1 || viewModel.stepIndex == 4)
 
                 Spacer()
 
@@ -78,6 +78,8 @@ struct OnboardingFlowView: View {
                 OnboardingStepPhotosView(viewModel: viewModel)
             case 3:
                 OnboardingStepSpotifyView(viewModel: viewModel)
+            case 4:
+                OnboardingStepAccountView(viewModel: viewModel)
             default:
                 OnboardingStepBasicsView(viewModel: viewModel)
             }
@@ -87,7 +89,19 @@ struct OnboardingFlowView: View {
 
     private var bottomCTA: some View {
         VStack(spacing: 10) {
-            if viewModel.stepIndex < 3 {
+            if viewModel.stepIndex == 4 {
+                // The Apple button lives in the step itself; this is the skip.
+                Button {
+                    viewModel.skipAccountStep()
+                } label: {
+                    Text("Not now")
+                        .font(AppFonts.subheadline())
+                        .foregroundColor(.white.opacity(0.7))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                }
+                .disabled(viewModel.isLinkingAccount)
+            } else if viewModel.stepIndex < 3 {
                 let isEnabled = viewModel.canContinueCurrentStep
                 Button(action: viewModel.goNext) {
                     Text(viewModel.stepIndex == 1 ? "Looks good" : "Continue")

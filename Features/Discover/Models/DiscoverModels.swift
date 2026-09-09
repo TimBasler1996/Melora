@@ -66,4 +66,23 @@ struct DiscoverBroadcast: Identifiable, Codable, Equatable {
     let broadcastedAt: Date
     let location: LocationPoint?
     var distanceMeters: Int?
+
+    /// `true` while the person is broadcasting right now. Broadcasts that
+    /// ended (or went stale) within the last day stay around as "recently
+    /// live" so Discover is never empty in a quiet moment.
+    var isLive: Bool = true
+
+    /// When the broadcast was last refreshed (live) or ended (recent).
+    var lastSeenAt: Date = Date()
+
+    /// Human "3 h ago" style label for recently-live rows.
+    var lastSeenText: String {
+        let seconds = Date().timeIntervalSince(lastSeenAt)
+        if seconds < 90 { return "just now" }
+        let minutes = Int(seconds / 60)
+        if minutes < 60 { return "\(minutes) min ago" }
+        let hours = Int(seconds / 3600)
+        if hours < 24 { return "\(hours) h ago" }
+        return "yesterday"
+    }
 }

@@ -9,6 +9,23 @@ actor LikeApiService {
     private let db = Firestore.firestore()
     private let usersCollection = "users"
 
+    enum LikeError: LocalizedError {
+        case notAuthenticated
+        case cannotLikeSelf
+        /// An earlier like or request to this person was declined. The
+        /// sender is told neutrally; they are never told about the decline.
+        case alreadyReachedOut(name: String)
+
+        var errorDescription: String? {
+            switch self {
+            case .notAuthenticated: return "You’re not signed in."
+            case .cannotLikeSelf: return "That’s you."
+            case .alreadyReachedOut(let name):
+                return "You’ve already reached out to \(name). If they’re interested, they’ll get back to you."
+            }
+        }
+    }
+
     // MARK: - Create Like (Broadcast)
 
     func likeBroadcastTrack(
@@ -21,13 +38,13 @@ actor LikeApiService {
     ) async throws -> TrackLike {
 
         guard let authedUid = Auth.auth().currentUser?.uid else {
-            throw NSError(domain: "LikeApiService", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+            throw LikeError.notAuthenticated
         }
 
         let fromUserId = fromUser?.uid ?? authedUid
 
         guard fromUserId != toUser.uid else {
-            throw NSError(domain: "LikeApiService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Cannot like yourself"])
+            throw LikeError.cannotLikeSelf
         }
 
         // ✅ IMPROVED: Always fetch complete user data from Firestore to ensure displayName + avatar are set
@@ -84,15 +101,43 @@ actor LikeApiService {
             .limit(to: 1)
             .getDocuments()
 
+        let trimmedMessage: String? = {
+            let t = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : String(t.prefix(160))
+        }()
+
         if let existingDoc = dupCheck.documents.first,
-           let existing = TrackLike.fromFirestore(id: existingDoc.documentID, data: existingDoc.data()) {
-            // Already liked this track: return the stored like so callers see
-            // its real status (e.g. accepted) instead of a made-up pending one.
+           var existing = TrackLike.fromFirestore(id: existingDoc.documentID, data: existingDoc.data()) {
+            // Already liked this track. If a message is added to a plain
+            // pending like, attach it so the receiver gets ONE thing to act on
+            // (a message request) instead of a like *and* a request.
+            let existingMessage = (existing.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if let trimmedMessage, existingMessage.isEmpty, (existing.status ?? .pending) == .pending {
+                let update: [String: Any] = ["message": trimmedMessage]
+                try await existingDoc.reference.updateData(update)
+                try? await db.collection(usersCollection)
+                    .document(fromUserId)
+                    .collection("likesGiven")
+                    .document(existing.id)
+                    .updateData(update)
+                existing.message = trimmedMessage
+            }
             return existing
         }
 
-        // Check if there's a previously accepted like between these two users.
-        // If so, auto-accept so the user doesn't need to re-accept.
+        // A declined (ignored) like or request closes the door: no new likes
+        // from this user. The caller shows a neutral message.
+        let priorDeclined = try await receivedCollection
+            .whereField("fromUserId", isEqualTo: fromUserId)
+            .whereField("status", isEqualTo: TrackLike.Status.rejected.rawValue)
+            .limit(to: 1)
+            .getDocuments()
+        if !priorDeclined.documents.isEmpty {
+            throw LikeError.alreadyReachedOut(name: toUser.displayName)
+        }
+
+        // A previously accepted like auto-accepts the new one so the receiver
+        // doesn't have to accept the same person twice.
         let priorAccepted = try await receivedCollection
             .whereField("fromUserId", isEqualTo: fromUserId)
             .whereField("status", isEqualTo: TrackLike.Status.accepted.rawValue)
@@ -104,11 +149,6 @@ actor LikeApiService {
         let now = Date()
 
         let trackArtworkURLString = track.artworkURL?.absoluteString
-
-        let trimmedMessage: String? = {
-            let t = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            return t.isEmpty ? nil : String(t.prefix(160))
-        }()
 
         let payload: [String: Any] = [
             "fromUserId": fromUserId,

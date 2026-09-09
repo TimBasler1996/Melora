@@ -39,6 +39,11 @@ async function getDisplayName(userId: string): Promise<string> {
   return userDoc.data()?.displayName ?? "Someone";
 }
 
+/** Same derivation as `ChatApiService.conversationId` in the app. */
+function conversationIdFor(a: string, b: string): string {
+  return [a.toLowerCase(), b.toLowerCase()].sort().join("_");
+}
+
 function truncate(text: string, max: number): string {
   return text.length > max ? text.slice(0, max - 1) + "…" : text;
 }
@@ -82,6 +87,13 @@ export const onUserWritten = onDocumentWritten(
     if (!after?.exists) return;
     const data = after.data() ?? {};
 
+    // The app asks for deletion by stamping `deletionRequestedAt` (clients
+    // cannot delete subcollections or other users' documents).
+    if (data.deletionRequestedAt) {
+      await deleteAccountData(event.params.userId);
+      return;
+    }
+
     const firstNameLower = String(data.firstName ?? "").trim().toLowerCase();
     const displayNameLower = String(data.displayName ?? "")
       .trim()
@@ -99,6 +111,56 @@ export const onUserWritten = onDocumentWritten(
     await after.ref.set(updates, {merge: true});
   }
 );
+
+// ──────────────────────────────────────────────────
+// Account deletion
+// ──────────────────────────────────────────────────
+
+/**
+ * Removes everything that belongs to a user: profile document (with its
+ * likes subcollections), photos, follow edges in both directions, blocks,
+ * their broadcast, every conversation they took part in, and finally the
+ * auth user. Idempotent; safe to re-run.
+ */
+async function deleteAccountData(uid: string): Promise<void> {
+  logger.info(`Deleting account data for ${uid}`);
+
+  const deleteQuery = async (q: FirebaseFirestore.Query) => {
+    const snap = await q.get();
+    if (snap.empty) return;
+    const batch = db.batch();
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  };
+
+  await deleteQuery(db.collection("follows").where("followerId", "==", uid));
+  await deleteQuery(db.collection("follows").where("followingId", "==", uid));
+  await deleteQuery(db.collection("blocks").where("blockerId", "==", uid));
+  await deleteQuery(db.collection("blocks").where("blockedUserId", "==", uid));
+
+  const convos = await db
+    .collection("conversations")
+    .where("participantIds", "array-contains", uid)
+    .get();
+  for (const convo of convos.docs) {
+    await db.recursiveDelete(convo.ref);
+  }
+
+  await db.collection("broadcasts").doc(uid).delete().catch(() => undefined);
+
+  const bucket = admin.storage().bucket();
+  await bucket.deleteFiles({prefix: `userPhotos/${uid}/`}).catch((err) => {
+    logger.warn(`Photo cleanup failed for ${uid}`, err);
+  });
+
+  await db.recursiveDelete(db.collection("users").doc(uid));
+
+  await admin.auth().deleteUser(uid).catch((err) => {
+    logger.warn(`Auth user delete failed for ${uid}`, err);
+  });
+
+  logger.info(`Account ${uid} deleted`);
+}
 
 // ──────────────────────────────────────────────────
 // Likes
@@ -146,6 +208,7 @@ export const onLikeCreated = onDocumentCreated(
       data: {
         type: hasMessage ? "messageRequest" : "likeReceived",
         likeId: event.params.likeId,
+        conversationId: conversationIdFor(receiverUid, data.fromUserId ?? ""),
       },
       apns: {payload: {aps: {sound: "default"}}},
     };
@@ -185,6 +248,7 @@ export const onLikeAccepted = onDocumentUpdated(
       data: {
         type: "likeAccepted",
         likeId: event.params.likeId,
+        conversationId: conversationIdFor(likerUid, after.toUserId ?? ""),
       },
       apns: {payload: {aps: {sound: "default"}}},
     };
@@ -266,48 +330,73 @@ export const onConversationDeleted = onDocumentDeleted(
 );
 
 // ──────────────────────────────────────────────────
-// Broadcasts: expire orphans
+// Broadcasts: expire orphans, keep "recently live" for a day
 // ──────────────────────────────────────────────────
 
-const BROADCAST_TTL_MINUTES = 10;
+const BROADCAST_LIVE_TTL_MINUTES = 10;
+const BROADCAST_KEEP_HOURS = 24;
 
 /**
- * A client that is killed mid-broadcast never removes its `broadcasts/{uid}`
- * doc or clears `users/{uid}.isBroadcasting`. Sweep anything that has not
- * been refreshed within the TTL. Discover additionally filters client-side.
+ * A client that is killed mid-broadcast never ends its `broadcasts/{uid}` doc
+ * or clears `users/{uid}.isBroadcasting`. Every 10 minutes:
+ *  1. live docs not refreshed within the TTL are marked ended (they stay
+ *     visible in Discover as "recently live"),
+ *  2. docs untouched for a day are deleted.
  */
 export const expireStaleBroadcasts = onSchedule(
   "every 10 minutes",
   async () => {
-    const cutoff = admin.firestore.Timestamp.fromMillis(
-      Date.now() - BROADCAST_TTL_MINUTES * 60 * 1000
+    const now = Date.now();
+    const liveCutoff = admin.firestore.Timestamp.fromMillis(
+      now - BROADCAST_LIVE_TTL_MINUTES * 60 * 1000
+    );
+    const keepCutoff = admin.firestore.Timestamp.fromMillis(
+      now - BROADCAST_KEEP_HOURS * 60 * 60 * 1000
     );
 
     const stale = await db
       .collection("broadcasts")
-      .where("updatedAt", "<", cutoff)
+      .where("isLive", "==", true)
+      .where("updatedAt", "<", liveCutoff)
       .limit(200)
       .get();
 
-    if (stale.empty) return;
-
-    const batch = db.batch();
-    for (const doc of stale.docs) {
-      batch.delete(doc.ref);
-      const userId: string | undefined = doc.data().userId;
-      if (userId) {
+    if (!stale.empty) {
+      const batch = db.batch();
+      for (const doc of stale.docs) {
         batch.set(
-          db.collection("users").doc(userId),
-          {
-            isBroadcasting: false,
-            currentTrack: admin.firestore.FieldValue.delete(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          },
+          doc.ref,
+          {isLive: false, endedAt: doc.data().updatedAt ?? liveCutoff},
           {merge: true}
         );
+        const userId: string | undefined = doc.data().userId;
+        if (userId) {
+          batch.set(
+            db.collection("users").doc(userId),
+            {
+              isBroadcasting: false,
+              currentTrack: admin.firestore.FieldValue.delete(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            {merge: true}
+          );
+        }
       }
+      await batch.commit();
+      logger.info(`Ended ${stale.size} stale broadcast(s)`);
     }
-    await batch.commit();
-    logger.info(`Expired ${stale.size} stale broadcast(s)`);
+
+    const old = await db
+      .collection("broadcasts")
+      .where("updatedAt", "<", keepCutoff)
+      .limit(200)
+      .get();
+
+    if (!old.empty) {
+      const batch = db.batch();
+      old.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+      logger.info(`Deleted ${old.size} broadcast(s) older than a day`);
+    }
   }
 );

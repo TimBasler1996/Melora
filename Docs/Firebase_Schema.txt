@@ -35,6 +35,9 @@ Presence:
 - `likesReceivedCount`: Int — maintained by the `onLikeCreated` function;
   shown on other users' profiles (their `likesReceived` is not listable)
 - `fcmToken`: String — push token, written by AppDelegate
+- `deletionRequestedAt`: Timestamp — set by the app when the user deletes
+  their profile; the `onUserWritten` function then removes the user doc,
+  photos, follows, blocks, broadcast, conversations and the auth user
 - `notifyLikes`, `notifyMessages`: Bool — mirrored from Settings; missing
   means enabled. Cloud Functions skip the push when false.
 
@@ -59,13 +62,17 @@ atomically with `likesReceived`. The receiver may only update `status` /
 at most one live broadcast per user. Owner-only writes.
 - `userId`, `trackId`, `trackTitle`, `trackArtist`: String
 - `trackAlbum`, `trackArtworkURL`, `spotifyTrackURL`: String (optional)
-- `latitude`, `longitude`: Double (optional)
-- `broadcastedAt`, `updatedAt`: Timestamp (server time)
+- `latitude`, `longitude`: Double (optional) — snapped to a ~275 m grid on
+  the device before upload (`LocationPoint.fuzzed()`); never precise
+- `isLive`: Bool — false once the broadcast ended
+- `broadcastedAt`, `updatedAt`, `endedAt`: Timestamp (server time)
 
 Lifecycle: the client refreshes `updatedAt` every 15–20 s while live and
-deletes the doc on stop. Discover hides docs older than 5 min; the
-`expireStaleBroadcasts` function deletes docs older than 10 min and resets
-`users/{uid}.isBroadcasting` (covers apps killed mid-broadcast).
+sets `isLive: false` + `endedAt` on stop (the document is kept). Discover
+shows live docs refreshed within 5 min as "Live now" and everything else
+from the last 24 h as "Recently live". The `expireStaleBroadcasts`
+function marks live docs older than 10 min as ended (covers apps killed
+mid-broadcast) and deletes docs older than 24 h.
 
 ## conversations/{conversationId}
 Chat between two users. Id = the two uids, lowercased and sorted, joined with
@@ -102,7 +109,14 @@ Private to the blocker; hides the blocked user from Discover, Chats and search.
 - `userPhotos/{uid}/photo_{index}.jpg` — profile photos (owner writes)
 - `userPhotos/{uid}/hero_photo.jpg` — hero image
 
+## Auth
+Everyone starts as an anonymous Firebase user. "Keep your profile" (last
+onboarding step, and Settings → Account) links a Sign in with Apple
+credential to that uid so the account survives reinstall. If the Apple ID
+already owns an account, the app signs into that one instead.
+
 ## Composite indexes (firestore.indexes.json)
+- `broadcasts`: isLive ASC, updatedAt ASC
 - `likesGiven`: status ASC, respondedAt DESC
 - `follows`: followingId ASC, createdAt DESC
 - `conversations`: participantIds CONTAINS, updatedAt DESC

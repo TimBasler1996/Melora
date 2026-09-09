@@ -23,9 +23,10 @@ actor ChatApiService {
 
         var errorDescription: String? {
             switch self {
-            case .notAuthenticated: return "Not authenticated"
-            case .emptyMessage: return "Cannot send an empty message"
-            case .requestDeclined: return "This person declined your message request."
+            case .notAuthenticated: return "You’re not signed in."
+            case .emptyMessage: return "Write something first."
+            // Deliberately neutral: the sender is never told a request was declined.
+            case .requestDeclined: return "You’ve already reached out to them. If they’re interested, they’ll get back to you."
             }
         }
     }
@@ -166,11 +167,15 @@ actor ChatApiService {
         try await setStatus(.rejected, conversationId: conversationId)
     }
 
-    /// Mirrors a like status change onto the linked conversation, if one exists.
+    /// Mirrors a like status change onto the linked conversation, but only
+    /// while that conversation is still a *pending* request. Ignoring a plain
+    /// like must never close a chat the two people already have.
     func mirrorLikeStatus(_ status: Conversation.Status, between uidA: String, and uidB: String) async {
         let convoId = conversationId(for: uidA, and: uidB)
         let convoRef = db.collection(conversationsCollection).document(convoId)
         guard let snap = try? await convoRef.getDocument(), snap.exists else { return }
+        let current = (snap.data()?["status"] as? String).flatMap(Conversation.Status.init(rawValue:)) ?? .accepted
+        guard current == .pending else { return }
         try? await setStatus(status, conversationId: convoId)
     }
 
