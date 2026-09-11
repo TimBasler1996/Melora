@@ -25,6 +25,9 @@ struct SettingsContentView: View {
     @State private var accountMessage: String?
     @State private var showSpotifyDisconnectConfirm = false
     @State private var notificationsDenied = false
+    /// Same key `SpotifyTasteSync.needsReconnect` writes; observed here so
+    /// the row updates the moment a sync succeeds.
+    @AppStorage("spotifyTaste.needsReconnect") private var needsSpotifyReconnect = false
 
     var body: some View {
         List {
@@ -122,7 +125,7 @@ struct SettingsContentView: View {
                         .tint(AppColors.primary)
                     }
 
-                    if SpotifyTasteSync.needsReconnect {
+                    if needsSpotifyReconnect {
                         Button {
                             spotifyAuth.reconnect()
                         } label: {
@@ -146,7 +149,7 @@ struct SettingsContentView: View {
                 Text("Spotify")
             } footer: {
                 Text(spotifyAuth.isAuthorized
-                     ? (SpotifyTasteSync.needsReconnect
+                     ? (needsSpotifyReconnect
                         ? "Your Spotify login is from before profiles showed top artists and playlists. Reconnect once to turn that on."
                         : "Going live shares what you’re playing. Your top artists, top tracks and public playlists show on your profile.")
                      : "Connect Spotify to go live and share what you’re playing.")
@@ -291,9 +294,6 @@ struct SettingsContentView: View {
                  : "You won’t be able to go live until you reconnect.")
         }
         .task { await refreshNotificationStatus() }
-        .onChange(of: spotifyAuth.isAuthorized) { _, connected in
-            if connected { Task { await SpotifyTasteSync.syncIfNeeded(force: true) } }
-        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await refreshNotificationStatus() } }
         }
