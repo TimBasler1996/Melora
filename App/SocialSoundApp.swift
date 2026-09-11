@@ -15,8 +15,8 @@ struct SocialSoundApp: App {
     @StateObject private var notificationService = BroadcastNotificationService()
 
     init() {
-        // Give URLSession.shared (used by AsyncImage) a real memory + disk cache
-        // so album art and profile photos aren't re-downloaded on every scroll.
+        // Disk cache behind `RemoteImageLoader`, so album art and profile
+        // photos survive a relaunch without a download.
         URLCache.shared = URLCache(
             memoryCapacity: 32 * 1024 * 1024,   // 32 MB
             diskCapacity: 256 * 1024 * 1024     // 256 MB

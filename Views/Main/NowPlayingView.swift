@@ -521,7 +521,7 @@ private struct CompactArtwork: View {
     var body: some View {
         Group {
             if let url = track.artworkURL {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: 260) { phase in
                     switch phase {
                     case .empty:
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -533,8 +533,6 @@ private struct CompactArtwork: View {
                             .scaledToFill()
                     case .failure:
                         artworkPlaceholder
-                    @unknown default:
-                        EmptyView()
                     }
                 }
             } else {
@@ -705,6 +703,9 @@ private struct EdgeGlowEffect: View {
 // MARK: - UIImage Extension for Dominant Color
 
 extension UIImage {
+    /// Creating a CIContext costs tens of milliseconds; one is enough.
+    private static let averageColorContext = CIContext(options: [.workingColorSpace: kCFNull as Any])
+
     func dominantColor() async -> UIColor? {
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
@@ -734,7 +735,7 @@ extension UIImage {
                 }
 
                 var bitmap = [UInt8](repeating: 0, count: 4)
-                let context = CIContext(options: [.workingColorSpace: kCFNull as Any])
+                let context = UIImage.averageColorContext
                 context.render(
                     outputImage,
                     toBitmap: &bitmap,

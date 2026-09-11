@@ -256,7 +256,7 @@ struct SharedProfilePreviewView: View {
                     // ✅ Hero image with explicit frame constraints
                     Group {
                         if let heroURL = data.heroPhotoURL, let url = URL(string: heroURL), !heroURL.isEmpty {
-                            AsyncImage(url: url) { phase in
+                            RemoteImage(url: url, size: 420) { phase in
                                 switch phase {
                                 case .empty:
                                     heroPlaceholder
@@ -269,8 +269,6 @@ struct SharedProfilePreviewView: View {
                                         .clipped()
                                         .transaction { t in t.animation = nil }
                                 case .failure:
-                                    heroPlaceholder
-                                @unknown default:
                                     heroPlaceholder
                                 }
                             }
@@ -387,7 +385,7 @@ struct SharedProfilePreviewView: View {
             .aspectRatio(3.0 / 4.0, contentMode: .fit)
             .overlay {
                 if let url = URL(string: urlString) {
-                    AsyncImage(url: url) { phase in
+                    RemoteImage(url: url, size: 420) { phase in
                         switch phase {
                         case .empty:
                             ZStack { photoPlaceholder; ProgressView().tint(AppColors.primary) }
@@ -397,8 +395,6 @@ struct SharedProfilePreviewView: View {
                                 .scaledToFill()
                                 .transaction { t in t.animation = nil }
                         case .failure:
-                            photoPlaceholder
-                        @unknown default:
                             photoPlaceholder
                         }
                     }
@@ -514,7 +510,7 @@ private struct FollowerListRow: View {
     private var avatar: some View {
         Group {
             if let s = user.avatarURL ?? user.photoURLs?.first, let url = URL(string: s) {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: 48) { phase in
                     switch phase {
                     case .success(let img): img.resizable().scaledToFill()
                     default: avatarPlaceholder
@@ -699,7 +695,7 @@ struct MusicTasteCard: View {
     private func image(_ urlString: String?, size: CGFloat, circle: Bool) -> some View {
         Group {
             if let urlString, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: size) { phase in
                     if case .success(let img) = phase {
                         img.resizable().scaledToFill()
                     } else {

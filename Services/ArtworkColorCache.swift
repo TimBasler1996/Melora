@@ -15,8 +15,9 @@ actor ArtworkColorCache {
         if let task = inFlight[url] { return await task.value }
 
         let task = Task<Color?, Never> {
-            guard let (data, _) = try? await URLSession.shared.data(from: url),
-                  let image = UIImage(data: data),
+            // A 128 px decode is plenty for an average color and shares the
+            // download with the card's artwork.
+            guard let image = await RemoteImageLoader.load(url, pixelSize: 128),
                   let uiColor = await image.dominantColor() else { return nil }
             return Color(uiColor)
         }

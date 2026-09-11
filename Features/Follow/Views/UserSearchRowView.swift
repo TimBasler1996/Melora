@@ -55,7 +55,7 @@ struct UserSearchRowView: View {
 
         return Group {
             if let urlString, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: 48) { phase in
                     switch phase {
                     case .empty:
                         Circle().fill(AppColors.surfaceElevated)
@@ -63,8 +63,6 @@ struct UserSearchRowView: View {
                     case .success(let image):
                         image.resizable().scaledToFill()
                     case .failure:
-                        initialsView
-                    @unknown default:
                         initialsView
                     }
                 }

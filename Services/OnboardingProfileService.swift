@@ -77,7 +77,7 @@ final class OnboardingProfileService {
     ///         Photos are downscaled to `UIImage.profilePhotoMaxDimension` before upload.
     func uploadPhoto(image: UIImage, uid: String, index: Int) async throws -> String {
         // Never ship raw camera-roll pixels: cap the longest edge before encoding.
-        guard let data = image.downscaled().jpegData(compressionQuality: 0.85) else {
+        guard let data = image.downscaled().jpegData(compressionQuality: 0.8) else {
             throw NSError(domain: "Onboarding", code: 2, userInfo: [
                 NSLocalizedDescriptionKey: "Invalid image data."
             ])
@@ -111,8 +111,8 @@ final class OnboardingProfileService {
 
     /// Upload a hero photo (large banner image for profile)
     func uploadHeroPhoto(image: UIImage, uid: String) async throws -> String {
-        // The hero is shown full-width; allow a little more resolution than a tile.
-        guard let data = image.downscaled(maxDimension: 2000).jpegData(compressionQuality: 0.85) else {
+        // 1600 px covers a full-width hero at 3x; anything more only slows the feed.
+        guard let data = image.downscaled().jpegData(compressionQuality: 0.8) else {
             throw NSError(domain: "Onboarding", code: 2, userInfo: [
                 NSLocalizedDescriptionKey: "Invalid image data."
             ])

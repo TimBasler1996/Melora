@@ -148,7 +148,7 @@ struct SpotifyLinkCard: View {
     private var artwork: some View {
         Group {
             if let url = artworkURL {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: 56) { phase in
                     switch phase {
                     case .empty:
                         artworkPlaceholder

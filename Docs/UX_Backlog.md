@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 62 items — P0 15 · P1 27 · P2 16 · P3 4 · done 59
+Totals: 64 items — P0 16 · P1 28 · P2 16 · P3 4 · done 61
 
 ## Your to-dos (need the project owner)
 
@@ -526,6 +526,15 @@ _Every control must do what it says; expected controls must exist._
 
 _Calm, premium tone means one vocabulary and no debug text._
 
+### UX-63 · Images load once, decoded small; lists lazy
+
+**P0 · before launch** · effort medium (2–4 days) · **Done**
+
+- **Problem:** AsyncImage decoded every 1600 px profile photo at full size for 44 pt avatars, on every appearance, with no shared memory cache: placeholders flashed on every scroll and the feed felt sluggish.
+- **Fix:** One loader (RemoteImageLoader): ImageIO downsampling to the displayed size, in-memory cache so a known image renders on the first frame, one download per URL, disk cache across launches. Discover and Inbox lists are lazy. Cover color reuses the small decode instead of a second download. Uploads capped at 1600 px / 0.8.
+- **Needs:** Old photos already in Storage stay large until re-uploaded; a server-side thumbnail would be the next step if lists still feel slow on cellular.
+- **Progress:** RemoteImage replaces all 17 AsyncImage sites.
+
 ### UX-51 · Map raw technical errors to human copy everywhere
 
 **P1 · next** · effort small (≤1 day) · **Done**
@@ -542,6 +551,14 @@ _Calm, premium tone means one vocabulary and no debug text._
 - **Fix:** One image, the ripple, as icon, live indicator and the o in the wordmark. Ember on warm black, cream text, song titles in italic serif, everything else a heavy grotesk. Discover cards glow in their cover's color.
 - **Needs:** Fonts are the system ones (SF Pro, New York italic) so nothing has to be bundled; OWN-8 covers adding Archivo and Instrument Serif files if wanted.
 - **Progress:** AppTheme tokens, AppFonts.song, RippleMark/LiveRipple/MeloraWordmark, new AppIcon set, Discover wordmark and cover glow, serif titles on Discover, Live, Activity and Music taste. Second pass: own line-icon set (Assets/Icons + MIcon), pressable buttons, ripple burst on like, card transitions, pill filters and a house segmented control, Live screen and profile hero rebuilt to the canvas.
+
+### UX-64 · App is called Melora on the home screen
+
+**P1 · next** · effort small (≤1 day) · **Done**
+
+- **Problem:** Display name still said SocialSound; the icon in the repo was new but the phone kept the cached old one.
+- **Fix:** CFBundleDisplayName = Melora. Icon: delete the app from the phone once and reinstall.
+- **Needs:** Bundle id and Xcode target keep the SocialSound name; renaming those is a separate, riskier change (signing, Firebase config).
 
 ### UX-52 · Calm system copy: no emoji toasts, lowercase status pills
 

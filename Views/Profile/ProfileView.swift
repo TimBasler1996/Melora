@@ -285,7 +285,7 @@ struct ProfileView: View {
                                 .resizable()
                                 .scaledToFill()
                         } else if let displayURL, let url = URL(string: displayURL), !displayURL.isEmpty {
-                            AsyncImage(url: url) { phase in
+                            RemoteImage(url: url, size: 420) { phase in
                                 switch phase {
                                 case .empty:
                                     heroEditPlaceholder
@@ -295,8 +295,6 @@ struct ProfileView: View {
                                         .scaledToFill()
                                         .transaction { t in t.animation = nil }
                                 case .failure:
-                                    heroEditPlaceholder
-                                @unknown default:
                                     heroEditPlaceholder
                                 }
                             }
@@ -422,7 +420,7 @@ struct ProfileView: View {
                             .scaledToFill()
                             .clipped()
                     } else if let remoteURL, let url = URL(string: remoteURL), !remoteURL.isEmpty {
-                        AsyncImage(url: url) { phase in
+                        RemoteImage(url: url, size: 300) { phase in
                             switch phase {
                             case .empty:
                                 editPhotoPlaceholder(index: index)
@@ -430,8 +428,6 @@ struct ProfileView: View {
                                 image.resizable().scaledToFill().clipped()
                                     .transaction { t in t.animation = nil }
                             case .failure:
-                                editPhotoPlaceholder(index: index)
-                            @unknown default:
                                 editPhotoPlaceholder(index: index)
                             }
                         }
@@ -835,7 +831,7 @@ struct ProfileAvatarView: View {
                     .resizable()
                     .scaledToFill()
             } else if let urlString, let url = URL(string: urlString), !urlString.isEmpty {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: size) { phase in
                     switch phase {
                     case .empty:
                         placeholder
@@ -845,8 +841,6 @@ struct ProfileAvatarView: View {
                             .scaledToFill()
                             .transaction { t in t.animation = nil }
                     case .failure:
-                        placeholder
-                    @unknown default:
                         placeholder
                     }
                 }

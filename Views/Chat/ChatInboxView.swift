@@ -121,7 +121,7 @@ struct ChatInboxView: View {
             }
         } else {
             ScrollView {
-                VStack(spacing: 12) {
+                LazyVStack(spacing: 12) {
                     if !vm.pendingRequestRows.isEmpty {
                         NavigationLink {
                             ChatRequestsView(vm: vm)

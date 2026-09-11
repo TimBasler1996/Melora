@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5746A839B1FC422C834FCAA4 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D54E966CF84FA6BEAB7605 /* RemoteImage.swift */; };
 		66F0BAF76C08432388F0A0FD /* MIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9D752374FB4725A261C395 /* MIcon.swift */; };
 		513FB17B8E044CF49074EB5C /* ArtworkColorCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E9FF9396BD46DFAF326058 /* ArtworkColorCache.swift */; };
 		B075EC834C844EEF9FE01036 /* RippleMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = F314DB3340394791A68ACC0D /* RippleMark.swift */; };
@@ -88,6 +89,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		00D54E966CF84FA6BEAB7605 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
 		4E9D752374FB4725A261C395 /* MIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIcon.swift; sourceTree = "<group>"; };
 		18E9FF9396BD46DFAF326058 /* ArtworkColorCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkColorCache.swift; sourceTree = "<group>"; };
 		F314DB3340394791A68ACC0D /* RippleMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RippleMark.swift; sourceTree = "<group>"; };
@@ -465,6 +467,7 @@
 				753AD78B2F2CC12500521CF9 /* SharedProfilePreviewView.swift */,
 				F314DB3340394791A68ACC0D /* RippleMark.swift */,
 				4E9D752374FB4725A261C395 /* MIcon.swift */,
+				00D54E966CF84FA6BEAB7605 /* RemoteImage.swift */,
 				79A1C0052F30000300112233 /* CitySearchField.swift */,
 				A1C2D3EB2F60000100SPLNK1 /* SpotifyLinkCard.swift */,
 			);
@@ -586,6 +589,7 @@
 				753AD78C2F2CC12500521CF9 /* SharedProfilePreviewView.swift in Sources */,
 				B075EC834C844EEF9FE01036 /* RippleMark.swift in Sources */,
 				66F0BAF76C08432388F0A0FD /* MIcon.swift in Sources */,
+				5746A839B1FC422C834FCAA4 /* RemoteImage.swift in Sources */,
 				75DAD8772F20E80500D1219E /* OnboardingStepSpotifyView.swift in Sources */,
 				7210DF7946B441C7AECBE56C /* OnboardingWelcomeView.swift in Sources */,
 				0F55817B66D8415D8C9BC878 /* OnboardingStepAccountView.swift in Sources */,
@@ -783,7 +787,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SocialSound-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = SocialSound;
+				INFOPLIST_KEY_CFBundleDisplayName = Melora;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SocialSound uses your location to show nearby listeners.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -817,7 +821,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SocialSound-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = SocialSound;
+				INFOPLIST_KEY_CFBundleDisplayName = Melora;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "SocialSound uses your location to show nearby listeners.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

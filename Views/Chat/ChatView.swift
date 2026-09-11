@@ -429,10 +429,12 @@ struct ChatView: View {
             ZStack {
                 Circle().fill(AppColors.surfaceElevated)
                 if let track = vm.nowPlaying {
-                    AsyncImage(url: track.artworkURL) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        MIcon("music", size: 18, color: AppColors.primary)
+                    RemoteImage(url: track.artworkURL, size: 30) { phase in
+                        if case .success(let image) = phase {
+                            image.resizable().scaledToFill()
+                        } else {
+                            MIcon("music", size: 18, color: AppColors.primary)
+                        }
                     }
                     .frame(width: 30, height: 30)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -563,7 +565,7 @@ private struct ChatThreadHeader: View {
     private var avatar: some View {
         if let urlString = peer?.avatarURL ?? peer?.photoURLs?.first,
            let url = URL(string: urlString) {
-            AsyncImage(url: url) { phase in
+            RemoteImage(url: url, size: None) { phase in
                 switch phase {
                 case .success(let image):
                     image.resizable().scaledToFill()

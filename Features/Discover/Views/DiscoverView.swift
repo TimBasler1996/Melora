@@ -369,7 +369,7 @@ struct DiscoverView: View {
             friendsEmptyState
         } else {
             ScrollView {
-                VStack(spacing: 20) {
+                LazyVStack(spacing: 20) {
                     if viewModel.visibleBroadcasts.isEmpty {
                         nobodyLiveCard
                     } else {

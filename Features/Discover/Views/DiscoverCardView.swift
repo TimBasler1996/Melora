@@ -333,7 +333,7 @@ struct DiscoverCardView: View {
         ZStack {
             if let urlString = broadcast.user.primaryPhotoURL,
                let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: 50) { phase in
                     switch phase {
                     case .empty:
                         userPlaceholder
@@ -343,8 +343,6 @@ struct DiscoverCardView: View {
                             .scaledToFill()
                             .transaction { $0.animation = nil }
                     case .failure:
-                        userPlaceholder
-                    @unknown default:
                         userPlaceholder
                     }
                 }
@@ -381,7 +379,7 @@ struct DiscoverCardView: View {
     private var albumArtwork: some View {
         ZStack {
             if let url = broadcast.track.artworkURLValue {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: 50) { phase in
                     switch phase {
                     case .empty:
                         artworkPlaceholder
@@ -391,8 +389,6 @@ struct DiscoverCardView: View {
                             .scaledToFill()
                             .transaction { $0.animation = nil }
                     case .failure:
-                        artworkPlaceholder
-                    @unknown default:
                         artworkPlaceholder
                     }
                 }

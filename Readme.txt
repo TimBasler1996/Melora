@@ -27,7 +27,10 @@ Ember `#FF5A3C` for live and the one primary action, warm "vinyl" black
 grotesk; song titles use `AppFonts.song` (italic serif) and nothing else
 does. Icons are the app's own line set (`Assets.xcassets/Icons`, drawn with
 `MIcon`); primary buttons use `.pressable`; a like fires `RippleBurst`.
-Album covers tint Discover cards (`ArtworkColorCache`). The design
+Album covers tint Discover cards (`ArtworkColorCache`). Remote images go
+through `RemoteImage` (Views/Components/RemoteImage.swift): decoded at
+display size, cached in memory and on disk, one download per URL. Never
+use `AsyncImage` directly. The design
 canvas: https://claude.ai/code/artifact/738ee33e-0097-4cfa-b88f-3771ac1e307b
 
 ## The social loop

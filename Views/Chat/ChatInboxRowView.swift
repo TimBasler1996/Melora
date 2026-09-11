@@ -59,7 +59,7 @@ struct ChatInboxRowView: View {
     private var avatar: some View {
         Group {
             if let urlString = row.avatarURL, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: 56) { phase in
                     switch phase {
                     case .empty:
                         Circle().fill(AppColors.tintedBackground)

@@ -295,7 +295,7 @@ private struct ActivityRow: View {
     private var avatar: some View {
         Group {
             if let urlString = item.avatarURL, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: 48) { phase in
                     if case .success(let image) = phase {
                         image.resizable().scaledToFill()
                     } else {

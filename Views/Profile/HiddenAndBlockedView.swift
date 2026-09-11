@@ -127,7 +127,7 @@ struct HiddenAndBlockedView: View {
     private func avatar(_ urlString: String?) -> some View {
         Group {
             if let urlString, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
+                RemoteImage(url: url, size: 36) { phase in
                     if case .success(let image) = phase {
                         image.resizable().scaledToFill()
                     } else {
