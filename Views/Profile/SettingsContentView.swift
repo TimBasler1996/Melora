@@ -28,8 +28,8 @@ struct SettingsContentView: View {
     /// Same key `SpotifyTasteSync.needsReconnect` writes; observed here so
     /// the row updates the moment a sync succeeds.
     @AppStorage("spotifyTaste.needsReconnect") private var needsSpotifyReconnect = false
-    /// Same key `SpotifyTasteSync.hidden` mirrors from the user document.
-    @AppStorage("spotifyTaste.hidden") private var spotifyTasteHidden = false
+    /// Mirrors `SpotifyTasteSync.hidden` (uid-scoped, fed by the user document).
+    @State private var spotifyTasteHidden = SpotifyTasteSync.hidden
 
     var body: some View {
         List {

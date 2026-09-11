@@ -326,8 +326,9 @@ final class ChatViewModel: ObservableObject {
         isSending = true
         defer { isSending = false }
 
-        let replyContext = replyingTo
-        replyingTo = nil
+        // A song card is never a reply: the open quote stays with the draft.
+        let replyContext = track == nil ? replyingTo : nil
+        if track == nil { replyingTo = nil }
 
         do {
             try await ChatApiService.shared.sendMessage(
@@ -339,7 +340,7 @@ final class ChatViewModel: ObservableObject {
             if clearsDraft { draft = "" }
         } catch {
             // Keep the draft and reply context so the user can retry.
-            replyingTo = replyContext
+            if track == nil { replyingTo = replyContext }
             actionError = "Couldn’t send your message. Please try again."
             print("❌ [Chat] send failed:", error.localizedDescription)
         }

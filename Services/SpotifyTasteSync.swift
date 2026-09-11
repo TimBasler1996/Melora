@@ -19,9 +19,17 @@ enum SpotifyTasteSync {
 
     /// Mirror of the user document's `spotifyTasteHidden`, kept current by
     /// `CurrentUserStore`, so Settings and the sync agree without a fetch.
+    /// Scoped to the signed-in uid so one account's choice never leaks into
+    /// the next one's launch sync.
     static var hidden: Bool {
-        get { UserDefaults.standard.bool(forKey: "spotifyTaste.hidden") }
-        set { UserDefaults.standard.set(newValue, forKey: "spotifyTaste.hidden") }
+        get {
+            guard let uid = Auth.auth().currentUser?.uid else { return false }
+            return UserDefaults.standard.bool(forKey: "spotifyTaste.hidden.\(uid)")
+        }
+        set {
+            guard let uid = Auth.auth().currentUser?.uid else { return }
+            UserDefaults.standard.set(newValue, forKey: "spotifyTaste.hidden.\(uid)")
+        }
     }
 
     /// Off: the taste data leaves the user document (so nobody can read it)
