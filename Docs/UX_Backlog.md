@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 64 items — P0 16 · P1 28 · P2 16 · P3 4 · done 61
+Totals: 65 items — P0 16 · P1 29 · P2 16 · P3 4 · done 62
 
 ## Your to-dos (need the project owner)
 
@@ -81,6 +81,14 @@ _Discover is the reason the app exists and today it is empty for almost every ne
 - **Problem:** The km slider stayed visible and filtered the People I follow feed, though distance is irrelevant for people you chose to follow. The empty state also said “friends”, which implied a mutual relation.
 - **Fix:** Slider and location bar only in Nearby; the following feed shows everyone you follow wherever they are, nearest first. Copy says “people you follow”.
 - **Progress:** DiscoverView hides locationBar outside Nearby; view model skips the radius filter in following mode.
+
+### UX-65 · Go live from Discover, in place
+
+**P1 · next** · effort small (≤1 day) · **Done**
+
+- **Problem:** The banner's Go live jumped to the Live tab, where the user had to flip the toggle themselves: two screens for one intent.
+- **Fix:** Tap Go live on Discover: the app checks what Spotify plays, asks for location once, and you're live without leaving the feed. Nothing playing: a small alert with Open Spotify. Already live: the button says Manage and opens the Live tab.
+- **Progress:** Banner and the empty-state button share goLive(); broadcast errors show on Discover too.
 
 ### UX-06 · Bring the Discover card back to the guideline
 

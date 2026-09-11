@@ -12,6 +12,9 @@ struct DiscoverView: View {
     @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
 
     @State private var showUserSearch = false
+    /// Go live from the banner: checking Spotify and flagging the broadcast.
+    @State private var goingLive = false
+    @State private var showNothingPlaying = false
     @State private var expandedCardId: String?
     @State private var chatToOpen: ChatTarget?
 
@@ -109,6 +112,18 @@ struct DiscoverView: View {
             } message: {
                 Text("Hidden songs and people can be restored in Settings.")
             }
+            .alert("Nothing is playing", isPresented: $showNothingPlaying) {
+                Button("Open Spotify") {
+                    if let url = URL(string: "spotify:") { UIApplication.shared.open(url) }
+                }
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Start a song on Spotify, then tap Go live.")
+            }
+            .onChange(of: broadcast.errorMessage) { _, message in
+                // Going live happens here now, so its failures show here too.
+                if let message, !message.isEmpty { viewModel.actionError = message }
+            }
             .alert(
                 "Couldn’t do that",
                 isPresented: Binding(
@@ -146,7 +161,7 @@ struct DiscoverView: View {
     /// looking at people to being seen by them.
     private var goLiveBanner: some View {
         Button {
-            router.goLive()
+            goLive()
         } label: {
             HStack(spacing: 12) {
                 if broadcast.isBroadcasting {
@@ -175,21 +190,60 @@ struct DiscoverView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text(broadcast.isBroadcasting ? "Manage" : "Go live")
-                    .font(.system(size: 13, weight: .heavy))
-                    .foregroundColor(broadcast.isBroadcasting ? AppColors.primaryText : AppColors.background)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(Capsule().fill(broadcast.isBroadcasting ? AppColors.surfaceElevated : AppColors.live))
+                Group {
+                    if goingLive {
+                        ProgressView()
+                            .tint(AppColors.background)
+                            .scaleEffect(0.8)
+                    } else {
+                        Text(broadcast.isBroadcasting ? "Manage" : "Go live")
+                    }
+                }
+                .font(.system(size: 13, weight: .heavy))
+                .foregroundColor(broadcast.isBroadcasting ? AppColors.primaryText : AppColors.background)
+                .frame(minWidth: 52)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(broadcast.isBroadcasting ? AppColors.surfaceElevated : AppColors.live))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .melCard(cornerRadius: 14)
         }
         .buttonStyle(.pressable)
+        .disabled(goingLive)
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.top, 4)
         .padding(.bottom, 8)
+    }
+
+    /// One tap, and you're on the map, without leaving Discover. The Live
+    /// tab stays the place to manage or stop a broadcast.
+    private func goLive() {
+        if broadcast.isBroadcasting {
+            router.goLive()
+            return
+        }
+        guard spotifyAuth.isAuthorized else {
+            spotifyAuth.ensureAuthorized()
+            return
+        }
+        guard !goingLive else { return }
+        goingLive = true
+        Task {
+            defer { goingLive = false }
+            let state = try? await SpotifyService.shared.fetchNowPlayingState()
+            guard let state, state.isPlaying, let track = state.track else {
+                showNothingPlaying = true
+                return
+            }
+            // First go-live is where location makes sense: it is what puts
+            // you on other people's Discover.
+            locationService.requestAuthorizationIfNeeded()
+            broadcast.attachLocationService(locationService)
+            broadcast.updateCurrentTrack(track)
+            await broadcast.startBroadcasting()
+        }
     }
 
     private var goLiveTitle: String {
@@ -537,7 +591,7 @@ struct DiscoverView: View {
                     .multilineTextAlignment(.center)
 
                 Button {
-                    router.goLive()
+                    goLive()
                 } label: {
                     Label("Go live", systemImage: "dot.radiowaves.left.and.right")
                         .font(.system(size: 15, weight: .semibold))
