@@ -7,6 +7,8 @@ import FirebaseAuth
 struct UserProfilePreviewView: View {
 
     let userId: String
+    /// Off when the profile was opened from that person's chat.
+    var showsMessageButton: Bool = true
 
     @StateObject private var vm = UserProfilePreviewViewModel()
     @Environment(\.dismiss) private var dismiss
@@ -130,7 +132,7 @@ struct UserProfilePreviewView: View {
             .buttonStyle(.plain)
             .disabled(vm.isFollowLoading)
 
-            if let me = Auth.auth().currentUser?.uid {
+            if showsMessageButton, let me = Auth.auth().currentUser?.uid {
                 NavigationLink {
                     ChatView(
                         conversationId: ChatApiService.shared.conversationId(for: me, and: userId),

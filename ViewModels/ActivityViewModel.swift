@@ -76,6 +76,12 @@ final class ActivityViewModel: ObservableObject {
             errorMessage = "You’re not signed in yet. Try again in a moment."
             return
         }
+        // Coming back from a pushed profile: listeners are still attached,
+        // just refresh the likes.
+        if followersListener != nil {
+            loadLikes(for: myUid)
+            return
+        }
         errorMessage = nil
         if items.isEmpty { isLoading = true }
 
@@ -196,10 +202,14 @@ final class ActivityViewModel: ObservableObject {
     }
 
     /// Follow rows come without names; fetch each follower once.
+    private var fetchingUserIds: Set<String> = []
+
     private func enrichUsers() {
         let missing = Set(followItems.filter { $0.displayName == nil }.map(\.userId))
             .subtracting(userCache.keys)
+            .subtracting(fetchingUserIds)
         for uid in missing {
+            fetchingUserIds.insert(uid)
             UserApiService.shared.getUser(uid: uid) { [weak self] result in
                 guard case .success(let user) = result else { return }
                 Task { @MainActor [weak self] in

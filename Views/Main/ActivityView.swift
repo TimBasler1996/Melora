@@ -45,9 +45,9 @@ struct ActivityView: View {
             chats.startListening()
         }
         .onDisappear {
+            // Also fires when a row pushes a profile; listeners stay attached
+            // (the view model removes them when it goes away).
             vm.markAllAsSeen()
-            vm.stop()
-            chats.stopListening()
         }
         .refreshable { vm.reload() }
     }

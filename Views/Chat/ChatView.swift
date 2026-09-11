@@ -22,7 +22,7 @@ struct ChatView: View {
                     Spacer()
                     ProgressView("Loading chat…").tint(.white)
                     Spacer()
-                } else if vm.conversationMissing, let peerUserId {
+                } else if vm.conversationMissing, peerUserId != nil {
                     // No conversation yet (opened from a profile): the first
                     // message becomes a request.
                     Spacer()
@@ -62,7 +62,8 @@ struct ChatView: View {
             ToolbarItem(placement: .principal) {
                 if let otherId = vm.otherUserId ?? peerUserId {
                     NavigationLink {
-                        UserProfilePreviewView(userId: otherId)
+                        // Already in the chat: no second "Message" button.
+                        UserProfilePreviewView(userId: otherId, showsMessageButton: false)
                     } label: {
                         ChatThreadHeader(peer: vm.peer)
                     }

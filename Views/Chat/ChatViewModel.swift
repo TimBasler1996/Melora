@@ -212,6 +212,8 @@ final class ChatViewModel: ObservableObject {
 
     func markAsRead(conversationId: String) async {
         guard let myId = Auth.auth().currentUser?.uid else { return }
+        // Nothing to mark when the conversation doesn't exist (yet).
+        guard !conversationMissing else { return }
         do {
             // Server time, like `lastMessageAt`, so unread / "Seen" comparisons
             // never mix two devices' clocks.
