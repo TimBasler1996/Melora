@@ -17,7 +17,8 @@ import ImageIO
 /// - reads and writes `URLCache.shared`, so bytes stay on disk between launches.
 enum RemoteImageLoader {
 
-    private static let memory: NSCache<NSString, UIImage> = {
+    // NSCache is thread-safe; the compiler can't see that.
+    nonisolated(unsafe) private static let memory: NSCache<NSString, UIImage> = {
         let cache = NSCache<NSString, UIImage>()
         cache.totalCostLimit = 96 * 1024 * 1024
         return cache
@@ -49,9 +50,10 @@ enum RemoteImageLoader {
 
     /// Longest edge in pixels the image is decoded to. Sizes are bucketed
     /// so a 50 pt and a 56 pt avatar share one decode.
+    @MainActor
     static func pixelSize(forPoints points: CGFloat) -> Int {
         guard points > 0 else { return 0 }
-        let scale = UIScreen.main.scale
+        let scale = UITraitCollection.current.displayScale
         let px = Int((points * scale).rounded(.up))
         return ((px + 127) / 128) * 128
     }

@@ -704,7 +704,7 @@ private struct EdgeGlowEffect: View {
 
 extension UIImage {
     /// Creating a CIContext costs tens of milliseconds; one is enough.
-    private static let averageColorContext = CIContext(options: [.workingColorSpace: kCFNull as Any])
+    nonisolated(unsafe) private static let averageColorContext = CIContext(options: [.workingColorSpace: kCFNull as Any])
 
     func dominantColor() async -> UIColor? {
         return await withCheckedContinuation { continuation in

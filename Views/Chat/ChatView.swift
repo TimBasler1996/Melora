@@ -565,7 +565,7 @@ private struct ChatThreadHeader: View {
     private var avatar: some View {
         if let urlString = peer?.avatarURL ?? peer?.photoURLs?.first,
            let url = URL(string: urlString) {
-            RemoteImage(url: url, size: None) { phase in
+            RemoteImage(url: url, size: 34) { phase in
                 switch phase {
                 case .success(let image):
                     image.resizable().scaledToFill()
