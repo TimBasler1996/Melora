@@ -98,17 +98,6 @@ final class ChatViewModel: ObservableObject {
         return convo.initiatorId != myId
     }
 
-    /// Recreates a deleted conversation as a new message request and starts
-    /// listening to it.
-    func startNewChat(with peerId: String) async {
-        do {
-            let convo = try await ChatApiService.shared.createRequestConversation(with: peerId)
-            start(conversationId: convo.id)
-        } catch {
-            actionError = UserFacingError.message(for: error, fallback: "Couldn’t start a new chat. Please try again.")
-        }
-    }
-
     /// True when the conversation is a pending message request and the current
     /// user is the recipient (i.e. they need to Accept or Decline).
     var needsAcceptance: Bool {
@@ -132,8 +121,14 @@ final class ChatViewModel: ObservableObject {
         return convo.initiatorId == myId
     }
 
-    func start(conversationId: String) {
+    func start(conversationId: String, peerUserId: String? = nil) {
         stop()
+
+        // Opened from a profile: show who this is even before any
+        // conversation document exists.
+        if let peerUserId, let myId = currentUserId {
+            startPeerListenerIfNeeded(participantIds: [myId, peerUserId])
+        }
 
         isLoading = true
         errorMessage = nil
@@ -228,10 +223,27 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
-    func send(conversationId: String) async {
+    func send(conversationId: String, peerUserId: String? = nil) async {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         guard Auth.auth().currentUser != nil else { return }
+
+        // Opened from a profile with no conversation yet: the first message
+        // creates the request, then flows through the normal path.
+        if conversation == nil, conversationMissing, let peerUserId {
+            isSending = true
+            do {
+                let convo = try await ChatApiService.shared.createRequestConversation(with: peerUserId)
+                try await ChatApiService.shared.sendMessage(conversationId: convo.id, text: text, replyTo: nil)
+                draft = ""
+                isSending = false
+                start(conversationId: convo.id)
+            } catch {
+                isSending = false
+                actionError = UserFacingError.message(for: error, fallback: "Couldn’t send your message. Please try again.")
+            }
+            return
+        }
 
         // A pending request carries exactly one message from its sender; the
         // rest waits for the accept. Declined chats take nothing.

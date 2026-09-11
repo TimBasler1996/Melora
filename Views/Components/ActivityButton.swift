@@ -1,33 +1,28 @@
-//
-//  LikesInboxButton.swift
-//  SocialSound
-//
-//  Created by Tim Basler on 05.01.2026.
-//
-
-
 import SwiftUI
 
-struct LikesInboxButton: View {
+/// The bell in every tab's top bar. Shows how many likes and followers are
+/// unseen and opens the Activity feed. One instance per tab; only the one
+/// on the selected tab answers a request from the router (push tap, profile
+/// stat), so the sheet always appears on screen.
+struct ActivityButton: View {
 
     let user: AppUser
+    let tab: AppRouter.Tab
 
     @StateObject private var badgeVM = LikesBadgeViewModel()
     @EnvironmentObject private var router: AppRouter
-    @State private var showInbox = false
+    @State private var showActivity = false
 
     var body: some View {
         Button {
-            showInbox = true
+            showActivity = true
         } label: {
             ZStack(alignment: .topTrailing) {
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(width: 36, height: 36)
-                    .background(
-                        Circle().fill(AppColors.surfaceElevated)
-                    )
+                    .background(Circle().fill(AppColors.surfaceElevated))
 
                 if badgeVM.unreadCount > 0 {
                     Text(badgeText)
@@ -41,37 +36,37 @@ struct LikesInboxButton: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Activity")
         .onAppear {
             badgeVM.startListening(userId: user.uid)
             consumeRouterRequest()
         }
-        .onChange(of: router.showLikesInbox) { _, _ in
+        .onChange(of: router.showActivity) { _, _ in
+            consumeRouterRequest()
+        }
+        .onChange(of: router.selectedTab) { _, _ in
             consumeRouterRequest()
         }
         .onDisappear {
             badgeVM.stopListening()
         }
-        .fullScreenCover(isPresented: $showInbox) {
+        .fullScreenCover(isPresented: $showActivity) {
             NavigationStack {
-                LikesInboxView(user: user)
-                    .onDisappear {
-                        // When leaving inbox: mark as seen (and reset badge)
-                        badgeVM.markAllAsSeenNow()
-                    }
+                ActivityView()
+            }
+            .onDisappear {
+                badgeVM.markAllAsSeenNow()
             }
         }
-        .accessibilityLabel("Likes inbox")
     }
 
-    /// A notification tap (or a profile stat) asked for the inbox.
     private func consumeRouterRequest() {
-        guard router.showLikesInbox else { return }
-        router.showLikesInbox = false
-        showInbox = true
+        guard router.showActivity, router.selectedTab == tab else { return }
+        router.showActivity = false
+        showActivity = true
     }
 
     private var badgeText: String {
-        if badgeVM.unreadCount > 99 { return "99+" }
-        return "\(badgeVM.unreadCount)"
+        badgeVM.unreadCount > 99 ? "99+" : "\(badgeVM.unreadCount)"
     }
 }

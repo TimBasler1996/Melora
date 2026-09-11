@@ -59,7 +59,7 @@ struct NowPlayingView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     if let user = currentUserStore.user {
-                        LikesInboxButton(user: user)
+                        ActivityButton(user: user, tab: .now)
                     }
                 }
             }

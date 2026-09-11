@@ -42,6 +42,11 @@ struct DiscoverView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    if let me = currentUserStore.user {
+                        ActivityButton(user: me, tab: .discover)
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showUserSearch = true
                     } label: {

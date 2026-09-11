@@ -25,10 +25,10 @@ struct ProfileView: View {
     }
 
     @EnvironmentObject private var currentUserStore: CurrentUserStore
+    @EnvironmentObject private var router: AppRouter
 
     @State private var mode: Mode = .preview
     @State private var showSettings = false
-    @State private var showLikesInbox = false
     @State private var photoPickerItems: [PhotosPickerItem?] = Array(repeating: nil, count: ProfileViewModel.photoSlotCount)
     @State private var avatarPickerItem: PhotosPickerItem?
     @State private var showDiscardAlert = false
@@ -81,13 +81,6 @@ struct ProfileView: View {
             .melScreenBackground()
         }
         .sheet(isPresented: $showSettings) { settingsSheet }
-        .fullScreenCover(isPresented: $showLikesInbox) {
-            if let me = currentUserStore.user {
-                NavigationStack {
-                    LikesInboxView(user: me)
-                }
-            }
-        }
         .overlay(alignment: .bottom) {
             if viewModel.saveSucceeded {
                 savedToast
@@ -136,6 +129,11 @@ struct ProfileView: View {
 
             Spacer()
 
+            if let me = currentUserStore.user {
+                ActivityButton(user: me, tab: .profile)
+                    .padding(.trailing, 8)
+            }
+
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 18, weight: .semibold))
@@ -175,7 +173,7 @@ struct ProfileView: View {
                 )
                 SharedProfilePreviewView(
                     data: previewData,
-                    onLikesTap: currentUserStore.user == nil ? nil : { showLikesInbox = true }
+                    onLikesTap: currentUserStore.user == nil ? nil : { router.openActivity() }
                 )
             } else {
                 Text("No profile data available")

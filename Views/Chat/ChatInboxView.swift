@@ -15,6 +15,8 @@ struct ChatInboxView: View {
     @State private var chatToDelete: ChatInboxRow?
     /// Conversation pushed from a notification tap or a Discover "Open chat".
     @State private var routedConversationId: String?
+    /// Requests list pushed from the Activity feed.
+    @State private var showRequests = false
 
     var body: some View {
         NavigationStack {
@@ -28,12 +30,26 @@ struct ChatInboxView: View {
             .navigationDestination(item: $routedConversationId) { conversationId in
                 ChatView(conversationId: conversationId)
             }
+            .navigationDestination(isPresented: $showRequests) {
+                ChatRequestsView(vm: vm)
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let me = currentUserStore.user {
+                        ActivityButton(user: me, tab: .chats)
+                    }
+                }
+            }
             .onAppear {
                 vm.startListening()
                 consumeRoutedConversation()
+                consumeRequestsRequest()
             }
             .onChange(of: router.pendingConversationId) { _, _ in
                 consumeRoutedConversation()
+            }
+            .onChange(of: router.showMessageRequests) { _, _ in
+                consumeRequestsRequest()
             }
             .onDisappear { vm.stopListening() }
             .refreshable { vm.reloadOnce() }
@@ -102,21 +118,11 @@ struct ChatInboxView: View {
             .padding(.horizontal, AppLayout.screenPadding)
         } else if vm.acceptedRows.isEmpty && vm.pendingRequestRows.isEmpty && vm.sentRequestRows.isEmpty {
             VStack(spacing: 12) {
-                if let me = currentUserStore.user {
-                    NavigationLink {
-                        LikesInboxView(user: me, showsCloseButton: false)
-                    } label: {
-                        likesBanner
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, AppLayout.screenPadding)
-                    .padding(.top, 12)
-                }
                 Spacer()
                 Text("No chats yet")
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
-                Text("Chats start when you accept someone’s like or request, or they accept yours.")
+                Text("Message someone from Discover or their profile. Chats start once they reply.")
                     .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
@@ -131,15 +137,6 @@ struct ChatInboxView: View {
                             ChatRequestsView(vm: vm)
                         } label: {
                             requestsBanner(count: vm.pendingRequestRows.count)
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    if let me = currentUserStore.user {
-                        NavigationLink {
-                            LikesInboxView(user: me, showsCloseButton: false)
-                        } label: {
-                            likesBanner
                         }
                         .buttonStyle(.plain)
                     }
@@ -194,6 +191,12 @@ struct ChatInboxView: View {
         }
     }
 
+    private func consumeRequestsRequest() {
+        guard router.showMessageRequests else { return }
+        router.showMessageRequests = false
+        showRequests = true
+    }
+
     private func consumeRoutedConversation() {
         guard let id = router.pendingConversationId else { return }
         router.pendingConversationId = nil
@@ -216,37 +219,6 @@ struct ChatInboxView: View {
                 Label("Delete Chat", systemImage: "trash")
             }
         }
-    }
-
-    private var likesBanner: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.live.opacity(0.2))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Likes and followers")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
-                Text("See who liked your tracks")
-                    .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.7))
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.white.opacity(0.5))
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .melCard(cornerRadius: 14)
     }
 
     private func requestsBanner(count: Int) -> some View {

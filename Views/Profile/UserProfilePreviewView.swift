@@ -97,35 +97,64 @@ struct UserProfilePreviewView: View {
         }
     }
 
-    // MARK: - Follow Bar
+    // MARK: - Follow + Message
 
+    /// The two things you can do with a person: follow them (see when they
+    /// go live) or message them (a request until they reply).
     private var followBar: some View {
-        Button {
-            Task { await vm.toggleFollow() }
-        } label: {
-            HStack(spacing: 6) {
-                if vm.isFollowLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: vm.isFollowing ? AppColors.primaryText : .white))
-                        .scaleEffect(0.8)
-                } else {
-                    Image(systemName: vm.isFollowing ? "checkmark" : "plus")
-                        .font(.system(size: 13, weight: .bold))
+        HStack(spacing: 10) {
+            Button {
+                Task { await vm.toggleFollow() }
+            } label: {
+                HStack(spacing: 6) {
+                    if vm.isFollowLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: vm.isFollowing ? AppColors.primaryText : .white))
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: vm.isFollowing ? "checkmark" : "plus")
+                            .font(.system(size: 13, weight: .bold))
+                    }
+                    Text(vm.isFollowing ? "Following" : "Follow")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
-                Text(vm.isFollowing ? "Following" : "Follow")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundColor(vm.isFollowing ? AppColors.primaryText : .white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                        .fill(vm.isFollowing ? AppColors.surfaceElevated : AppColors.primary)
+                )
+                .contentShape(Rectangle())
             }
-            .foregroundColor(vm.isFollowing ? AppColors.primaryText : .white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                    .fill(vm.isFollowing ? AppColors.surfaceElevated : AppColors.primary)
-            )
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .disabled(vm.isFollowLoading)
+
+            if let me = Auth.auth().currentUser?.uid {
+                NavigationLink {
+                    ChatView(
+                        conversationId: ChatApiService.shared.conversationId(for: me, and: userId),
+                        peerUserId: userId
+                    )
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "paperplane.fill")
+                            .font(.system(size: 13, weight: .bold))
+                        Text("Message")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(AppColors.primaryText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
+                            .fill(AppColors.surfaceElevated)
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .buttonStyle(.plain)
-        .disabled(vm.isFollowLoading)
     }
 
     // MARK: - Loading State

@@ -19,8 +19,11 @@ final class AppRouter: ObservableObject {
     /// Conversation the Chats tab should push as soon as it is on screen.
     @Published var pendingConversationId: String?
 
-    /// Ask the Now tab to present the likes inbox.
-    @Published var showLikesInbox: Bool = false
+    /// Ask the visible tab to present the Activity feed (likes, followers).
+    @Published var showActivity: Bool = false
+
+    /// Ask the Chats tab to show the message requests list.
+    @Published var showMessageRequests: Bool = false
 
     /// Profile the Profile tab should push (e.g. a new follower).
     @Published var pendingProfileUserId: String?
@@ -34,9 +37,15 @@ final class AppRouter: ObservableObject {
         pendingConversationId = conversationId
     }
 
-    func openLikesInbox() {
-        selectedTab = .now
-        showLikesInbox = true
+    /// The bell on whichever tab is selected answers this, so the feed
+    /// always opens on screen.
+    func openActivity() {
+        showActivity = true
+    }
+
+    func openMessageRequests() {
+        selectedTab = .chats
+        showMessageRequests = true
     }
 
     func goLive() {
@@ -64,7 +73,7 @@ final class AppRouter: ObservableObject {
                 selectedTab = .chats
             }
         case "likeReceived":
-            openLikesInbox()
+            openActivity()
         case "newFollower":
             if let userId = userInfo["userId"] as? String, !userId.isEmpty {
                 openProfile(userId)

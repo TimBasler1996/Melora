@@ -22,6 +22,13 @@ struct ChatView: View {
                     Spacer()
                     ProgressView("Loading chat…").tint(.white)
                     Spacer()
+                } else if vm.conversationMissing, let peerUserId {
+                    // No conversation yet (opened from a profile): the first
+                    // message becomes a request.
+                    Spacer()
+                    newChatIntro
+                    Spacer()
+                    composer
                 } else if let err = vm.errorMessage {
                     Spacer()
                     VStack(spacing: 10) {
@@ -33,23 +40,12 @@ struct ChatView: View {
                             .foregroundColor(AppColors.secondaryText)
                             .multilineTextAlignment(.center)
 
-                        if vm.conversationMissing, let peerUserId {
-                            Button("Start a new chat") {
-                                Task { await vm.startNewChat(with: peerUserId) }
-                            }
+                        Button("Retry") { vm.start(conversationId: conversationId, peerUserId: peerUserId) }
                             .font(AppFonts.subheadline())
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
-                            .background(Capsule().fill(AppColors.primary))
-                            .foregroundColor(.white)
-                        } else {
-                            Button("Retry") { vm.start(conversationId: conversationId) }
-                                .font(AppFonts.subheadline())
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .melCard(cornerRadius: 12)
-                                .foregroundColor(AppColors.primaryText)
-                        }
+                            .melCard(cornerRadius: 12)
+                            .foregroundColor(AppColors.primaryText)
                     }
                     .padding(.horizontal, AppLayout.screenPadding)
                     Spacer()
@@ -64,7 +60,16 @@ struct ChatView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                ChatThreadHeader(peer: vm.peer)
+                if let otherId = vm.otherUserId ?? peerUserId {
+                    NavigationLink {
+                        UserProfilePreviewView(userId: otherId)
+                    } label: {
+                        ChatThreadHeader(peer: vm.peer)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    ChatThreadHeader(peer: vm.peer)
+                }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -122,7 +127,7 @@ struct ChatView: View {
         } message: {
             Text(vm.actionError ?? "")
         }
-        .onAppear { vm.start(conversationId: conversationId) }
+        .onAppear { vm.start(conversationId: conversationId, peerUserId: peerUserId) }
         .onDisappear {
             Task { await vm.markAsRead(conversationId: conversationId) }
             vm.stop()
@@ -236,6 +241,22 @@ struct ChatView: View {
         .background(Capsule().fill(AppColors.surfaceElevated))
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.bottom, 8)
+    }
+
+    private var newChatIntro: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "paperplane")
+                .font(.system(size: 40, weight: .thin))
+                .foregroundColor(.white.opacity(0.4))
+            Text("Say hi")
+                .font(AppFonts.headline())
+                .foregroundColor(.white)
+            Text("Your first message reaches them as a request. Once they reply, you can chat freely.")
+                .font(AppFonts.footnote())
+                .foregroundColor(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+        }
     }
 
     private var requestBanner: some View {
@@ -376,7 +397,7 @@ struct ChatView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
             Button {
-                Task { await vm.send(conversationId: conversationId) }
+                Task { await vm.send(conversationId: conversationId, peerUserId: peerUserId) }
             } label: {
                 Image(systemName: "paperplane.fill")
                     .foregroundColor(.white)

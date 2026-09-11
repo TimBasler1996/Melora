@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 50
+Totals: 55 items — P0 14 · P1 22 · P2 15 · P3 4 · done 52
 
 ## Your to-dos (need the project owner)
 
@@ -21,9 +21,10 @@ Totals: 53 items — P0 12 · P1 22 · P2 15 · P3 4 · done 50
 - **UX-01** Give Discover something to show when nobody is live — Decided: ended broadcasts stay visible as 'Recently live' for 24 h (no distance filter), then are deleted.
 - **UX-06** Bring the Discover card back to the guideline — Decided: rebuild the card to the guideline later (P2); the compact card stays for now.
 - **UX-08** Decide the account model: Sign in with Apple or explicit 'Delete profile' — Decided: Sign in with Apple, linked to the anonymous uid (last onboarding step + Settings). 'Sign out' only for linked accounts; everyone gets 'Delete profile and data' with a double confirmation.
-- **UX-16** Define and show what a declined request looks like to the sender — Decided: the sender is never told about a decline. Declined pairs can't like or message again; they see 'You've already reached out to X'.
+- **UX-16** Define and show what a declined request looks like to the sender — Decided: the sender is never told about a decline. Declined pairs can't like or message again; they see 'You've already reached out to X'. Update: likes no longer need an answer; declines only exist for message requests.
 - **UX-27** Reconsider asking for a last name — Decided: keep last name for now (used in the denormalised display name); revisit with the card redesign.
 - **UX-31** Server-side nearby notifications — Decided: later. Locations are now fuzzed to a ~275 m grid, which makes a server-side matcher acceptable when it is built.
+- **UX-54** One social loop: like, follow, message — Decided: no accept/decline for likes any more (the per-track like list with Accept/Decline is gone). Message requests stay in Chats. Followers and likes share one timeline.
 
 ## Suggested order of work
 
@@ -163,7 +164,7 @@ _Both sides of an interaction need to see the same truth at every step._
 
 - **Problem:** A declined request simply disappears from 'Waiting for response'; the Discover card still shows the sent state; a retry produces 'Please try again' which can never work.
 - **Fix:** Keep a quiet 'Not accepted' row (or none, but say so once), reflect it on the Discover card, and show the honest reason instead of a retry prompt. Don't create a fresh like for a declined pair.
-- **Needs:** Decided: the sender is never told about a decline. Declined pairs can't like or message again; they see 'You've already reached out to X'.
+- **Needs:** Decided: the sender is never told about a decline. Declined pairs can't like or message again; they see 'You've already reached out to X'. Update: likes no longer need an answer; declines only exist for message requests.
 
 ### UX-17 · Reconcile 'like first, then message' into one thing to act on
 
@@ -179,13 +180,30 @@ _Both sides of an interaction need to see the same truth at every step._
 - **Problem:** Every push opens whatever tab was last open.
 - **Fix:** Handle notification taps: like → Likes inbox, message or request → that conversation, accepted → that chat.
 
+### UX-54 · One social loop: like, follow, message
+
+**P0 · before launch** · effort large (1–2 weeks) · **Done**
+
+- **Problem:** Likes had to be accepted, message requests lived in Chats, followers in a tab of the likes inbox, and the inbox was only reachable from the Now tab. Nobody could tell where an action would show up.
+- **Fix:** Three verbs, each with one meaning: Like = react to a track (no acceptance, just a signal). Follow = see when someone goes live. Message = reaches the other person as a request; the first reply opens the chat. One Activity feed (bell) shows likes and new followers as a timeline and points to waiting message requests; requests are answered in Chats.
+- **Needs:** Decided: no accept/decline for likes any more (the per-track like list with Accept/Decline is gone). Message requests stay in Chats. Followers and likes share one timeline.
+- **Progress:** ActivityView + ActivityViewModel replace the likes inbox, followers tab and per-track detail; ActivityButton (bell with badge) sits on Now, Discover, Chats and Profile; the Likes stat and push taps open the same feed.
+
+### UX-55 · Profiles reachable from everywhere, with Follow and Message on them
+
+**P0 · before launch** · effort medium (2–4 days) · **Done**
+
+- **Problem:** A profile could only be opened from the Discover card. In a chat, in the likes inbox, in search results or in follower lists there was no way to see who you were dealing with.
+- **Fix:** Every avatar or name opens the profile: chat header, Activity rows, follower lists, Find People rows, Discover card. The profile carries Follow and Message side by side; Message opens the chat even when none exists yet (the first message becomes a request).
+- **Progress:** UserProfilePreviewView has the Follow + Message row; ChatView has a new-chat mode (Say hi) that creates the request with the first message and shows the peer in the header; the chat header opens the profile.
+
 ### UX-19 · Make the Likes inbox reachable from Profile and Chats
 
 **P1 · next** · effort small (≤1 day) · **Done**
 
 - **Problem:** The inbox is only a heart icon on the Now tab. People look for 'who liked me' in Profile or Chats; the Likes stat on the profile is not tappable.
 - **Fix:** Tapping the Likes stat opens the inbox; add an entry above Message Requests in Chats.
-- **Progress:** Likes inbox opens from the Likes stat on your own profile and from a "Likes and followers" card at the top of Chats (also in the empty state).
+- **Progress:** Superseded by UX-54: the Activity bell is on every tab.
 
 ### UX-20 · One vocabulary for the whole loop
 
@@ -201,7 +219,7 @@ _Both sides of an interaction need to see the same truth at every step._
 
 - **Problem:** Rows only say '3 likes'; pending, accepted and ignored likes sit together forever.
 - **Fix:** Show '2 new' or '1 pending' per row, sort rows with pending likes first, collapse ignored ones.
-- **Progress:** Likes rows show "2 waiting" when likes need an answer and sort those tracks first.
+- **Progress:** Superseded by UX-54: likes are a plain timeline, nothing to answer.
 
 ### UX-22 · Recover when 'Open chat' from an accepted like hits a deleted conversation
 
