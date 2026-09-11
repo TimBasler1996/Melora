@@ -43,10 +43,11 @@ struct LiveRipple: View {
                     .frame(width: size * 0.5, height: size * 0.5)
                     .scaleEffect(animate ? 2.2 : 0.6)
                     .opacity(animate ? 0 : 0.9)
+                    // One ring every 1.3 s: calm, not a siren.
                     .animation(
-                        .easeOut(duration: 2.4)
+                        .easeOut(duration: 3.9)
                             .repeatForever(autoreverses: false)
-                            .delay(Double(index) * 0.8),
+                            .delay(Double(index) * 1.3),
                         value: animate
                     )
             }

@@ -29,15 +29,21 @@ final class ChatViewModel: ObservableObject {
     /// a quote bar and the next sent message carries the reply context.
     @Published var replyingTo: ChatMessage?
 
+    /// What the user is playing on Spotify right now, or nil when nothing
+    /// is playing. Drives the "send this song" button in the composer.
+    @Published var nowPlaying: Track?
+
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
     private var conversationListener: ListenerRegistration?
     private var peerListener: ListenerRegistration?
+    private var nowPlayingTask: Task<Void, Never>?
 
     deinit {
         listener?.remove()
         conversationListener?.remove()
         peerListener?.remove()
+        nowPlayingTask?.cancel()
     }
 
     /// When the *other* user last opened this conversation. Used to render
@@ -180,6 +186,8 @@ final class ChatViewModel: ObservableObject {
         Task {
             await markAsRead(conversationId: conversationId)
         }
+
+        startNowPlayingPolling()
     }
 
     func stop() {
@@ -189,6 +197,46 @@ final class ChatViewModel: ObservableObject {
         conversationListener = nil
         peerListener?.remove()
         peerListener = nil
+        nowPlayingTask?.cancel()
+        nowPlayingTask = nil
+    }
+
+    // MARK: - Now playing
+
+    /// Asks Spotify what is playing every 20 s while the chat is open, so the
+    /// song button is live without the user having to go to the Live tab.
+    private func startNowPlayingPolling() {
+        nowPlayingTask?.cancel()
+        nowPlayingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                await self.refreshNowPlaying()
+                try? await Task.sleep(for: .seconds(20))
+            }
+        }
+    }
+
+    func refreshNowPlaying() async {
+        guard SpotifyAuthManager.shared.isAuthorized else {
+            nowPlaying = nil
+            return
+        }
+        // A failed poll keeps the last answer: a blip shouldn't grey the
+        // button out mid-tap.
+        guard let state = try? await SpotifyService.shared.fetchNowPlayingState() else { return }
+        nowPlaying = state.isPlaying ? state.track : nil
+    }
+
+    /// Sends the song playing right now as a message with a track card.
+    func sendNowPlaying(conversationId: String, peerUserId: String? = nil) async {
+        guard let track = nowPlaying else { return }
+        await deliver(
+            text: "🎵 \(track.title) – \(track.artist)",
+            track: track,
+            clearsDraft: false,
+            conversationId: conversationId,
+            peerUserId: peerUserId
+        )
     }
 
     /// Live-listen to the other participant's user doc so the header can show
@@ -228,6 +276,17 @@ final class ChatViewModel: ObservableObject {
     func send(conversationId: String, peerUserId: String? = nil) async {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        await deliver(text: text, track: nil, clearsDraft: true, conversationId: conversationId, peerUserId: peerUserId)
+    }
+
+    /// Shared send path for typed messages and song cards.
+    private func deliver(
+        text: String,
+        track: Track?,
+        clearsDraft: Bool,
+        conversationId: String,
+        peerUserId: String?
+    ) async {
         guard Auth.auth().currentUser != nil else { return }
 
         // Opened from a profile with no conversation yet: the first message
@@ -236,8 +295,8 @@ final class ChatViewModel: ObservableObject {
             isSending = true
             do {
                 let convo = try await ChatApiService.shared.createRequestConversation(with: peerUserId)
-                try await ChatApiService.shared.sendMessage(conversationId: convo.id, text: text, replyTo: nil)
-                draft = ""
+                try await ChatApiService.shared.sendMessage(conversationId: convo.id, text: text, replyTo: nil, track: track)
+                if clearsDraft { draft = "" }
                 isSending = false
                 start(conversationId: convo.id)
             } catch {
@@ -274,9 +333,10 @@ final class ChatViewModel: ObservableObject {
             try await ChatApiService.shared.sendMessage(
                 conversationId: conversationId,
                 text: text,
-                replyTo: replyContext
+                replyTo: replyContext,
+                track: track
             )
-            draft = ""
+            if clearsDraft { draft = "" }
         } catch {
             // Keep the draft and reply context so the user can retry.
             replyingTo = replyContext

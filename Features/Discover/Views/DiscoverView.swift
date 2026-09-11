@@ -29,7 +29,11 @@ struct DiscoverView: View {
                 VStack(spacing: 0) {
                     goLiveBanner
                     modePickerBar
-                    locationBar
+                    // The radius belongs to Nearby; people you follow show
+                    // up wherever they are.
+                    if viewModel.discoverMode == .nearby {
+                        locationBar
+                    }
                     content
                 }
 
@@ -522,10 +526,12 @@ struct DiscoverView: View {
                         .clipShape(Capsule())
                 }
             } else {
-                Text(viewModel.discoverMode == .friends ? "None of your friends are live" : "No one is live right now")
+                Text(viewModel.discoverMode == .friends ? "No one you follow is live right now" : "No one is live right now")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.white)
-                Text("Go live yourself: the moment someone nearby starts playing, they show up here and you get notified.")
+                Text(viewModel.discoverMode == .friends
+                     ? "You’ll see them here the moment they go live, wherever they are."
+                     : "Go live yourself: the moment someone nearby starts playing, they show up here and you get notified.")
                     .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)

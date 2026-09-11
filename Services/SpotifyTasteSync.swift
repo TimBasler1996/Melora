@@ -1,5 +1,6 @@
 import Foundation
 import FirebaseAuth
+import FirebaseFirestore
 
 /// Copies the user's top artists, top tracks and playlists from Spotify to
 /// their user document, at most once a day, so profiles can show them.
@@ -16,8 +17,33 @@ enum SpotifyTasteSync {
         set { UserDefaults.standard.set(newValue, forKey: "spotifyTaste.needsReconnect") }
     }
 
+    /// Mirror of the user document's `spotifyTasteHidden`, kept current by
+    /// `CurrentUserStore`, so Settings and the sync agree without a fetch.
+    static var hidden: Bool {
+        get { UserDefaults.standard.bool(forKey: "spotifyTaste.hidden") }
+        set { UserDefaults.standard.set(newValue, forKey: "spotifyTaste.hidden") }
+    }
+
+    /// Off: the taste data leaves the user document (so nobody can read it)
+    /// and stops syncing. On: synced again right away.
+    static func setHidden(_ hidden: Bool) async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        Self.hidden = hidden
+        if hidden {
+            UserApiService.shared.updateProfile(uid: uid, updates: [
+                "spotifyTasteHidden": true,
+                "spotifyTaste": FieldValue.delete()
+            ])
+            UserDefaults.standard.removeObject(forKey: key(uid))
+        } else {
+            UserApiService.shared.updateProfile(uid: uid, updates: ["spotifyTasteHidden": false])
+            await syncIfNeeded(force: true)
+        }
+    }
+
     static func syncIfNeeded(force: Bool = false) async {
         guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard !hidden else { return }
         // A refresh token is enough; the access token is fetched on demand.
         guard force || SpotifyAuthManager.shared.tokens?.refreshToken != nil else { return }
 

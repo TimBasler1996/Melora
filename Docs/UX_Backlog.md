@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 58 items — P0 15 · P1 24 · P2 15 · P3 4 · done 55
+Totals: 62 items — P0 15 · P1 27 · P2 16 · P3 4 · done 59
 
 ## Your to-dos (need the project owner)
 
@@ -73,6 +73,14 @@ _Discover is the reason the app exists and today it is empty for almost every ne
 - **Problem:** Muting a song hides it for every future broadcaster forever, muting a person is permanent, and neither is visible or reversible anywhere.
 - **Fix:** Undo toast right after muting; 'Hidden songs and people' list in Settings; consider making song mutes session-only.
 - **Progress:** Hidden people and songs live in a per-account store with names; every hide shows a 5-second Undo toast; Settings → Blocked and hidden lists them with Show again.
+
+### UX-62 · People I follow: no radius
+
+**P1 · next** · effort small (≤1 day) · **Done**
+
+- **Problem:** The km slider stayed visible and filtered the People I follow feed, though distance is irrelevant for people you chose to follow. The empty state also said “friends”, which implied a mutual relation.
+- **Fix:** Slider and location bar only in Nearby; the following feed shows everyone you follow wherever they are, nearest first. Copy says “people you follow”.
+- **Progress:** DiscoverView hides locationBar outside Nearby; view model skips the radius filter in following mode.
 
 ### UX-06 · Bring the Discover card back to the guideline
 
@@ -310,6 +318,14 @@ _Going live is the first action of the loop; it must feel safe and understood._
 - **Fix:** Local notification 'Your broadcast ended because nothing was playing'.
 - **Progress:** Local notification "Your live session ended" when the idle timeout stops a broadcast.
 
+### UX-59 · Calmer live ripple
+
+**P2 · later** · effort small (≤1 day) · **Done**
+
+- **Problem:** The ring behind the cover pulsed every 0.8 s and read as an alarm rather than a heartbeat.
+- **Fix:** One ring every 1.3 s, each fading over 3.9 s. Same mark, slower breath.
+- **Progress:** LiveRipple timing changed; used on Live, Discover banner and profile hero.
+
 ### UX-31 · Server-side nearby notifications
 
 **P3 · someday** · effort large (1–2 weeks)
@@ -429,6 +445,15 @@ _Inboxes must show what needs action and never lie about state._
 - **Fix:** Optimistic with rollback and a 'Couldn't follow' toast, like Discover already does.
 - **Progress:** Follow back is optimistic with rollback and an alert on failure; button disabled while the write is in flight.
 
+### UX-61 · Send what I’m playing from the chat
+
+**P1 · next** · effort medium (2–4 days) · **Done**
+
+- **Problem:** Sharing a song meant leaving the app, copying a Spotify link and pasting it.
+- **Fix:** A song button next to the composer shows the cover of what you play right now and sends it as a card in one tap. Nothing playing: greyed out. The receiver taps the card to open it in Spotify.
+- **Needs:** Same request rules as text: one message while a request is pending.
+- **Progress:** track attachment on messages, 20 s now-playing poll while the chat is open, refresh on foreground, SpotifyLinkCard in the bubble; text holds “🎵 Title – Artist” for previews and pushes.
+
 ### UX-44 · Message Requests list must reflect accept and decline immediately
 
 **P2 · later** · effort small (≤1 day) · **Done**
@@ -488,6 +513,14 @@ _Every control must do what it says; expected controls must exist._
 - **Problem:** Toggles stay on when notifications are denied at system level and nothing arrives.
 - **Fix:** Inline 'Notifications are off in iOS Settings — Enable' row when permission is denied.
 - **Progress:** Settings shows a "Notifications are off" card with Open Settings when iOS permission is denied (refreshes when the app returns).
+
+### UX-60 · Switch: music taste on my profile
+
+**P1 · next** · effort medium (2–4 days) · **Done**
+
+- **Problem:** Top artists, top tracks and playlists were always public once Spotify was connected; no way to keep them private without disconnecting.
+- **Fix:** Settings → Spotify gets a switch. Off removes the data from the user document (so no client can read it) and stops the daily sync; on syncs again right away. Going live is unaffected.
+- **Progress:** spotifyTasteHidden on the user document, mirrored by CurrentUserStore; SpotifyTasteSync.setHidden; profile hides the card immediately.
 
 ## Copy & polish
 

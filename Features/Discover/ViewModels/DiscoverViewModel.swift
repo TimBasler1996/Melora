@@ -6,7 +6,7 @@ import CoreLocation
 
 enum DiscoverMode: String, CaseIterable, Identifiable {
     case nearby = "Nearby"
-    case friends = "Friends"
+    case friends = "Following"
     var id: String { rawValue }
 }
 
@@ -633,7 +633,9 @@ final class DiscoverViewModel: ObservableObject {
         // Live now: radius-filtered, nearest first.
         let live = base.filter(\.isLive)
         var visible = live
-        if currentLocation != nil {
+        // People you follow are shown wherever they are; the radius only
+        // narrows the Nearby feed.
+        if currentLocation != nil, discoverMode == .nearby {
             visible = live.filter(passesRadius)
             liveOutsideRadiusCount = live.count - visible.count
             visible.sort { lhs, rhs in
@@ -644,7 +646,12 @@ final class DiscoverViewModel: ObservableObject {
             }
         } else {
             liveOutsideRadiusCount = 0
-            visible.sort { $0.broadcastedAt > $1.broadcastedAt }
+            visible.sort { lhs, rhs in
+                let l = lhs.distanceMeters ?? Int.max
+                let r = rhs.distanceMeters ?? Int.max
+                if l == r { return lhs.broadcastedAt > rhs.broadcastedAt }
+                return l < r
+            }
         }
         visibleBroadcasts = visible
 

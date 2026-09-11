@@ -165,7 +165,9 @@ struct ProfileView: View {
                     userId: profile.uid,
                     // Live from the user listener, so a fresh Spotify sync
                     // shows up without reloading the profile.
-                    taste: currentUserStore.user?.spotifyTaste ?? profile.spotifyTaste
+                    taste: currentUserStore.user?.spotifyTasteHidden == true
+                        ? nil
+                        : (currentUserStore.user?.spotifyTaste ?? profile.spotifyTaste)
                 )
                 SharedProfilePreviewView(
                     data: previewData,

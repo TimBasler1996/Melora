@@ -28,6 +28,8 @@ struct SettingsContentView: View {
     /// Same key `SpotifyTasteSync.needsReconnect` writes; observed here so
     /// the row updates the moment a sync succeeds.
     @AppStorage("spotifyTaste.needsReconnect") private var needsSpotifyReconnect = false
+    /// Same key `SpotifyTasteSync.hidden` mirrors from the user document.
+    @AppStorage("spotifyTaste.hidden") private var spotifyTasteHidden = false
 
     var body: some View {
         List {
@@ -125,17 +127,29 @@ struct SettingsContentView: View {
                         .tint(AppColors.primary)
                     }
 
-                    if needsSpotifyReconnect {
-                        Button {
-                            spotifyAuth.reconnect()
-                        } label: {
-                            Label("Reconnect to show your music taste", systemImage: "arrow.clockwise")
+                    Toggle(isOn: Binding(
+                        get: { !spotifyTasteHidden },
+                        set: { show in
+                            spotifyTasteHidden = !show
+                            Task { await SpotifyTasteSync.setHidden(!show) }
                         }
-                    } else {
-                        Button {
-                            Task { await SpotifyTasteSync.syncIfNeeded(force: true) }
-                        } label: {
-                            Label("Refresh music taste on my profile", systemImage: "arrow.clockwise")
+                    )) {
+                        Label("Music taste on my profile", systemImage: "music.note.list")
+                    }
+
+                    if !spotifyTasteHidden {
+                        if needsSpotifyReconnect {
+                            Button {
+                                spotifyAuth.reconnect()
+                            } label: {
+                                Label("Reconnect to show your music taste", systemImage: "arrow.clockwise")
+                            }
+                        } else {
+                            Button {
+                                Task { await SpotifyTasteSync.syncIfNeeded(force: true) }
+                            } label: {
+                                Label("Refresh music taste now", systemImage: "arrow.clockwise")
+                            }
                         }
                     }
                 } else {
@@ -149,9 +163,11 @@ struct SettingsContentView: View {
                 Text("Spotify")
             } footer: {
                 Text(spotifyAuth.isAuthorized
-                     ? (needsSpotifyReconnect
-                        ? "Your Spotify login is from before profiles showed top artists and playlists. Reconnect once to turn that on."
-                        : "Going live shares what you’re playing. Your top artists, top tracks and public playlists show on your profile.")
+                     ? (spotifyTasteHidden
+                        ? "Going live still shares what you’re playing. Your top artists, top tracks and playlists are not shown on your profile."
+                        : (needsSpotifyReconnect
+                           ? "Your Spotify login is from before profiles showed top artists and playlists. Reconnect once to turn that on."
+                           : "Going live shares what you’re playing. Your top artists, top tracks and public playlists show on your profile."))
                      : "Connect Spotify to go live and share what you’re playing.")
             }
 

@@ -35,11 +35,17 @@ Three verbs, each with one meaning:
 - **Like** – react to a track someone is playing live. A signal only; the
   other person sees it in Activity and can look at your profile. Nothing to
   accept.
-- **Follow** – see when someone goes live (Discover friends mode, push).
-  One-way, no acceptance. Followers show up in Activity with Follow back.
+- **Follow** – see when someone goes live (Discover "People I follow",
+  wherever they are, and push). One-way, no acceptance. Followers show up
+  in Activity with Follow back.
 - **Message** – from the Discover card or a profile. Reaches the other
   person as a message request in Chats; their first reply opens the chat.
-  A declined request is invisible to the sender.
+  A declined request is invisible to the sender. The song button next to
+  the composer sends what you play right now as a card (tap opens Spotify).
+
+Spotify data on a profile (top artists, top tracks, public playlists) is
+copied once a day and can be switched off in Settings → Spotify; off
+removes it from the user document.
 
 ## Backend
 Everything server-side lives in this repo and deploys with the Firebase CLI:

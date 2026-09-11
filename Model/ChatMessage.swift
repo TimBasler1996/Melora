@@ -35,6 +35,11 @@ struct ChatMessage: Identifiable, Codable, Equatable {
     /// Reactions keyed by user id → emoji. One reaction per user per message.
     var reactions: [String: String]?
 
+    /// A song sent with the message ("what I’m playing right now"). The text
+    /// carries a plain "🎵 Title – Artist" for previews, pushes and clients
+    /// that don’t know the attachment.
+    var track: Track?
+
     static func fromFirestore(id: String, data: [String: Any]) -> ChatMessage? {
         guard
             let senderId = data["senderId"] as? String,
@@ -60,6 +65,21 @@ struct ChatMessage: Identifiable, Codable, Equatable {
 
         let reactions = data["reactions"] as? [String: String]
 
+        let track: Track? = {
+            guard let dict = data["track"] as? [String: Any],
+                  let trackId = dict["id"] as? String, !trackId.isEmpty,
+                  let title = dict["title"] as? String,
+                  let artist = dict["artist"] as? String else { return nil }
+            return Track(
+                id: trackId,
+                title: title,
+                artist: artist,
+                album: dict["album"] as? String,
+                artworkURL: (dict["artworkURL"] as? String).flatMap(URL.init(string:)),
+                durationMs: dict["durationMs"] as? Int
+            )
+        }()
+
         return ChatMessage(
             id: id,
             senderId: senderId,
@@ -67,7 +87,8 @@ struct ChatMessage: Identifiable, Codable, Equatable {
             createdAt: createdAt,
             type: type,
             replyTo: replyTo,
-            reactions: reactions
+            reactions: reactions,
+            track: track
         )
     }
 }

@@ -10,6 +10,7 @@ struct ChatView: View {
 
     @StateObject private var vm = ChatViewModel()
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @FocusState private var composerFocused: Bool
     @State private var showBlockConfirm = false
     @State private var showDeleteConfirm = false
@@ -129,6 +130,10 @@ struct ChatView: View {
             Text(vm.actionError ?? "")
         }
         .onAppear { vm.start(conversationId: conversationId, peerUserId: peerUserId) }
+        .onChange(of: scenePhase) { _, phase in
+            // Back from Spotify: the song button should match what plays now.
+            if phase == .active { Task { await vm.refreshNowPlaying() } }
+        }
         .onDisappear {
             Task { await vm.markAsRead(conversationId: conversationId) }
             vm.stop()
@@ -386,6 +391,8 @@ struct ChatView: View {
 
     private var composer: some View {
         HStack(spacing: 10) {
+            sendSongButton
+
             TextField("Message…", text: $vm.draft, axis: .vertical)
                 .focused($composerFocused)
                 .lineLimit(1...5)
@@ -411,6 +418,38 @@ struct ChatView: View {
         }
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.bottom, 12)
+    }
+
+    /// Sends what the user is playing on Spotify right now. Shows the cover
+    /// while something plays; greyed out when nothing does.
+    private var sendSongButton: some View {
+        Button {
+            Task { await vm.sendNowPlaying(conversationId: conversationId, peerUserId: peerUserId) }
+        } label: {
+            ZStack {
+                Circle().fill(AppColors.surfaceElevated)
+                if let track = vm.nowPlaying {
+                    AsyncImage(url: track.artworkURL) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        MIcon("music", size: 18, color: AppColors.primary)
+                    }
+                    .frame(width: 30, height: 30)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    Circle().stroke(AppColors.primary, lineWidth: 2)
+                } else {
+                    MIcon("music", size: 18, color: AppColors.primaryText.opacity(0.3))
+                }
+            }
+            .frame(width: 44, height: 44)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(vm.nowPlaying == nil || vm.isSending)
+        .animation(.easeInOut(duration: 0.2), value: vm.nowPlaying)
+        .accessibilityLabel(
+            vm.nowPlaying.map { "Send \($0.title) by \($0.artist)" } ?? "Nothing playing on Spotify"
+        )
     }
 }
 
@@ -631,14 +670,25 @@ private struct ChatBubble: View {
                 replyQuote(reply)
             }
 
-            Text(message.text)
-                .font(AppFonts.subheadline())
-                .foregroundColor(.white)
-                .fixedSize(horizontal: false, vertical: true)
+            if let track = message.track {
+                // A sent song: the card is the message. Tap opens Spotify.
+                SpotifyLinkCard(
+                    trackId: track.id,
+                    title: track.title,
+                    artist: track.artist,
+                    album: track.album,
+                    artworkURL: track.artworkURL
+                )
+            } else {
+                Text(message.text)
+                    .font(AppFonts.subheadline())
+                    .foregroundColor(.white)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            if let trackId = spotifyTrackId {
-                SpotifyLinkCard(fetchingTrackId: trackId)
-                    .padding(.top, 4)
+                if let trackId = spotifyTrackId {
+                    SpotifyLinkCard(fetchingTrackId: trackId)
+                        .padding(.top, 4)
+                }
             }
 
             Text(message.createdAt.formatted(date: .omitted, time: .shortened))

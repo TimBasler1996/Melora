@@ -41,6 +41,8 @@ Presence:
 - `spotifyTaste`: { topArtists, topTracks, playlists: [{ id, name, subtitle?,
   imageURL?, url? }], updatedAt } — copied from Spotify by the app at most
   once a day (public playlists only); shown as "Music taste" on the profile
+- `spotifyTasteHidden`: Bool — Settings switch "Music taste on my profile"
+  off: the app deletes `spotifyTaste` and stops syncing it
 - `notifyLikes`, `notifyMessages`, `notifyFollowers`: Bool — mirrored from
   Settings; missing means enabled. Cloud Functions skip the push when false.
 
@@ -98,6 +100,9 @@ messages subcollection.
 - `createdAt`: Timestamp (server time)
 - `replyTo`: { messageId, senderId, textPreview } (optional)
 - `reactions`: { uid: emoji } — the only field that may change after send
+- `track`: { id, title, artist, album?, artworkURL?, durationMs? } (optional) —
+  a song sent from the composer; `text` then holds "🎵 Title – Artist" for
+  previews and pushes
 
 ## follows/{followerId_followingId}
 - `followerId`, `followingId`: String

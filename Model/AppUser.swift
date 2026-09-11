@@ -41,6 +41,9 @@ struct AppUser: Identifiable, Codable, Equatable {
     var lookingFor: String?
     /// Top artists, tracks and public playlists copied from Spotify.
     var spotifyTaste: SpotifyTaste?
+    /// The user switched the Spotify section off in Settings; the taste
+    /// data is removed from the document and no longer synced.
+    var spotifyTasteHidden: Bool
 
     // MARK: - Photos
 
@@ -77,6 +80,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         musicTaste: String? = nil,
         lookingFor: String? = nil,
         spotifyTaste: SpotifyTaste? = nil,
+        spotifyTasteHidden: Bool = false,
         countryCode: String? = nil,
         gender: String? = nil,
         firstName: String? = nil,
@@ -105,6 +109,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         self.musicTaste = musicTaste
         self.lookingFor = lookingFor
         self.spotifyTaste = spotifyTaste
+        self.spotifyTasteHidden = spotifyTasteHidden
         self.countryCode = countryCode
         self.gender = gender
 
@@ -256,6 +261,7 @@ struct AppUser: Identifiable, Codable, Equatable {
             musicTaste: stringValue("musicTaste"),
             lookingFor: stringValue("lookingFor"),
             spotifyTaste: SpotifyTaste.fromFirestore(data["spotifyTaste"]),
+            spotifyTasteHidden: data["spotifyTasteHidden"] as? Bool ?? false,
             countryCode: stringValue("countryCode"),
             gender: stringValue("gender"),
             firstName: firstName,

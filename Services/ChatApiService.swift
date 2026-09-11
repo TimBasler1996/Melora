@@ -223,7 +223,8 @@ actor ChatApiService {
     func sendMessage(
         conversationId: String,
         text: String,
-        replyTo: ChatMessage? = nil
+        replyTo: ChatMessage? = nil,
+        track: Track? = nil
     ) async throws {
         guard let senderId = Auth.auth().currentUser?.uid else {
             throw ChatError.notAuthenticated
@@ -232,7 +233,7 @@ actor ChatApiService {
         guard !trimmed.isEmpty else { throw ChatError.emptyMessage }
 
         let convoRef = db.collection(conversationsCollection).document(conversationId)
-        try await appendMessage(to: convoRef, senderId: senderId, text: trimmed, replyTo: replyTo)
+        try await appendMessage(to: convoRef, senderId: senderId, text: trimmed, replyTo: replyTo, track: track)
     }
 
     /// Writes one message and refreshes the conversation's preview fields.
@@ -242,7 +243,8 @@ actor ChatApiService {
         to convoRef: DocumentReference,
         senderId: String,
         text: String,
-        replyTo: ChatMessage? = nil
+        replyTo: ChatMessage? = nil,
+        track: Track? = nil
     ) async throws {
         var payload: [String: Any] = [
             "senderId": senderId,
@@ -256,6 +258,17 @@ actor ChatApiService {
                 "senderId": replyTo.senderId,
                 "textPreview": String(replyTo.text.prefix(120))
             ]
+        }
+        if let track {
+            var dict: [String: Any] = [
+                "id": track.id,
+                "title": track.title,
+                "artist": track.artist
+            ]
+            if let album = track.album { dict["album"] = album }
+            if let artwork = track.artworkURL { dict["artworkURL"] = artwork.absoluteString }
+            if let duration = track.durationMs { dict["durationMs"] = duration }
+            payload["track"] = dict
         }
 
         let batch = db.batch()
