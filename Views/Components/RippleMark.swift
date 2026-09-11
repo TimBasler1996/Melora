@@ -55,7 +55,13 @@ struct LiveRipple: View {
                 .frame(width: size * 0.36, height: size * 0.36)
         }
         .frame(width: size, height: size)
-        .onAppear { animate = true }
+        .onAppear {
+            // Restart cleanly even when the view is re-inserted with its
+            // state preserved (a same-value set would not animate).
+            animate = false
+            DispatchQueue.main.async { animate = true }
+        }
+        .onDisappear { animate = false }
     }
 }
 

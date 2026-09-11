@@ -41,7 +41,8 @@ enum AppColors {
     /// Live is Ember too; the dot with rings is the mark of being on air.
     static let live = Color(hex: 0xFF5A3C)
 
-    static let destructive = Color(hex: 0xFF5A3C)
+    /// Destructive stays a plain red so it never reads as "go live".
+    static let destructive = Color(hex: 0xE5484D)
 
     // MARK: - Surfaces (warm "vinyl" black, never blue)
 
