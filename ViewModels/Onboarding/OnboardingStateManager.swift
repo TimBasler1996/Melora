@@ -106,7 +106,7 @@ final class OnboardingStateManager: ObservableObject {
 
     // MARK: - Completeness
 
-    private func isProfileComplete(data: [String: Any]) -> Bool {
+    nonisolated private func isProfileComplete(data: [String: Any]) -> Bool {
         let trimmed: (String?) -> String? = { value in
             value?.trimmingCharacters(in: .whitespacesAndNewlines)
         }

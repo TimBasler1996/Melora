@@ -584,6 +584,12 @@ private struct SpotifyProgressBar: View {
         VStack(spacing: 6) {
             // Custom slider
             GeometryReader { geometry in
+                // 0…1, and never NaN when a track has no duration yet.
+                let fraction: CGFloat = durationMs > 0
+                    ? min(1, max(0, CGFloat(localProgress) / CGFloat(durationMs)))
+                    : 0
+                let filled = geometry.size.width * fraction
+
                 ZStack(alignment: .leading) {
                     // Background track
                     Capsule()
@@ -593,17 +599,14 @@ private struct SpotifyProgressBar: View {
                     // Progress track
                     Capsule()
                         .fill(Color.white)
-                        .frame(
-                            width: max(0, geometry.size.width * CGFloat(localProgress) / CGFloat(durationMs)),
-                            height: 4
-                        )
+                        .frame(width: filled, height: 4)
 
                     // Thumb (only visible when scrubbing)
                     if isScrubbing {
                         Circle()
                             .fill(Color.white)
                             .frame(width: 14, height: 14)
-                            .offset(x: max(0, geometry.size.width * CGFloat(localProgress) / CGFloat(durationMs)) - 7)
+                            .offset(x: filled - 7)
                     }
                 }
                 .gesture(

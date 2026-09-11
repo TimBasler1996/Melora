@@ -44,7 +44,7 @@ struct ProfileView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let contentWidth = geo.size.width - (AppLayout.screenPadding * 2)
+            let contentWidth = max(0, geo.size.width - (AppLayout.screenPadding * 2))
 
             ZStack {
                 VStack(spacing: 14) {

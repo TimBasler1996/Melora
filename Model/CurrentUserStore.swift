@@ -50,7 +50,7 @@ final class CurrentUserStore: ObservableObject {
             let user = AppUser.fromFirestore(uid: uid, data: data)
             self.user = user
             self.isLoading = false
-            if let user { SpotifyTasteSync.hidden = user.spotifyTasteHidden }
+            SpotifyTasteSync.hidden = user.spotifyTasteHidden
         }
     }
 

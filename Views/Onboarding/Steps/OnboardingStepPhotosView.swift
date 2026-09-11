@@ -63,7 +63,7 @@ struct OnboardingStepPhotosView: View {
                 }
             }
         }
-        .onChange(of: pickerItems) { items in
+        .onChange(of: pickerItems) { _, items in
             for (index, item) in items.enumerated() {
                 if let item = item {
                     loadImage(from: item, at: index)

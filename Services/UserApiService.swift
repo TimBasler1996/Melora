@@ -97,14 +97,10 @@ final class UserApiService {
         excludeUID: String?,
         onChange: @escaping (Result<[AppUser], Error>) -> Void
     ) -> ListenerRegistration {
-        var q: Query = db.collection("users")
+        // Own uid is filtered client-side below: Firestore can't exclude a
+        // document id in a where clause.
+        let q: Query = db.collection("users")
             .whereField("isBroadcasting", isEqualTo: true)
-
-        if let excludeUID {
-            // Firestore can't "where != uid" reliably for doc id here, so we filter client-side
-            // (fine for MVP).
-            // no-op on query
-        }
 
         return q.addSnapshotListener { snapshot, error in
             if let error {
