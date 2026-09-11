@@ -61,14 +61,14 @@ final class LikesBadgeViewModel: ObservableObject {
 
             if let error {
                 print("❌ LikesBadgeViewModel likes listener error:", error.localizedDescription)
-                self.unreadLikes = 0
-                self.updateCombinedCount()
+                self.likeDates = []
+                self.recount()
                 return
             }
 
             guard let docs = snapshot?.documents else {
-                self.unreadLikes = 0
-                self.updateCombinedCount()
+                self.likeDates = []
+                self.recount()
                 return
             }
 
@@ -97,14 +97,14 @@ final class LikesBadgeViewModel: ObservableObject {
 
             if let error {
                 print("❌ LikesBadgeViewModel followers listener error:", error.localizedDescription)
-                self.unreadFollowers = 0
-                self.updateCombinedCount()
+                self.followDates = []
+                self.recount()
                 return
             }
 
             guard let docs = snapshot?.documents else {
-                self.unreadFollowers = 0
-                self.updateCombinedCount()
+                self.followDates = []
+                self.recount()
                 return
             }
 

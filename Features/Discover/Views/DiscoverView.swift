@@ -568,4 +568,6 @@ struct DiscoverView: View {
         .environmentObject(CurrentUserStore())
         .environmentObject(LocationService())
         .environmentObject(AppRouter.shared)
+        .environmentObject(BroadcastManager())
+        .environmentObject(SpotifyAuthManager.shared)
 }

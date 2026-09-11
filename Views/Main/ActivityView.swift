@@ -9,9 +9,27 @@ struct ActivityView: View {
     @StateObject private var chats = ChatInboxViewModel()
     @EnvironmentObject private var router: AppRouter
 
+    /// Navigation is driven by state rather than nested links, so the row
+    /// tap and the button on the row never fight over the gesture.
+    @State private var profileUserId: String?
+    @State private var chatTarget: ChatTarget?
+
+    private struct ChatTarget: Identifiable, Hashable {
+        let conversationId: String
+        let peerId: String
+        var id: String { conversationId }
+    }
+
     var body: some View {
         ZStack {
             content
+        }
+        .melScreenBackground()
+        .navigationDestination(item: $profileUserId) { userId in
+            UserProfilePreviewView(userId: userId)
+        }
+        .navigationDestination(item: $chatTarget) { target in
+            ChatView(conversationId: target.conversationId, peerUserId: target.peerId)
         }
         .alert(
             "Couldn’t do that",
@@ -150,15 +168,21 @@ struct ActivityView: View {
     }
 
     private func row(_ item: ActivityItem) -> some View {
-        NavigationLink {
-            UserProfilePreviewView(userId: item.userId)
+        Button {
+            profileUserId = item.userId
         } label: {
             ActivityRow(
                 item: item,
                 isNew: vm.isNew(item),
                 isFollowing: vm.isFollowing(item.userId),
-                myUserId: vm.myUserId,
-                onFollow: { Task { await vm.toggleFollow(item.userId) } }
+                onFollow: { Task { await vm.toggleFollow(item.userId) } },
+                onSayHi: {
+                    guard let me = vm.myUserId else { return }
+                    chatTarget = ChatTarget(
+                        conversationId: ChatApiService.shared.conversationId(for: me, and: item.userId),
+                        peerId: item.userId
+                    )
+                }
             )
         }
         .buttonStyle(.plain)
@@ -171,8 +195,8 @@ private struct ActivityRow: View {
     let item: ActivityItem
     let isNew: Bool
     let isFollowing: Bool
-    let myUserId: String?
     let onFollow: () -> Void
+    let onSayHi: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -235,22 +259,15 @@ private struct ActivityRow: View {
     private var trailing: some View {
         switch item.kind {
         case .like:
-            if let myUserId {
-                NavigationLink {
-                    ChatView(
-                        conversationId: ChatApiService.shared.conversationId(for: myUserId, and: item.userId),
-                        peerUserId: item.userId
-                    )
-                } label: {
-                    Text("Say hi")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(Capsule().fill(AppColors.primary))
-                }
-                .buttonStyle(.plain)
+            Button(action: onSayHi) {
+                Text("Say hi")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(AppColors.primary))
             }
+            .buttonStyle(.plain)
         case .follow:
             Button(action: onFollow) {
                 Text(isFollowing ? "Following" : "Follow back")
