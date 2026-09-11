@@ -201,6 +201,9 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
                 do {
                     try await self.exchangeCodeForTokens(code: code, verifier: verifier)
                     self.isAuthorized = true
+                    // A fresh login carries every scope: refresh the
+                    // profile's music taste right away.
+                    Task { await SpotifyTasteSync.syncIfNeeded(force: true) }
                 } catch {
                     print("❌ [Auth] Failed to exchange code for tokens: \(error)")
                     self.lastLoginFailure = .failed
