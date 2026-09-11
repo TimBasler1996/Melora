@@ -129,8 +129,14 @@ final class LikesBadgeViewModel: ObservableObject {
     private func recount() {
         let likesSeen = lastSeenDate
         let followersSeen = lastSeenFollowersDate
-        unreadLikes = likeDates.filter { likesSeen.map { seen in $0 > seen } ?? true }.count
-        unreadFollowers = followDates.filter { followersSeen.map { seen in $0 > seen } ?? true }.count
+        unreadLikes = likeDates.filter { date in
+            guard let likesSeen else { return true }
+            return date > likesSeen
+        }.count
+        unreadFollowers = followDates.filter { date in
+            guard let followersSeen else { return true }
+            return date > followersSeen
+        }.count
         updateCombinedCount()
     }
 
