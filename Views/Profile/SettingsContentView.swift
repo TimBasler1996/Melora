@@ -333,6 +333,7 @@ struct SettingsContentView: View {
         } catch AccountService.AccountError.cancelled {
             // Nothing to say.
         } catch {
+            print("❌ [Account] Apple link failed: \(error)")
             accountMessage = "Couldn’t link your Apple ID. Please try again."
         }
     }

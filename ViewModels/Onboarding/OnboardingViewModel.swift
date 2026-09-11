@@ -148,6 +148,7 @@ final class OnboardingViewModel: ObservableObject {
         } catch AccountService.AccountError.cancelled {
             // User backed out of the Apple sheet; stay on the step.
         } catch {
+            print("❌ [Account] Apple link failed: \(error)")
             accountErrorMessage = "Couldn’t link your Apple ID. You can try again later in Settings."
         }
     }
