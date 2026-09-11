@@ -50,10 +50,9 @@ struct DiscoverView: View {
                     Button {
                         showUserSearch = true
                     } label: {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
+                        MIcon("search", size: 20)
                             .frame(width: 44, height: 44)
+                            .background(Circle().fill(AppColors.surface))
                             .contentShape(Rectangle())
                     }
                     .accessibilityLabel("Find people")
@@ -183,7 +182,7 @@ struct DiscoverView: View {
             .padding(.vertical, 10)
             .melCard(cornerRadius: 14)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.top, 4)
         .padding(.bottom, 8)
@@ -204,15 +203,29 @@ struct DiscoverView: View {
         return spotifyAuth.isAuthorized ? "Go live and show up here for people nearby" : "Takes a minute, then you’re on the map"
     }
 
+    /// Two pills, not a system segmented control: "Nearby" and "People I follow".
     private var modePickerBar: some View {
-        Picker("Mode", selection: $viewModel.discoverMode) {
+        HStack(spacing: 8) {
             ForEach(DiscoverMode.allCases) { mode in
-                Text(mode.rawValue).tag(mode)
+                let selected = viewModel.discoverMode == mode
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        viewModel.discoverMode = mode
+                    }
+                } label: {
+                    Text(mode == .friends ? "People I follow" : mode.rawValue)
+                        .font(.system(size: 13, weight: selected ? .heavy : .bold))
+                        .foregroundColor(selected ? AppColors.background : AppColors.secondaryText)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Capsule().fill(selected ? AppColors.primaryText : AppColors.surface))
+                }
+                .buttonStyle(.plain)
             }
+            Spacer()
         }
-        .pickerStyle(.segmented)
         .padding(.horizontal, AppLayout.screenPadding)
-        .padding(.top, 8)
+        .padding(.top, 4)
         .padding(.bottom, 4)
     }
 
@@ -359,6 +372,7 @@ struct DiscoverView: View {
                         sectionHeader("Live now", count: viewModel.visibleBroadcasts.count)
                         ForEach(viewModel.visibleBroadcasts) { broadcast in
                             card(for: broadcast)
+                                .transition(.opacity.combined(with: .scale(scale: 0.96)))
                         }
                     }
 
@@ -376,7 +390,7 @@ struct DiscoverView: View {
             .refreshable {
                 await viewModel.refresh()
             }
-            .animation(.easeInOut(duration: 0.3), value: viewModel.visibleBroadcasts.map(\.id))
+            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: viewModel.visibleBroadcasts.map(\.id))
         }
     }
 

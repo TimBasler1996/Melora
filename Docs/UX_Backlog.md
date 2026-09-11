@@ -508,7 +508,7 @@ _Calm, premium tone means one vocabulary and no debug text._
 - **Problem:** Violet on blue-black with rounded type looked like every other app; nothing said music, nothing said 'someone near you is playing this right now'.
 - **Fix:** One image, the ripple, as icon, live indicator and the o in the wordmark. Ember on warm black, cream text, song titles in italic serif, everything else a heavy grotesk. Discover cards glow in their cover's color.
 - **Needs:** Fonts are the system ones (SF Pro, New York italic) so nothing has to be bundled; OWN-8 covers adding Archivo and Instrument Serif files if wanted.
-- **Progress:** AppTheme tokens, AppFonts.song, RippleMark/LiveRipple/MeloraWordmark, new AppIcon set, Discover wordmark and cover glow, serif titles on Discover, Live, Activity and Music taste.
+- **Progress:** AppTheme tokens, AppFonts.song, RippleMark/LiveRipple/MeloraWordmark, new AppIcon set, Discover wordmark and cover glow, serif titles on Discover, Live, Activity and Music taste. Second pass: own line-icon set (Assets/Icons + MIcon), pressable buttons, ripple burst on like, card transitions, pill filters and a house segmented control, Live screen and profile hero rebuilt to the canvas.
 
 ### UX-52 · Calm system copy: no emoji toasts, lowercase status pills
 

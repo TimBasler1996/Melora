@@ -25,7 +25,9 @@ live indicator and the wordmark. Tokens live in `Utils/AppTheme.swift`:
 Ember `#FF5A3C` for live and the one primary action, warm "vinyl" black
 `#0E0C0B`, cream text `#F4EFE6`, radii 12/20. Names and UI use the system
 grotesk; song titles use `AppFonts.song` (italic serif) and nothing else
-does. Album covers tint Discover cards (`ArtworkColorCache`). The design
+does. Icons are the app's own line set (`Assets.xcassets/Icons`, drawn with
+`MIcon`); primary buttons use `.pressable`; a like fires `RippleBurst`.
+Album covers tint Discover cards (`ArtworkColorCache`). The design
 canvas: https://claude.ai/code/artifact/738ee33e-0097-4cfa-b88f-3771ac1e307b
 
 ## The social loop

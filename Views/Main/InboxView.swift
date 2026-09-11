@@ -10,12 +10,10 @@ struct InboxView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("", selection: $router.inboxSection) {
-                    ForEach(AppRouter.InboxSection.allCases) { section in
-                        Text(section.rawValue).tag(section)
-                    }
-                }
-                .pickerStyle(.segmented)
+                MeloraSegmentedControl(
+                    options: AppRouter.InboxSection.allCases.map { ($0, $0.rawValue) },
+                    selection: $router.inboxSection
+                )
                 .padding(.horizontal, AppLayout.screenPadding)
                 .padding(.top, 6)
                 .padding(.bottom, 10)

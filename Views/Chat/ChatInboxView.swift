@@ -217,9 +217,7 @@ struct ChatInboxView: View {
                 Circle()
                     .fill(AppColors.primary.opacity(0.25))
                     .frame(width: 44, height: 44)
-                Image(systemName: "tray.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
+                MIcon("envelope", size: 20, color: AppColors.live)
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -233,9 +231,7 @@ struct ChatInboxView: View {
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.white.opacity(0.5))
+            MIcon("chev-right", size: 18, color: AppColors.mutedText)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

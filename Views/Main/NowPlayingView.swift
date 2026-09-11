@@ -51,11 +51,6 @@ struct NowPlayingView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("Live")
-                        .font(AppFonts.headline())
-                        .foregroundColor(AppColors.primaryText)
-                }
 
             }
         }
@@ -100,162 +95,146 @@ struct NowPlayingView: View {
         if !spotifyAuth.isAuthorized && vm.currentTrack == nil {
             spotifyDisconnectedState
         } else if let track = vm.currentTrack {
-            // ✅ Playing state - compact Melora view
+            // Playing: the cover in the middle, the ripple around it while
+            // live, the song in serif underneath.
             VStack(spacing: 0) {
-                // Compact Broadcast Toggle
-                CompactBroadcastToggle(hasTrack: true)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 16)
+                HStack {
+                    Text("Live")
+                        .font(.system(size: 20, weight: .heavy))
+                        .foregroundColor(AppColors.primaryText)
+                    Spacer()
+                    if broadcast.isBroadcasting {
+                        HStack(spacing: 6) {
+                            RippleMark(size: 10, rings: 0)
+                            Text("LIVE")
+                                .font(.system(size: 12, weight: .heavy))
+                                .foregroundColor(AppColors.live)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(AppColors.live.opacity(0.16)))
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 4)
 
-                // Error message if any
                 if let err = vm.errorMessage, !err.isEmpty {
                     Text(err)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.7))
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 8)
-                }
-
-                Spacer()
-
-                // Compact music card: artwork left, info + controls right
-                VStack(spacing: 20) {
-                    HStack(spacing: 16) {
-                        // Compact artwork
-                        CompactArtwork(track: track)
-                            .frame(width: 140, height: 140)
-
-                        // Track info
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(track.title)
-                                .font(AppFonts.song(size: 28))
-                                .foregroundColor(AppColors.primaryText)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.8)
-
-                            Text(track.artist)
-                                .font(AppFonts.subheadline())
-                                .foregroundColor(AppColors.secondaryText)
-                                .lineLimit(1)
-
-                            if let album = track.album, !album.isEmpty {
-                                Text(album)
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.4))
-                                    .lineLimit(1)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(.horizontal, 24)
-
-                    // Thin progress bar
-                    if let durationMs = track.durationMs {
-                        SpotifyProgressBar(
-                            progressMs: vm.progressMs,
-                            durationMs: durationMs,
-                            isScrubbing: $vm.isScrubbing,
-                            onSeek: { newProgress in
-                                Task { await vm.seek(to: newProgress) }
-                            }
-                        )
+                        .font(AppFonts.caption())
+                        .foregroundColor(AppColors.secondaryText)
                         .padding(.horizontal, 24)
-                    }
-
-                    // Compact playback controls
-                    HStack(spacing: 0) {
-                        // Shuffle
-                        Button(action: {
-                            Task { await vm.toggleShuffle() }
-                            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                        }) {
-                            Image(systemName: "shuffle")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(vm.isShuffling ? AppColors.live : .white.opacity(0.5))
-                                .frame(width: 40, height: 40)
-                        }
-                        .accessibilityLabel(vm.isShuffling ? "Shuffle on" : "Shuffle off")
-
-                        Spacer()
-
-                        // Previous
-                        Button(action: {
-                            Task { await vm.previous() }
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        }) {
-                            Image(systemName: "backward.fill")
-                                .font(.system(size: 24, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(width: 52, height: 52)
-                        }
-                        .disabled(vm.isLoading)
-                        .accessibilityLabel("Previous track")
-
-                        // Play/Pause
-                        Button(action: {
-                            Task { await vm.togglePlayPause() }
-                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        }) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.white)
-                                    .frame(width: 48, height: 48)
-
-                                Image(systemName: vm.isPlaying ? "pause.fill" : "play.fill")
-                                    .font(.system(size: 20, weight: .black))
-                                    .foregroundColor(.black)
-                                    .offset(x: vm.isPlaying ? 0 : 2)
-                            }
-                        }
-                        .disabled(vm.isLoading)
-                        .padding(.horizontal, 8)
-                        .accessibilityLabel(vm.isPlaying ? "Pause" : "Play")
-
-                        // Next
-                        Button(action: {
-                            Task { await vm.next() }
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        }) {
-                            Image(systemName: "forward.fill")
-                                .font(.system(size: 24, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(width: 52, height: 52)
-                        }
-                        .disabled(vm.isLoading)
-                        .accessibilityLabel("Next track")
-
-                        Spacer()
-
-                        // Repeat
-                        Button(action: {
-                            Task { await vm.cycleRepeatMode() }
-                            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                        }) {
-                            let iconName: String = {
-                                switch vm.repeatMode {
-                                case .off: return "repeat"
-                                case .context: return "repeat"
-                                case .track: return "repeat.1"
-                                }
-                            }()
-
-                            Image(systemName: iconName)
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(vm.repeatMode != .off ? AppColors.live : .white.opacity(0.5))
-                                .frame(width: 40, height: 40)
-                        }
-                        .accessibilityLabel(repeatAccessibilityLabel)
-                    }
-                    .padding(.horizontal, 24)
+                        .padding(.top, 8)
                 }
-                .padding(.vertical, 20)
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(AppColors.surface)
-                )
-                .padding(.horizontal, 16)
 
-                Spacer()
+                Spacer(minLength: 12)
+
+                ZStack {
+                    if broadcast.isBroadcasting {
+                        LiveRipple(size: 300, color: AppColors.live)
+                            .opacity(0.8)
+                    }
+                    CompactArtwork(track: track)
+                        .frame(width: 240, height: 240)
+                        .shadow(color: .black.opacity(0.5), radius: 30, y: 20)
+                }
+                .frame(height: 300)
+
+                VStack(spacing: 4) {
+                    Text(track.title)
+                        .font(AppFonts.song(size: 34))
+                        .foregroundColor(AppColors.primaryText)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                    Text(track.artist)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(AppColors.secondaryText)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 28)
+                .padding(.top, 8)
+
+                if let durationMs = track.durationMs {
+                    SpotifyProgressBar(
+                        progressMs: vm.progressMs,
+                        durationMs: durationMs,
+                        isScrubbing: $vm.isScrubbing,
+                        onSeek: { newProgress in
+                            Task { await vm.seek(to: newProgress) }
+                        }
+                    )
+                    .padding(.horizontal, 28)
+                    .padding(.top, 18)
+                }
+
+                HStack(spacing: 0) {
+                    Button(action: {
+                        Task { await vm.toggleShuffle() }
+                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                    }) {
+                        MIcon("shuffle", size: 20, color: vm.isShuffling ? AppColors.live : AppColors.mutedText)
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel(vm.isShuffling ? "Shuffle on" : "Shuffle off")
+
+                    Spacer()
+
+                    Button(action: {
+                        Task { await vm.previous() }
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    }) {
+                        MIcon("prev", size: 30)
+                            .frame(width: 52, height: 52)
+                    }
+                    .disabled(vm.isLoading)
+                    .accessibilityLabel("Previous track")
+
+                    Button(action: {
+                        Task { await vm.togglePlayPause() }
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(AppColors.primaryText)
+                                .frame(width: 72, height: 72)
+                            MIcon(vm.isPlaying ? "pause" : "play", size: 30, color: AppColors.background)
+                                .offset(x: vm.isPlaying ? 0 : 2)
+                        }
+                    }
+                    .buttonStyle(.pressable)
+                    .disabled(vm.isLoading)
+                    .padding(.horizontal, 16)
+                    .accessibilityLabel(vm.isPlaying ? "Pause" : "Play")
+
+                    Button(action: {
+                        Task { await vm.next() }
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    }) {
+                        MIcon("next", size: 30)
+                            .frame(width: 52, height: 52)
+                    }
+                    .disabled(vm.isLoading)
+                    .accessibilityLabel("Next track")
+
+                    Spacer()
+
+                    Button(action: {
+                        Task { await vm.cycleRepeatMode() }
+                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+                    }) {
+                        MIcon("repeat", size: 20, color: vm.repeatMode != .off ? AppColors.live : AppColors.mutedText)
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel(repeatAccessibilityLabel)
+                }
+                .padding(.horizontal, 28)
+                .padding(.top, 18)
+
+                Spacer(minLength: 12)
+
+                CompactBroadcastToggle(hasTrack: true)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
             }
         } else {
             // ✅ Empty state - nothing playing
@@ -452,7 +431,7 @@ private struct CompactBroadcastToggle: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(broadcast.isBroadcasting ? "You’re live nearby" : "Go live nearby")
+                Text(broadcast.isBroadcasting ? "Sharing nearby" : "Go live nearby")
                     .font(AppFonts.subheadline())
                     .foregroundColor(.white.opacity(hasTrack ? 0.9 : 0.5))
 

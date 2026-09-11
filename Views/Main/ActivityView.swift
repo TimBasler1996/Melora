@@ -143,9 +143,7 @@ struct ActivityView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle().fill(AppColors.primary.opacity(0.25)).frame(width: 44, height: 44)
-                    Image(systemName: "envelope.fill")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(.white)
+                    MIcon("send", size: 20, color: AppColors.live)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(count == 1 ? "1 message request" : "\(count) message requests")
@@ -156,15 +154,20 @@ struct ActivityView: View {
                         .foregroundColor(.white.opacity(0.7))
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.5))
+                MIcon("chev-right", size: 18, color: AppColors.mutedText)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .melCard(cornerRadius: 14)
+            .background(
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
+                    .fill(AppColors.cardBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
+                    .stroke(AppColors.live.opacity(0.35), lineWidth: 1)
+            )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private func row(_ item: ActivityItem) -> some View {
@@ -261,13 +264,13 @@ private struct ActivityRow: View {
         case .like:
             Button(action: onSayHi) {
                 Text("Say hi")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundColor(AppColors.background)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
                     .background(Capsule().fill(AppColors.primary))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         case .follow:
             Button(action: onFollow) {
                 Text(isFollowing ? "Following" : "Follow back")
@@ -284,9 +287,7 @@ private struct ActivityRow: View {
     private var kindBadge: some View {
         ZStack {
             Circle().fill(AppColors.surfaceElevated).frame(width: 20, height: 20)
-            Image(systemName: item.kind == .follow ? "person.fill.badge.plus" : "heart.fill")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(item.kind == .follow ? AppColors.primary : .red)
+            MIcon(item.kind == .follow ? "person-plus" : "heart-fill", size: 11, color: AppColors.live)
         }
         .offset(x: 3, y: 3)
     }

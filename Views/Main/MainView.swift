@@ -13,19 +13,19 @@ struct MainView: View {
         TabView(selection: $router.selectedTab) {
             DiscoverView()
                 .tabItem {
-                    Label("Discover", systemImage: "dot.radiowaves.left.and.right")
+                    Label("Discover", image: "icon-waves")
                 }
                 .tag(AppRouter.Tab.discover)
 
             NowPlayingView()
                 .tabItem {
-                    Label("Live", systemImage: "music.note")
+                    Label("Live", image: "icon-music")
                 }
                 .tag(AppRouter.Tab.now)
 
             InboxView()
                 .tabItem {
-                    Label("Inbox", systemImage: "tray")
+                    Label("Inbox", image: "icon-tray")
                 }
                 .badge(chatBadge.unreadCount + activityBadge.unreadCount)
                 .tag(AppRouter.Tab.chats)
@@ -37,7 +37,7 @@ struct MainView: View {
                     }
             }
             .tabItem {
-                Label("Profile", systemImage: "person.circle")
+                Label("Profile", image: "icon-person")
             }
             .tag(AppRouter.Tab.profile)
         }

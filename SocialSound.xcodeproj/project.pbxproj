@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		66F0BAF76C08432388F0A0FD /* MIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9D752374FB4725A261C395 /* MIcon.swift */; };
 		513FB17B8E044CF49074EB5C /* ArtworkColorCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E9FF9396BD46DFAF326058 /* ArtworkColorCache.swift */; };
 		B075EC834C844EEF9FE01036 /* RippleMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = F314DB3340394791A68ACC0D /* RippleMark.swift */; };
 		66F9387B231E4215AE65215B /* SpotifyTasteSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF2F988231D4E0BA3D52E77 /* SpotifyTasteSync.swift */; };
@@ -87,6 +88,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4E9D752374FB4725A261C395 /* MIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIcon.swift; sourceTree = "<group>"; };
 		18E9FF9396BD46DFAF326058 /* ArtworkColorCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkColorCache.swift; sourceTree = "<group>"; };
 		F314DB3340394791A68ACC0D /* RippleMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RippleMark.swift; sourceTree = "<group>"; };
 		0AF2F988231D4E0BA3D52E77 /* SpotifyTasteSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTasteSync.swift; sourceTree = "<group>"; };
@@ -460,6 +462,7 @@
 			children = (
 				753AD78B2F2CC12500521CF9 /* SharedProfilePreviewView.swift */,
 				F314DB3340394791A68ACC0D /* RippleMark.swift */,
+				4E9D752374FB4725A261C395 /* MIcon.swift */,
 				79A1C0052F30000300112233 /* CitySearchField.swift */,
 				A1C2D3EB2F60000100SPLNK1 /* SpotifyLinkCard.swift */,
 			);
@@ -580,6 +583,7 @@
 				75834A902F0D8F0C008C51F8 /* ChatApiService.swift in Sources */,
 				753AD78C2F2CC12500521CF9 /* SharedProfilePreviewView.swift in Sources */,
 				B075EC834C844EEF9FE01036 /* RippleMark.swift in Sources */,
+				66F0BAF76C08432388F0A0FD /* MIcon.swift in Sources */,
 				75DAD8772F20E80500D1219E /* OnboardingStepSpotifyView.swift in Sources */,
 				7210DF7946B441C7AECBE56C /* OnboardingWelcomeView.swift in Sources */,
 				0F55817B66D8415D8C9BC878 /* OnboardingStepAccountView.swift in Sources */,

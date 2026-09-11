@@ -130,11 +130,9 @@ struct ProfileView: View {
             Spacer()
 
             Button { showSettings = true } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(AppColors.primary)
-                    .frame(width: 40, height: 40)
-                    .background(Circle().fill(AppColors.tintedBackground.opacity(0.35)))
+                MIcon("gear", size: 20)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(AppColors.surface))
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Settings")

@@ -21,6 +21,7 @@ struct DiscoverCardView: View {
     @Environment(\.openURL) private var openURL
 
     @State private var showHeartAnimation: Bool = false
+    @State private var likeBurst: Int = 0
     @State private var glow: Color?
     @State private var showMessageField: Bool = false
     @State private var messageText: String = ""
@@ -154,9 +155,7 @@ struct DiscoverCardView: View {
             albumArtwork
 
             // Chevron
-            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.white.opacity(0.35))
+            MIcon(isExpanded ? "chev-up" : "chev-down", size: 16, color: AppColors.mutedText)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -178,27 +177,27 @@ struct DiscoverCardView: View {
             // 1. Like — state comes from the view model so a failed like
             // rolls the heart back instead of leaving it red.
             actionButton(
-                icon: hasLiked ? "heart.fill" : "heart",
+                icon: hasLiked ? "heart-fill" : "heart",
                 label: hasLiked ? "Liked" : "Like",
-                color: hasLiked ? .red : .white
+                color: hasLiked ? AppColors.live : AppColors.primaryText
             ) {
                 handleLikeAction()
             }
 
             // 2. Message → after sending, becomes "Open chat".
             actionButton(
-                icon: hasMessaged ? "bubble.left.and.bubble.right.fill" : "paperplane",
+                icon: "send",
                 label: hasMessaged ? "Open chat" : "Message",
-                color: hasMessaged ? AppColors.live : .white
+                color: hasMessaged ? AppColors.live : AppColors.primaryText
             ) {
                 handleMessageAction()
             }
 
             // 3. Follow
             actionButton(
-                icon: isFollowing ? "person.fill.checkmark" : "person.fill.badge.plus",
+                icon: isFollowing ? "person-check" : "person-plus",
                 label: isFollowing ? "Following" : "Follow",
-                color: isFollowing ? AppColors.live : .white
+                color: isFollowing ? AppColors.live : AppColors.primaryText
             ) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 onToggleFollow()
@@ -206,19 +205,19 @@ struct DiscoverCardView: View {
 
             // 4. Profile
             actionButton(
-                icon: "person.crop.circle",
+                icon: "person",
                 label: "Profile",
-                color: .white
+                color: AppColors.primaryText
             ) {
                 onViewProfile()
             }
 
             // 5. Dismiss (X)
             actionButton(
-                icon: "xmark",
+                icon: "x",
                 label: "",
                 accessibilityLabel: "Not interested",
-                color: .white.opacity(0.6)
+                color: AppColors.mutedText
             ) {
                 onDismiss()
             }
@@ -236,9 +235,7 @@ struct DiscoverCardView: View {
     ) -> some View {
         Button(action: action) {
             VStack(spacing: 5) {
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(color)
+                MIcon(icon, size: 22, color: color)
 
                 if !label.isEmpty {
                     Text(label)
@@ -275,13 +272,10 @@ struct DiscoverCardView: View {
                 .lineLimit(1...3)
 
             Button(action: handleSendMessage) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundColor(
-                        messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? .white.opacity(0.25)
-                            : AppColors.live
-                    )
+                let empty = messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                MIcon("send", size: 18, color: AppColors.background)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(empty ? AppColors.mutedText : AppColors.live))
             }
             .buttonStyle(.plain)
             .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -302,17 +296,9 @@ struct DiscoverCardView: View {
 
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-            showHeartAnimation = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
-                showHeartAnimation = false
-            }
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        showHeartAnimation = true
+        likeBurst += 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
             showHeartAnimation = false
         }
 
@@ -440,13 +426,9 @@ struct DiscoverCardView: View {
 
     // MARK: - Heart Animation Overlay
 
+    /// A like sends a signal: the ripple leaves the card once.
     private var heartAnimationOverlay: some View {
-        Image(systemName: "heart.fill")
-            .font(.system(size: 80, weight: .bold))
-            .foregroundColor(.red.opacity(0.9))
-            .scaleEffect(showHeartAnimation ? 1.2 : 0.5)
-            .opacity(showHeartAnimation ? 0.0 : 1.0)
-            .animation(.easeOut(duration: 0.6), value: showHeartAnimation)
+        RippleBurst(size: 160, trigger: likeBurst)
     }
 
     // MARK: - Helpers

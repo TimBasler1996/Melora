@@ -26,6 +26,11 @@ struct ProfilePreviewData: Equatable {
     /// Top artists, tracks and playlists from Spotify, when synced.
     var taste: SpotifyTaste? = nil
 
+    /// Live right now, and what is playing (other people's profiles).
+    var isLive: Bool = false
+    var currentTrackTitle: String? = nil
+    var currentTrackArtist: String? = nil
+
     var spotifyProfileURL: URL? {
         guard let id = spotifyId?.trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty else {
             return nil
@@ -85,7 +90,10 @@ struct ProfilePreviewData: Equatable {
             broadcastMinutes: appUser.broadcastMinutesTotal,
             likesReceivedCount: likesReceivedCount,
             userId: appUser.uid,
-            taste: appUser.spotifyTaste
+            taste: appUser.spotifyTaste,
+            isLive: appUser.isBroadcasting == true,
+            currentTrackTitle: appUser.isBroadcasting == true ? appUser.currentTrack?.title : nil,
+            currentTrackArtist: appUser.isBroadcasting == true ? appUser.currentTrack?.artist : nil
         )
     }
 }
@@ -257,7 +265,7 @@ struct SharedProfilePreviewView: View {
                                     image
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
-                                        .frame(width: width, height: 420)
+                                        .frame(width: width, height: 300)
                                         .clipped()
                                         .transaction { t in t.animation = nil }
                                 case .failure:
@@ -270,50 +278,77 @@ struct SharedProfilePreviewView: View {
                             heroPlaceholder
                         }
                     }
-                    .frame(width: width, height: 420)
+                    .frame(width: width, height: 300)
                     .clipped()
                     
                     // Gradient overlay for text readability
                     LinearGradient(
-                        colors: [Color.black.opacity(0.7), Color.black.opacity(0.2), Color.clear],
+                        colors: [AppColors.background.opacity(0.95), AppColors.background.opacity(0.35), Color.clear],
                         startPoint: .bottom,
                         endPoint: .top
                     )
-                    .frame(width: width, height: 420)
+                    .frame(width: width, height: 300)
                     
                     // Name and info overlay
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            if data.isLive {
+                                HStack(spacing: 6) {
+                                    RippleMark(size: 10, rings: 0)
+                                    Text("LIVE")
+                                        .font(.system(size: 12, weight: .heavy))
+                                        .foregroundColor(AppColors.live)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Capsule().fill(AppColors.live.opacity(0.22)))
+                            }
+                            if !city.isEmpty {
+                                HStack(spacing: 4) {
+                                    MIcon("pin", size: 13, color: AppColors.secondaryText)
+                                    Text(city)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(AppColors.secondaryText)
+                                        .lineLimit(1)
+                                }
+                            }
+                        }
+
                         Text("\(data.fullName)\(ageText)")
-                            .font(AppFonts.largeTitle())
-                            .foregroundColor(.white)
+                            .font(.system(size: 36, weight: .heavy))
+                            .kerning(-1)
+                            .foregroundColor(AppColors.primaryText)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
-                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-                        
-                        if !city.isEmpty {
-                            HStack(spacing: 4) {
-                                Image(systemName: "location.fill")
-                                    .font(.system(size: 12, weight: .semibold))
-                                Text(city)
-                                    .font(AppFonts.body())
+
+                        if data.isLive, let title = data.currentTrackTitle, !title.isEmpty {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text("Playing")
+                                    .font(AppFonts.caption())
+                                    .foregroundColor(AppColors.secondaryText)
+                                Text(title)
+                                    .font(AppFonts.song(size: 22))
+                                    .foregroundColor(AppColors.primaryText)
                                     .lineLimit(1)
+                                if let artist = data.currentTrackArtist, !artist.isEmpty {
+                                    Text(artist)
+                                        .font(AppFonts.caption())
+                                        .foregroundColor(AppColors.secondaryText)
+                                        .lineLimit(1)
+                                }
                             }
-                            .foregroundColor(.white.opacity(0.95))
-                            .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
                         }
-                        
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(width: width, height: 420)
+                .frame(width: width, height: 300)
             }
             .frame(maxWidth: .infinity)
         }
-        .frame(height: 420)
+        .frame(height: 300)
         .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous))
-        .shadow(color: Color.black.opacity(0.15), radius: 16, x: 0, y: 8)
     }
     
     private var heroPlaceholder: some View {

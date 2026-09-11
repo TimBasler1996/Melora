@@ -60,9 +60,7 @@ struct UserProfilePreviewView: View {
                             Label("Block", systemImage: "hand.raised")
                         }
                     } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
+                        MIcon("ellipsis", size: 20)
                             .frame(width: 36, height: 36)
                             .contentShape(Rectangle())
                     }
@@ -105,33 +103,6 @@ struct UserProfilePreviewView: View {
     /// go live) or message them (a request until they reply).
     private var followBar: some View {
         HStack(spacing: 10) {
-            Button {
-                Task { await vm.toggleFollow() }
-            } label: {
-                HStack(spacing: 6) {
-                    if vm.isFollowLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: vm.isFollowing ? AppColors.primaryText : .white))
-                            .scaleEffect(0.8)
-                    } else {
-                        Image(systemName: vm.isFollowing ? "checkmark" : "plus")
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                    Text(vm.isFollowing ? "Following" : "Follow")
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .foregroundColor(vm.isFollowing ? AppColors.primaryText : .white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                        .fill(vm.isFollowing ? AppColors.surfaceElevated : AppColors.primary)
-                )
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(vm.isFollowLoading)
-
             if showsMessageButton, let me = Auth.auth().currentUser?.uid {
                 NavigationLink {
                     ChatView(
@@ -139,23 +110,52 @@ struct UserProfilePreviewView: View {
                         peerUserId: userId
                     )
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "paperplane.fill")
-                            .font(.system(size: 13, weight: .bold))
+                    HStack(spacing: 8) {
+                        MIcon("send", size: 18, color: AppColors.background)
                         Text("Message")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: 15, weight: .heavy))
                     }
-                    .foregroundColor(AppColors.primaryText)
+                    .foregroundColor(AppColors.background)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .frame(height: 48)
                     .background(
-                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusMedium, style: .continuous)
-                            .fill(AppColors.surfaceElevated)
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(AppColors.primary)
                     )
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
+
+            Button {
+                Task { await vm.toggleFollow() }
+            } label: {
+                HStack(spacing: 8) {
+                    if vm.isFollowLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: AppColors.primaryText))
+                            .scaleEffect(0.8)
+                    } else {
+                        MIcon(vm.isFollowing ? "check" : "plus", size: 18)
+                    }
+                    Text(vm.isFollowing ? "Following" : "Follow")
+                        .font(.system(size: 15, weight: .bold))
+                }
+                .foregroundColor(AppColors.primaryText)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(AppColors.surfaceElevated)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(AppColors.stroke, lineWidth: 1)
+                )
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.pressable)
+            .disabled(vm.isFollowLoading)
         }
     }
 
