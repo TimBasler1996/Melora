@@ -4,28 +4,30 @@ import SwiftUI
 struct MainView: View {
 
     @EnvironmentObject private var router: AppRouter
+    @EnvironmentObject private var currentUserStore: CurrentUserStore
     @StateObject private var chatBadge = ChatBadgeViewModel()
+    @StateObject private var activityBadge = LikesBadgeViewModel()
     @State private var routedProfileUserId: String?
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
-            NowPlayingView()
-                .tabItem {
-                    Label("Now", systemImage: "music.note")
-                }
-                .tag(AppRouter.Tab.now)
-
             DiscoverView()
                 .tabItem {
                     Label("Discover", systemImage: "dot.radiowaves.left.and.right")
                 }
                 .tag(AppRouter.Tab.discover)
 
-            ChatInboxView()
+            NowPlayingView()
                 .tabItem {
-                    Label("Chats", systemImage: "message")
+                    Label("Live", systemImage: "music.note")
                 }
-                .badge(chatBadge.unreadCount)
+                .tag(AppRouter.Tab.now)
+
+            InboxView()
+                .tabItem {
+                    Label("Inbox", systemImage: "tray")
+                }
+                .badge(chatBadge.unreadCount + activityBadge.unreadCount)
                 .tag(AppRouter.Tab.chats)
 
             NavigationStack {
@@ -45,12 +47,20 @@ struct MainView: View {
             router.pendingProfileUserId = nil
             routedProfileUserId = userId
         }
+        .onChange(of: currentUserStore.user?.uid) { _, uid in
+            activityBadge.stopListening()
+            if let uid { activityBadge.startListening(userId: uid) }
+        }
         .onAppear {
             chatBadge.startListening()
+            if let uid = currentUserStore.user?.uid { activityBadge.startListening(userId: uid) }
             // First time the user reaches the main app (after onboarding) is
             // the right moment to ask for notifications, not at cold launch.
             Task { await BroadcastNotificationService.requestPermissionIfNeeded() }
         }
-        .onDisappear { chatBadge.stopListening() }
+        .onDisappear {
+            chatBadge.stopListening()
+            activityBadge.stopListening()
+        }
     }
 }

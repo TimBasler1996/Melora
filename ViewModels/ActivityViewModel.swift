@@ -61,6 +61,8 @@ final class ActivityViewModel: ObservableObject {
         followingListener?.remove()
     }
 
+    var myUserId: String? { Auth.auth().currentUser?.uid }
+
     func isNew(_ item: ActivityItem) -> Bool {
         guard let seen = lastSeenDate else { return true }
         return item.date > seen
@@ -141,7 +143,9 @@ final class ActivityViewModel: ObservableObject {
         let now = Date()
         UserDefaults.standard.set(now, forKey: likesSeenKey)
         UserDefaults.standard.set(now, forKey: followersSeenKey)
-        // Keep the current "New" section until the next visit.
+        // Keep the current "New" section until the next visit; tell the tab
+        // badge to recount.
+        NotificationCenter.default.post(name: .activitySeen, object: nil)
     }
 
     // MARK: - Follow back
@@ -224,4 +228,10 @@ final class ActivityViewModel: ObservableObject {
             }
         }
     }
+}
+
+extension Notification.Name {
+    /// Posted when the Activity feed was viewed; badges recount from the
+    /// stored "last seen" dates.
+    static let activitySeen = Notification.Name("melora.activitySeen")
 }

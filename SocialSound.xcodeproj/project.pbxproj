@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		23CCD0940CB341038D4A7E2F /* ActivityButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780D0BB0FC01404BA4BD94E8 /* ActivityButton.swift */; };
+		56E7E7828C4D4A0F9400F1C6 /* InboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118806D3FA7C4BC88DCB0F6B /* InboxView.swift */; };
 		4CC8BE5FA3DC44648A2E5D83 /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF476DD03EC4BF4A904FF08 /* ActivityView.swift */; };
 		0698200E6376485D86E6B9D5 /* ActivityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E98E132E3473481B8A103FB2 /* ActivityViewModel.swift */; };
 		37F3896CA94D43B593651D27 /* LegalLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB05F36BE7BE4FD58CA1BC8A /* LegalLinks.swift */; };
@@ -83,7 +83,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		780D0BB0FC01404BA4BD94E8 /* ActivityButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityButton.swift; sourceTree = "<group>"; };
+		118806D3FA7C4BC88DCB0F6B /* InboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxView.swift; sourceTree = "<group>"; };
 		9EF476DD03EC4BF4A904FF08 /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
 		E98E132E3473481B8A103FB2 /* ActivityViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityViewModel.swift; sourceTree = "<group>"; };
 		EB05F36BE7BE4FD58CA1BC8A /* LegalLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegalLinks.swift; sourceTree = "<group>"; };
@@ -361,6 +361,7 @@
 			isa = PBXGroup;
 			children = (
 				759F7AF92EC77D5B0012A549 /* MainView.swift */,
+				118806D3FA7C4BC88DCB0F6B /* InboxView.swift */,
 				75DAD87A2F20EBE900D1219E /* NowPlayingView.swift */,
 				9EF476DD03EC4BF4A904FF08 /* ActivityView.swift */,
 			);
@@ -447,7 +448,6 @@
 			isa = PBXGroup;
 			children = (
 				753AD78B2F2CC12500521CF9 /* SharedProfilePreviewView.swift */,
-				780D0BB0FC01404BA4BD94E8 /* ActivityButton.swift */,
 				79A1C0052F30000300112233 /* CitySearchField.swift */,
 				A1C2D3EB2F60000100SPLNK1 /* SpotifyLinkCard.swift */,
 			);
@@ -567,7 +567,6 @@
 				78B0C1B12F20000100112233 /* OnboardingStepPhotosView.swift in Sources */,
 				75834A902F0D8F0C008C51F8 /* ChatApiService.swift in Sources */,
 				753AD78C2F2CC12500521CF9 /* SharedProfilePreviewView.swift in Sources */,
-				23CCD0940CB341038D4A7E2F /* ActivityButton.swift in Sources */,
 				75DAD8772F20E80500D1219E /* OnboardingStepSpotifyView.swift in Sources */,
 				7210DF7946B441C7AECBE56C /* OnboardingWelcomeView.swift in Sources */,
 				0F55817B66D8415D8C9BC878 /* OnboardingStepAccountView.swift in Sources */,
@@ -616,6 +615,7 @@
 				0698200E6376485D86E6B9D5 /* ActivityViewModel.swift in Sources */,
 				759F7B172EC78DB70012A549 /* SpotifyAuthManager.swift in Sources */,
 				759F7AFE2EC781A70012A549 /* MainView.swift in Sources */,
+				56E7E7828C4D4A0F9400F1C6 /* InboxView.swift in Sources */,
 				75F1A0022F5B000100ABC001 /* ChatBadgeViewModel.swift in Sources */,
 				75F1A0062F5B000100ABC003 /* SettingsContentView.swift in Sources */,
 				E603DAB4923243B39C049CF5 /* HiddenAndBlockedView.swift in Sources */,

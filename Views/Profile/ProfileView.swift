@@ -129,11 +129,6 @@ struct ProfileView: View {
 
             Spacer()
 
-            if let me = currentUserStore.user {
-                ActivityButton(user: me, tab: .profile)
-                    .padding(.trailing, 8)
-            }
-
             Button { showSettings = true } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 18, weight: .semibold))

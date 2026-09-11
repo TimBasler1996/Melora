@@ -52,16 +52,11 @@ struct NowPlayingView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Now Playing")
+                    Text("Live")
                         .font(AppFonts.headline())
                         .foregroundColor(AppColors.primaryText)
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
-                    if let user = currentUserStore.user {
-                        ActivityButton(user: user, tab: .now)
-                    }
-                }
             }
         }
         .onAppear {

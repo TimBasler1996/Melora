@@ -14,9 +14,9 @@ SocialSound is an iOS app built with SwiftUI.
 - Spotify integration (PKCE, connected during onboarding or later)
 
 ## Navigation
-Bottom tab bar: Now · Discover · Chats · Profile. Every tab has the Activity
-bell (likes and new followers) in its top bar, and every avatar or name
-opens the person's profile.
+Bottom tab bar: Discover (home, with a Go live banner) · Live (player and
+the live toggle) · Inbox (Messages | Activity, one badge) · Profile. Every
+avatar or name opens the person's profile.
 
 ## The social loop
 Three verbs, each with one meaning:

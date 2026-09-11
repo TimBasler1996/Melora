@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 55 items — P0 14 · P1 22 · P2 15 · P3 4 · done 52
+Totals: 56 items — P0 15 · P1 22 · P2 15 · P3 4 · done 53
 
 ## Your to-dos (need the project owner)
 
@@ -24,7 +24,7 @@ Totals: 55 items — P0 14 · P1 22 · P2 15 · P3 4 · done 52
 - **UX-16** Define and show what a declined request looks like to the sender — Decided: the sender is never told about a decline. Declined pairs can't like or message again; they see 'You've already reached out to X'. Update: likes no longer need an answer; declines only exist for message requests.
 - **UX-27** Reconsider asking for a last name — Decided: keep last name for now (used in the denormalised display name); revisit with the card redesign.
 - **UX-31** Server-side nearby notifications — Decided: later. Locations are now fuzzed to a ~275 m grid, which makes a server-side matcher acceptable when it is built.
-- **UX-54** One social loop: like, follow, message — Decided: no accept/decline for likes any more (the per-track like list with Accept/Decline is gone). Message requests stay in Chats. Followers and likes share one timeline.
+- **UX-54** One social loop: like, follow, message — Decided: no accept/decline for likes any more (the per-track like list with Accept/Decline is gone). Message requests stay in Chats. Followers and likes share one timeline. Second pass: no bells at all, one Inbox tab; Discover first.
 
 ## Suggested order of work
 
@@ -186,8 +186,8 @@ _Both sides of an interaction need to see the same truth at every step._
 
 - **Problem:** Likes had to be accepted, message requests lived in Chats, followers in a tab of the likes inbox, and the inbox was only reachable from the Now tab. Nobody could tell where an action would show up.
 - **Fix:** Three verbs, each with one meaning: Like = react to a track (no acceptance, just a signal). Follow = see when someone goes live. Message = reaches the other person as a request; the first reply opens the chat. One Activity feed (bell) shows likes and new followers as a timeline and points to waiting message requests; requests are answered in Chats.
-- **Needs:** Decided: no accept/decline for likes any more (the per-track like list with Accept/Decline is gone). Message requests stay in Chats. Followers and likes share one timeline.
-- **Progress:** ActivityView + ActivityViewModel replace the likes inbox, followers tab and per-track detail; ActivityButton (bell with badge) sits on Now, Discover, Chats and Profile; the Likes stat and push taps open the same feed.
+- **Needs:** Decided: no accept/decline for likes any more (the per-track like list with Accept/Decline is gone). Message requests stay in Chats. Followers and likes share one timeline. Second pass: no bells at all, one Inbox tab; Discover first.
+- **Progress:** Inbox tab (Messages | Activity) with one badge replaces the bells; Discover is the home tab with a Go live banner on top; Live tab holds the player; like rows offer Say hi, follow rows Follow back.
 
 ### UX-55 · Profiles reachable from everywhere, with Follow and Message on them
 
@@ -196,6 +196,14 @@ _Both sides of an interaction need to see the same truth at every step._
 - **Problem:** A profile could only be opened from the Discover card. In a chat, in the likes inbox, in search results or in follower lists there was no way to see who you were dealing with.
 - **Fix:** Every avatar or name opens the profile: chat header, Activity rows, follower lists, Find People rows, Discover card. The profile carries Follow and Message side by side; Message opens the chat even when none exists yet (the first message becomes a request).
 - **Progress:** UserProfilePreviewView has the Follow + Message row; ChatView has a new-chat mode (Say hi) that creates the request with the first message and shows the peer in the header; the chat header opens the profile.
+
+### UX-56 · Home is where the people are: Discover first, Go live one tap away
+
+**P0 · before launch** · effort medium (2–4 days) · **Done**
+
+- **Problem:** The app opened on the Spotify player. The first thing a returning user wants is to see who is around and whether anything happened; the second is to go live. Both were a tab away.
+- **Fix:** Discover is the first tab and the default. A banner at its top shows your state (connect Spotify / go live / you're live with track) and jumps to the Live tab. The Inbox tab carries one badge for messages and activity.
+- **Progress:** Done.
 
 ### UX-19 · Make the Likes inbox reachable from Profile and Chats
 

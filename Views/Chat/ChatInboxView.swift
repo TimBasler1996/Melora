@@ -18,27 +18,17 @@ struct ChatInboxView: View {
     /// Requests list pushed from the Activity feed.
     @State private var showRequests = false
 
+    /// Lives inside `InboxView`'s navigation stack (Messages segment).
     var body: some View {
-        NavigationStack {
+        Group {
             ZStack {
                 content
             }
-            .melScreenBackground()
-            .navigationTitle("Chats")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .navigationDestination(item: $routedConversationId) { conversationId in
                 ChatView(conversationId: conversationId)
             }
             .navigationDestination(isPresented: $showRequests) {
                 ChatRequestsView(vm: vm)
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    if let me = currentUserStore.user {
-                        ActivityButton(user: me, tab: .chats)
-                    }
-                }
             }
             .onAppear {
                 vm.startListening()

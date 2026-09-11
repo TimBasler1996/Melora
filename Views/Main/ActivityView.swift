@@ -1,36 +1,17 @@
 import SwiftUI
 
-/// The one place for everything that happened to you: likes on tracks you
-/// played, new followers, and a pointer to waiting message requests.
-/// Every row opens the person's profile.
+/// The Activity segment of the Inbox tab: likes on tracks you played, new
+/// followers, and a pointer to waiting message requests. Every row opens
+/// the person's profile; every row offers the next step (say hi, follow back).
 struct ActivityView: View {
 
     @StateObject private var vm = ActivityViewModel()
     @StateObject private var chats = ChatInboxViewModel()
     @EnvironmentObject private var router: AppRouter
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
             content
-        }
-        .melScreenBackground()
-        .navigationTitle("Activity")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 32, height: 32)
-                        .background(Circle().fill(AppColors.surfaceElevated))
-                }
-                .accessibilityLabel("Close")
-            }
         }
         .alert(
             "Couldn’t do that",
@@ -139,7 +120,6 @@ struct ActivityView: View {
     /// Message requests are answered in Chats; this row just gets you there.
     private func requestsRow(count: Int) -> some View {
         Button {
-            dismiss()
             router.openMessageRequests()
         } label: {
             HStack(spacing: 12) {
@@ -177,6 +157,7 @@ struct ActivityView: View {
                 item: item,
                 isNew: vm.isNew(item),
                 isFollowing: vm.isFollowing(item.userId),
+                myUserId: vm.myUserId,
                 onFollow: { Task { await vm.toggleFollow(item.userId) } }
             )
         }
@@ -190,6 +171,7 @@ private struct ActivityRow: View {
     let item: ActivityItem
     let isNew: Bool
     let isFollowing: Bool
+    let myUserId: String?
     let onFollow: () -> Void
 
     var body: some View {
@@ -202,9 +184,19 @@ private struct ActivityRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 text
                     .lineLimit(2)
-                Text(ChatInboxRowView.relativeLabel(for: item.date))
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.4))
+                HStack(spacing: 6) {
+                    if case .like(_, let artist, _) = item.kind, !artist.isEmpty {
+                        Text(artist)
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.55))
+                            .lineLimit(1)
+                        Text("·")
+                            .foregroundColor(.white.opacity(0.4))
+                    }
+                    Text(ChatInboxRowView.relativeLabel(for: item.date))
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.4))
+                }
             }
 
             Spacer(minLength: 8)
@@ -237,11 +229,28 @@ private struct ActivityRow: View {
         }
     }
 
+    /// The next step, right on the row: a like invites a hello, a follow
+    /// invites a follow back.
     @ViewBuilder
     private var trailing: some View {
         switch item.kind {
-        case .like(_, _, let artworkURL):
-            artwork(artworkURL)
+        case .like:
+            if let myUserId {
+                NavigationLink {
+                    ChatView(
+                        conversationId: ChatApiService.shared.conversationId(for: myUserId, and: item.userId),
+                        peerUserId: item.userId
+                    )
+                } label: {
+                    Text("Say hi")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Capsule().fill(AppColors.primary))
+                }
+                .buttonStyle(.plain)
+            }
         case .follow:
             Button(action: onFollow) {
                 Text(isFollowing ? "Following" : "Follow back")
@@ -290,22 +299,4 @@ private struct ActivityRow: View {
         }
     }
 
-    private func artwork(_ urlString: String?) -> some View {
-        Group {
-            if let urlString, let url = URL(string: urlString) {
-                AsyncImage(url: url) { phase in
-                    if case .success(let image) = phase {
-                        image.resizable().scaledToFill()
-                    } else {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppColors.surface)
-                    }
-                }
-            } else {
-                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(AppColors.surface)
-                    .overlay(Image(systemName: "music.note").foregroundColor(.white.opacity(0.4)))
-            }
-        }
-        .frame(width: 44, height: 44)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
 }

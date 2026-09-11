@@ -8,6 +8,8 @@ struct DiscoverView: View {
     @EnvironmentObject private var currentUserStore: CurrentUserStore
     @EnvironmentObject private var locationService: LocationService
     @EnvironmentObject private var router: AppRouter
+    @EnvironmentObject private var broadcast: BroadcastManager
+    @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
 
     @State private var showUserSearch = false
     @State private var expandedCardId: String?
@@ -25,6 +27,7 @@ struct DiscoverView: View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 VStack(spacing: 0) {
+                    goLiveBanner
                     modePickerBar
                     locationBar
                     content
@@ -41,11 +44,6 @@ struct DiscoverView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    if let me = currentUserStore.user {
-                        ActivityButton(user: me, tab: .discover)
-                    }
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showUserSearch = true
@@ -133,6 +131,66 @@ struct DiscoverView: View {
     }
 
     // MARK: - Top controls
+
+    // MARK: - Go live banner
+
+    /// The contribution action lives on the home screen: one tap from
+    /// looking at people to being seen by them.
+    private var goLiveBanner: some View {
+        Button {
+            router.goLive()
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(broadcast.isBroadcasting ? AppColors.live.opacity(0.2) : AppColors.primary.opacity(0.2))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: broadcast.isBroadcasting ? "dot.radiowaves.left.and.right" : "music.note")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(broadcast.isBroadcasting ? AppColors.live : .white)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(goLiveTitle)
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    Text(goLiveSubtitle)
+                        .font(AppFonts.footnote())
+                        .foregroundColor(.white.opacity(0.65))
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                Text(broadcast.isBroadcasting ? "Manage" : "Go live")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(broadcast.isBroadcasting ? AppColors.surfaceElevated : AppColors.live))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .melCard(cornerRadius: 14)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, AppLayout.screenPadding)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
+    }
+
+    private var goLiveTitle: String {
+        if broadcast.isBroadcasting {
+            return broadcast.currentTrack.map { "You’re live · \($0.title)" } ?? "You’re live"
+        }
+        return spotifyAuth.isAuthorized ? "Share what you’re playing" : "Connect Spotify to go live"
+    }
+
+    private var goLiveSubtitle: String {
+        if broadcast.isBroadcasting { return "People nearby can see your track" }
+        return spotifyAuth.isAuthorized ? "Go live and show up here for people nearby" : "Takes a minute, then you’re on the map"
+    }
 
     private var modePickerBar: some View {
         Picker("Mode", selection: $viewModel.discoverMode) {

@@ -22,6 +22,7 @@ final class LikesBadgeViewModel: ObservableObject {
     deinit {
         likesListener?.remove()
         followersListener?.remove()
+        if let seenObserver { NotificationCenter.default.removeObserver(seenObserver) }
     }
 
     private let lastSeenKey = "LikesInboxView_lastSeenDate"
@@ -38,6 +39,9 @@ final class LikesBadgeViewModel: ObservableObject {
 
     private var unreadLikes: Int = 0
     private var unreadFollowers: Int = 0
+    private var likeDates: [Date] = []
+    private var followDates: [Date] = []
+    private var seenObserver: NSObjectProtocol?
 
     // MARK: - Public
 
@@ -68,8 +72,7 @@ final class LikesBadgeViewModel: ObservableObject {
                 return
             }
 
-            let seen = self.lastSeenDate
-            let unread = docs.compactMap { doc -> Date? in
+            self.likeDates = docs.compactMap { doc -> Date? in
                 let data = doc.data()
                 // Likes with a message belong in the Chat tab; exclude them
                 // so the Likes badge only reflects pure likes.
@@ -80,14 +83,7 @@ final class LikesBadgeViewModel: ObservableObject {
                 if let date = data["createdAt"] as? Date { return date }
                 return nil
             }
-            .filter { likeDate in
-                guard let seen else { return true }
-                return likeDate > seen
-            }
-            .count
-
-            self.unreadLikes = unread
-            self.updateCombinedCount()
+            self.recount()
         }
 
         // Followers listener
@@ -112,22 +108,30 @@ final class LikesBadgeViewModel: ObservableObject {
                 return
             }
 
-            let seen = self.lastSeenFollowersDate
-            let unread = docs.compactMap { doc -> Date? in
+            self.followDates = docs.compactMap { doc -> Date? in
                 let data = doc.data()
                 if let ts = data["createdAt"] as? Timestamp { return ts.dateValue() }
                 if let date = data["createdAt"] as? Date { return date }
                 return nil
             }
-            .filter { followDate in
-                guard let seen else { return true }
-                return followDate > seen
-            }
-            .count
-
-            self.unreadFollowers = unread
-            self.updateCombinedCount()
+            self.recount()
         }
+
+        // The Activity feed marks things seen; recount without a new snapshot.
+        seenObserver = NotificationCenter.default.addObserver(
+            forName: .activitySeen, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in self?.recount() }
+        }
+    }
+
+    /// Unseen = newer than the stored "last seen" dates.
+    private func recount() {
+        let likesSeen = lastSeenDate
+        let followersSeen = lastSeenFollowersDate
+        unreadLikes = likeDates.filter { likesSeen.map { seen in $0 > seen } ?? true }.count
+        unreadFollowers = followDates.filter { followersSeen.map { seen in $0 > seen } ?? true }.count
+        updateCombinedCount()
     }
 
     func stopListening() {
@@ -135,6 +139,8 @@ final class LikesBadgeViewModel: ObservableObject {
         likesListener = nil
         followersListener?.remove()
         followersListener = nil
+        if let seenObserver { NotificationCenter.default.removeObserver(seenObserver) }
+        seenObserver = nil
         isListening = false
     }
 

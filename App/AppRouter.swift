@@ -8,21 +8,30 @@ import Combine
 @MainActor
 final class AppRouter: ObservableObject {
 
+    /// Tab order on screen: Discover (home), Live, Inbox, Profile. The case
+    /// names predate the labels.
     enum Tab: Hashable {
         case now, discover, chats, profile
     }
 
+    enum InboxSection: String, CaseIterable, Identifiable {
+        case messages = "Messages"
+        case activity = "Activity"
+        var id: String { rawValue }
+    }
+
     static let shared = AppRouter()
 
-    @Published var selectedTab: Tab = .now
+    /// Discover is home: opening the app shows who is live around you.
+    @Published var selectedTab: Tab = .discover
+
+    /// Which half of the Inbox tab is showing.
+    @Published var inboxSection: InboxSection = .messages
 
     /// Conversation the Chats tab should push as soon as it is on screen.
     @Published var pendingConversationId: String?
 
-    /// Ask the visible tab to present the Activity feed (likes, followers).
-    @Published var showActivity: Bool = false
-
-    /// Ask the Chats tab to show the message requests list.
+    /// Ask the Inbox tab to push the message requests list.
     @Published var showMessageRequests: Bool = false
 
     /// Profile the Profile tab should push (e.g. a new follower).
@@ -37,14 +46,14 @@ final class AppRouter: ObservableObject {
         pendingConversationId = conversationId
     }
 
-    /// The bell on whichever tab is selected answers this, so the feed
-    /// always opens on screen.
     func openActivity() {
-        showActivity = true
+        selectedTab = .chats
+        inboxSection = .activity
     }
 
     func openMessageRequests() {
         selectedTab = .chats
+        inboxSection = .messages
         showMessageRequests = true
     }
 
