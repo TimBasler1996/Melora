@@ -38,6 +38,9 @@ Presence:
 - `deletionRequestedAt`: Timestamp — set by the app when the user deletes
   their profile; the `onUserWritten` function then removes the user doc,
   photos, follows, blocks, broadcast, conversations and the auth user
+- `spotifyTaste`: { topArtists, topTracks, playlists: [{ id, name, subtitle?,
+  imageURL?, url? }], updatedAt } — copied from Spotify by the app at most
+  once a day (public playlists only); shown as "Music taste" on the profile
 - `notifyLikes`, `notifyMessages`, `notifyFollowers`: Bool — mirrored from
   Settings; missing means enabled. Cloud Functions skip the push when false.
 

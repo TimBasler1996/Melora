@@ -117,6 +117,9 @@ struct DiscoverView: View {
             }
             .onAppear {
                 guard !isRunningInPreview else { return }
+                // Discover is the first screen: make sure the banner knows
+                // whether Spotify is connected before anyone visits Live.
+                spotifyAuth.refreshAuthorizationSilently()
                 locationService.requestAuthorizationIfNeeded()
                 viewModel.updateCurrentLocation(locationService.currentLocationPoint)
                 viewModel.startListening()
@@ -159,9 +162,9 @@ struct DiscoverView: View {
                         .font(AppFonts.footnote())
                         .foregroundColor(.white.opacity(0.65))
                         .lineLimit(1)
+                        .truncationMode(.tail)
                 }
-
-                Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(broadcast.isBroadcasting ? "Manage" : "Go live")
                     .font(.system(size: 13, weight: .bold, design: .rounded))
@@ -181,14 +184,17 @@ struct DiscoverView: View {
     }
 
     private var goLiveTitle: String {
-        if broadcast.isBroadcasting {
-            return broadcast.currentTrack.map { "You’re live · \($0.title)" } ?? "You’re live"
-        }
+        if broadcast.isBroadcasting { return "You’re live" }
         return spotifyAuth.isAuthorized ? "Share what you’re playing" : "Connect Spotify to go live"
     }
 
     private var goLiveSubtitle: String {
-        if broadcast.isBroadcasting { return "People nearby can see your track" }
+        if broadcast.isBroadcasting {
+            if let track = broadcast.currentTrack {
+                return track.artist.isEmpty ? track.title : "\(track.title) · \(track.artist)"
+            }
+            return "People nearby can see your track"
+        }
         return spotifyAuth.isAuthorized ? "Go live and show up here for people nearby" : "Takes a minute, then you’re on the map"
     }
 

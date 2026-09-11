@@ -89,6 +89,8 @@ enum SpotifyAPIError: Error {
     case noTrackPlaying
     case invalidResponse
     case noActiveDevice
+    /// 403 with the stored login: it predates a scope we now need.
+    case insufficientScope
 }
 
 struct NowPlayingState: Equatable {
@@ -268,6 +270,93 @@ final class SpotifyService {
         }
 
         return try JSONDecoder().decode(SpotifyUserProfile.self, from: data)
+    }
+
+    // MARK: - Taste (top artists, top tracks, playlists)
+
+    private struct SpotifyPage<T: Decodable>: Decodable { let items: [T] }
+    private struct SpotifyArtistDTO: Decodable {
+        let id: String
+        let name: String
+        let images: [SpotifyImage]?
+        let external_urls: [String: String]?
+    }
+    private struct SpotifyAlbumDTO: Decodable { let images: [SpotifyImage]? }
+    private struct SpotifyTrackDTO: Decodable {
+        let id: String
+        let name: String
+        let artists: [SpotifyArtistDTO]
+        let album: SpotifyAlbumDTO?
+        let external_urls: [String: String]?
+    }
+    private struct SpotifyPlaylistDTO: Decodable {
+        struct Tracks: Decodable { let total: Int? }
+        let id: String
+        let name: String
+        let images: [SpotifyImage]?
+        let external_urls: [String: String]?
+        let tracks: Tracks?
+        let `public`: Bool?
+    }
+
+    /// Needs the `user-top-read` scope.
+    func fetchTopArtists(limit: Int) async throws -> [SpotifyTaste.Item] {
+        let page: SpotifyPage<SpotifyArtistDTO> = try await getJSON(path: "me/top/artists", query: ["limit": "\(limit)", "time_range": "medium_term"])
+        return page.items.map {
+            SpotifyTaste.Item(id: $0.id, name: $0.name, subtitle: nil, imageURL: $0.images?.first?.url, url: $0.external_urls?["spotify"])
+        }
+    }
+
+    /// Needs the `user-top-read` scope.
+    func fetchTopTracks(limit: Int) async throws -> [SpotifyTaste.Item] {
+        let page: SpotifyPage<SpotifyTrackDTO> = try await getJSON(path: "me/top/tracks", query: ["limit": "\(limit)", "time_range": "medium_term"])
+        return page.items.map {
+            SpotifyTaste.Item(
+                id: $0.id,
+                name: $0.name,
+                subtitle: $0.artists.map(\.name).joined(separator: ", "),
+                imageURL: $0.album?.images?.first?.url,
+                url: $0.external_urls?["spotify"]
+            )
+        }
+    }
+
+    /// Public playlists only, so nothing private leaks onto the profile.
+    func fetchMyPlaylists(limit: Int) async throws -> [SpotifyTaste.Item] {
+        let page: SpotifyPage<SpotifyPlaylistDTO> = try await getJSON(path: "me/playlists", query: ["limit": "\(max(limit, 20))"])
+        return page.items
+            .filter { $0.public ?? false }
+            .prefix(limit)
+            .map {
+                let count = $0.tracks?.total ?? 0
+                return SpotifyTaste.Item(
+                    id: $0.id,
+                    name: $0.name,
+                    subtitle: count == 1 ? "1 song" : "\(count) songs",
+                    imageURL: $0.images?.first?.url,
+                    url: $0.external_urls?["spotify"]
+                )
+            }
+    }
+
+    private func getJSON<T: Decodable>(path: String, query: [String: String]) async throws -> T {
+        let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
+        var components = URLComponents(url: apiBaseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
+        guard let url = components.url else { throw SpotifyAPIError.invalidResponse }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw SpotifyAPIError.invalidResponse }
+        if http.statusCode == 403 { throw SpotifyAPIError.insufficientScope }
+        guard (200..<300).contains(http.statusCode) else {
+            print("❌ Spotify /\(path) HTTP \(http.statusCode): \(String(data: data, encoding: .utf8) ?? "")")
+            throw SpotifyAPIError.invalidResponse
+        }
+        return try JSONDecoder().decode(T.self, from: data)
     }
 
     // MARK: - Player Controls

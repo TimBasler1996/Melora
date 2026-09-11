@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 56 items — P0 15 · P1 22 · P2 15 · P3 4 · done 53
+Totals: 57 items — P0 15 · P1 23 · P2 15 · P3 4 · done 54
 
 ## Your to-dos (need the project owner)
 
@@ -358,6 +358,15 @@ _Editing must never lose work or lock the user out._
 - **Problem:** 'Profile not found.' or 'No Firebase user.' appear as body text with no way forward.
 - **Fix:** Human copy plus a Retry button; hide the mode picker while nothing is loaded.
 - **Progress:** Other profiles: friendly "Check your connection" copy with Retry; follow failures show an alert instead of silently reverting.
+
+### UX-57 · Show real music taste on profiles: top artists, top tracks, playlists
+
+**P1 · next** · effort medium (2–4 days) · **Done**
+
+- **Problem:** A profile said nothing about what the person listens to beyond the one track they happen to play live. Music is the whole point of the app.
+- **Fix:** Sync top artists, top tracks and public playlists from Spotify into the user document (max once a day) and show them as a Music taste card on every profile; items open in Spotify.
+- **Needs:** Needs the user-top-read and playlist-read-private scopes: existing logins must reconnect once (Settings shows the button). Private playlists are never shown.
+- **Progress:** SpotifyTaste model, SpotifyTasteSync (launch, after connect, manual refresh in Settings), MusicTasteCard in the shared profile view.
 
 ### UX-37 · Read-only birthday row in the editor
 

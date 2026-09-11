@@ -86,6 +86,8 @@ struct SocialSoundApp: App {
 
         currentUserStore.startListening()
         broadcast.reconcileAfterLaunch()
+        // Keep the profile's music taste fresh (at most once a day).
+        Task { await SpotifyTasteSync.syncIfNeeded() }
     }
 }
 

@@ -22,6 +22,7 @@ struct UserProfile: Identifiable, Equatable {
     var countryCode: String?
     var spotifyAvatarURL: String?
     var spotifyDisplayName: String?
+    var spotifyTaste: SpotifyTaste?
 
     var profileCompleted: Bool
 
@@ -95,6 +96,7 @@ struct UserProfile: Identifiable, Equatable {
             countryCode: stringValue("countryCode"),
             spotifyAvatarURL: stringValue("spotifyAvatarURL") ?? stringValue("avatarURL"),
             spotifyDisplayName: stringValue("spotifyDisplayName") ?? stringValue("displayName"),
+            spotifyTaste: SpotifyTaste.fromFirestore(data["spotifyTaste"]),
             profileCompleted: boolValue("profileCompleted")
         )
     }

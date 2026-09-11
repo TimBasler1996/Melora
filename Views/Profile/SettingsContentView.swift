@@ -121,6 +121,20 @@ struct SettingsContentView: View {
                         .buttonStyle(.bordered)
                         .tint(AppColors.primary)
                     }
+
+                    if SpotifyTasteSync.needsReconnect {
+                        Button {
+                            spotifyAuth.reconnect()
+                        } label: {
+                            Label("Reconnect to show your music taste", systemImage: "arrow.clockwise")
+                        }
+                    } else {
+                        Button {
+                            Task { await SpotifyTasteSync.syncIfNeeded(force: true) }
+                        } label: {
+                            Label("Refresh music taste on my profile", systemImage: "arrow.clockwise")
+                        }
+                    }
                 } else {
                     Button {
                         spotifyAuth.ensureAuthorized()
@@ -132,7 +146,9 @@ struct SettingsContentView: View {
                 Text("Spotify")
             } footer: {
                 Text(spotifyAuth.isAuthorized
-                     ? "Going live shares what you’re playing on Spotify."
+                     ? (SpotifyTasteSync.needsReconnect
+                        ? "Your Spotify login is from before profiles showed top artists and playlists. Reconnect once to turn that on."
+                        : "Going live shares what you’re playing. Your top artists, top tracks and public playlists show on your profile.")
                      : "Connect Spotify to go live and share what you’re playing.")
             }
 
@@ -275,6 +291,9 @@ struct SettingsContentView: View {
                  : "You won’t be able to go live until you reconnect.")
         }
         .task { await refreshNotificationStatus() }
+        .onChange(of: spotifyAuth.isAuthorized) { _, connected in
+            if connected { Task { await SpotifyTasteSync.syncIfNeeded(force: true) } }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await refreshNotificationStatus() } }
         }

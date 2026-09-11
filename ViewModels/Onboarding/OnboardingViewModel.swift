@@ -188,6 +188,8 @@ final class OnboardingViewModel: ObservableObject {
             )
 
             spotifyConnected = true
+            // Fresh login has every scope: fill the profile's music taste now.
+            await SpotifyTasteSync.syncIfNeeded(force: true)
         } catch SpotifyLoginError.cancelled {
             // The user closed the Spotify sheet; nothing to explain.
             spotifyErrorMessage = nil

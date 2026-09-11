@@ -39,7 +39,10 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
         "user-read-private",
         "user-read-playback-state",
         "user-modify-playback-state",
-        "user-read-currently-playing"
+        "user-read-currently-playing",
+        // Profile: top artists, top tracks, public playlists.
+        "user-top-read",
+        "playlist-read-private"
     ].joined(separator: " ")
 
     private var authSession: ASWebAuthenticationSession?
@@ -101,6 +104,12 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
         Task {
             _ = try? await getValidAccessToken()
         }
+    }
+
+    /// Forget the stored login and ask again (e.g. after new scopes).
+    func reconnect() {
+        disconnect()
+        startAuthFlow()
     }
 
     func disconnect() {

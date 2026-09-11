@@ -164,7 +164,8 @@ struct ProfileView: View {
                     followerCount: followerCount,
                     broadcastMinutes: currentUserStore.user?.broadcastMinutesTotal,
                     likesReceivedCount: likesReceivedCount,
-                    userId: profile.uid
+                    userId: profile.uid,
+                    taste: profile.spotifyTaste
                 )
                 SharedProfilePreviewView(
                     data: previewData,

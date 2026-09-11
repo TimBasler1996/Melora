@@ -39,6 +39,8 @@ struct AppUser: Identifiable, Codable, Equatable {
     var hometown: String?
     var musicTaste: String?
     var lookingFor: String?
+    /// Top artists, tracks and public playlists copied from Spotify.
+    var spotifyTaste: SpotifyTaste?
 
     // MARK: - Photos
 
@@ -74,6 +76,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         hometown: String? = nil,
         musicTaste: String? = nil,
         lookingFor: String? = nil,
+        spotifyTaste: SpotifyTaste? = nil,
         countryCode: String? = nil,
         gender: String? = nil,
         firstName: String? = nil,
@@ -101,6 +104,7 @@ struct AppUser: Identifiable, Codable, Equatable {
         self.hometown = hometown
         self.musicTaste = musicTaste
         self.lookingFor = lookingFor
+        self.spotifyTaste = spotifyTaste
         self.countryCode = countryCode
         self.gender = gender
 
@@ -251,6 +255,7 @@ struct AppUser: Identifiable, Codable, Equatable {
             hometown: stringValue("hometown"),
             musicTaste: stringValue("musicTaste"),
             lookingFor: stringValue("lookingFor"),
+            spotifyTaste: SpotifyTaste.fromFirestore(data["spotifyTaste"]),
             countryCode: stringValue("countryCode"),
             gender: stringValue("gender"),
             firstName: firstName,

@@ -23,6 +23,9 @@ struct ProfilePreviewData: Equatable {
     /// their followers list. `nil` disables that interaction.
     var userId: String? = nil
 
+    /// Top artists, tracks and playlists from Spotify, when synced.
+    var taste: SpotifyTaste? = nil
+
     var spotifyProfileURL: URL? {
         guard let id = spotifyId?.trimmingCharacters(in: .whitespacesAndNewlines), !id.isEmpty else {
             return nil
@@ -50,7 +53,8 @@ struct ProfilePreviewData: Equatable {
             followerCount: nil,
             broadcastMinutes: nil,
             likesReceivedCount: nil,
-            userId: userProfile.uid
+            userId: userProfile.uid,
+            taste: userProfile.spotifyTaste
         )
     }
 
@@ -80,7 +84,8 @@ struct ProfilePreviewData: Equatable {
             followerCount: followerCount,
             broadcastMinutes: appUser.broadcastMinutesTotal,
             likesReceivedCount: likesReceivedCount,
-            userId: appUser.uid
+            userId: appUser.uid,
+            taste: appUser.spotifyTaste
         )
     }
 }
@@ -100,6 +105,10 @@ struct SharedProfilePreviewView: View {
         VStack(spacing: 16) {
             heroSection
             infoCard
+
+            if let taste = data.taste, !taste.isEmpty {
+                MusicTasteCard(taste: taste)
+            }
 
             if !data.additionalPhotoURLs.isEmpty {
                 photosStack
@@ -538,5 +547,136 @@ final class FollowersListViewModel: ObservableObject {
                 continuation.resume(with: result)
             }
         }
+    }
+}
+
+// MARK: - Music taste
+
+/// What someone actually listens to: their Spotify top artists, top tracks
+/// and public playlists. Tapping opens Spotify.
+struct MusicTasteCard: View {
+    let taste: SpotifyTaste
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Music taste")
+                .font(AppFonts.sectionTitle())
+                .foregroundColor(AppColors.primaryText)
+
+            if !taste.topArtists.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    caption("Top artists")
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 14) {
+                            ForEach(taste.topArtists) { artist in
+                                Button { open(artist) } label: {
+                                    VStack(spacing: 6) {
+                                        image(artist.imageURL, size: 56, circle: true)
+                                        Text(artist.name)
+                                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                                            .foregroundColor(AppColors.primaryText)
+                                            .lineLimit(1)
+                                            .frame(width: 64)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !taste.topTracks.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    caption("On repeat")
+                    ForEach(taste.topTracks.prefix(3)) { track in
+                        Button { open(track) } label: {
+                            HStack(spacing: 10) {
+                                image(track.imageURL, size: 40, circle: false)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(track.name)
+                                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                        .foregroundColor(AppColors.primaryText)
+                                        .lineLimit(1)
+                                    if let subtitle = track.subtitle {
+                                        Text(subtitle)
+                                            .font(AppFonts.caption())
+                                            .foregroundColor(AppColors.secondaryText)
+                                            .lineLimit(1)
+                                    }
+                                }
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(AppColors.mutedText)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            if !taste.playlists.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    caption("Playlists")
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(taste.playlists) { playlist in
+                                Button { open(playlist) } label: {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        image(playlist.imageURL, size: 96, circle: false)
+                                        Text(playlist.name)
+                                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                            .foregroundColor(AppColors.primaryText)
+                                            .lineLimit(1)
+                                        if let subtitle = playlist.subtitle {
+                                            Text(subtitle)
+                                                .font(AppFonts.caption())
+                                                .foregroundColor(AppColors.mutedText)
+                                                .lineLimit(1)
+                                        }
+                                    }
+                                    .frame(width: 96, alignment: .leading)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding(AppLayout.cardPadding)
+        .melCard(cornerRadius: AppLayout.cornerRadiusLarge)
+    }
+
+    private func caption(_ text: String) -> some View {
+        Text(text)
+            .font(AppFonts.caption())
+            .foregroundColor(AppColors.mutedText)
+    }
+
+    private func open(_ item: SpotifyTaste.Item) {
+        guard let urlString = item.url, let url = URL(string: urlString) else { return }
+        openURL(url)
+    }
+
+    private func image(_ urlString: String?, size: CGFloat, circle: Bool) -> some View {
+        Group {
+            if let urlString, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    if case .success(let img) = phase {
+                        img.resizable().scaledToFill()
+                    } else {
+                        Rectangle().fill(AppColors.surface)
+                    }
+                }
+            } else {
+                Rectangle().fill(AppColors.surface)
+                    .overlay(Image(systemName: "music.note").foregroundColor(AppColors.mutedText))
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: circle ? size / 2 : 8, style: .continuous))
     }
 }
