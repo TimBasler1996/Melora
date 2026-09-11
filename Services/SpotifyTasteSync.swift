@@ -18,7 +18,8 @@ enum SpotifyTasteSync {
 
     static func syncIfNeeded(force: Bool = false) async {
         guard let uid = Auth.auth().currentUser?.uid else { return }
-        guard SpotifyAuthManager.shared.isAuthorized || force else { return }
+        // A refresh token is enough; the access token is fetched on demand.
+        guard force || SpotifyAuthManager.shared.tokens?.refreshToken != nil else { return }
 
         let last = UserDefaults.standard.object(forKey: key(uid)) as? Date
         if !force, let last, Date().timeIntervalSince(last) < interval { return }

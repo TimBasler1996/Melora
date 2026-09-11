@@ -291,11 +291,13 @@ final class SpotifyService {
     }
     private struct SpotifyPlaylistDTO: Decodable {
         struct Tracks: Decodable { let total: Int? }
+        struct Owner: Decodable { let id: String? }
         let id: String
         let name: String
         let images: [SpotifyImage]?
         let external_urls: [String: String]?
         let tracks: Tracks?
+        let owner: Owner?
         let `public`: Bool?
     }
 
@@ -321,11 +323,13 @@ final class SpotifyService {
         }
     }
 
-    /// Public playlists only, so nothing private leaks onto the profile.
+    /// The user's own public playlists only: nothing private, and nothing
+    /// they merely follow.
     func fetchMyPlaylists(limit: Int) async throws -> [SpotifyTaste.Item] {
-        let page: SpotifyPage<SpotifyPlaylistDTO> = try await getJSON(path: "me/playlists", query: ["limit": "\(max(limit, 20))"])
+        let me = try await fetchCurrentUserProfile()
+        let page: SpotifyPage<SpotifyPlaylistDTO> = try await getJSON(path: "me/playlists", query: ["limit": "50"])
         return page.items
-            .filter { $0.public ?? false }
+            .filter { ($0.public ?? false) && $0.owner?.id == me.id }
             .prefix(limit)
             .map {
                 let count = $0.tracks?.total ?? 0
@@ -351,7 +355,14 @@ final class SpotifyService {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw SpotifyAPIError.invalidResponse }
-        if http.statusCode == 403 { throw SpotifyAPIError.insufficientScope }
+        if http.statusCode == 403 {
+            // Only a scope problem is fixed by reconnecting; other 403s
+            // (dev-mode allow list, region) are not.
+            let body = String(data: data, encoding: .utf8) ?? ""
+            if body.lowercased().contains("scope") { throw SpotifyAPIError.insufficientScope }
+            print("❌ Spotify /\(path) HTTP 403: \(body)")
+            throw SpotifyAPIError.invalidResponse
+        }
         guard (200..<300).contains(http.statusCode) else {
             print("❌ Spotify /\(path) HTTP \(http.statusCode): \(String(data: data, encoding: .utf8) ?? "")")
             throw SpotifyAPIError.invalidResponse

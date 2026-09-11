@@ -106,9 +106,9 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
         }
     }
 
-    /// Forget the stored login and ask again (e.g. after new scopes).
+    /// Ask Spotify again with the full scope list. The stored login stays
+    /// until the new one succeeds, so cancelling costs nothing.
     func reconnect() {
-        disconnect()
         startAuthFlow()
     }
 
