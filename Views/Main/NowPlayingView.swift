@@ -50,9 +50,6 @@ struct NowPlayingView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-
-            }
         }
         .onAppear {
             // Silent refresh only — the disconnected state below offers an
