@@ -142,6 +142,7 @@
 		75A1740B2EC8C0FA00CEB48F /* ProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewModel.swift; sourceTree = "<group>"; };
 		75A1740D2ECA158400CEB48F /* TrackLike.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackLike.swift; sourceTree = "<group>"; };
 		75A1740F2ECA159900CEB48F /* LikeApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LikeApiService.swift; sourceTree = "<group>"; };
+		75B43BBD30543F9800B1387A /* SocialSound.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SocialSound.entitlements; sourceTree = "<group>"; };
 		75D9721D2F4EEAC500D41DD1 /* UserSearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSearchViewModel.swift; sourceTree = "<group>"; };
 		75D9721F2F4EEAC500D41DD1 /* UserSearchRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSearchRowView.swift; sourceTree = "<group>"; };
 		75D972202F4EEAC500D41DD1 /* UserSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSearchView.swift; sourceTree = "<group>"; };
@@ -258,6 +259,7 @@
 		759F7AD22EC779740012A549 = {
 			isa = PBXGroup;
 			children = (
+				75B43BBD30543F9800B1387A /* SocialSound.entitlements */,
 				755D06AD2F2D077D00BD1112 /* Assets.xcassets */,
 				7576DF432F18036A0034BF2A /* Readme.txt */,
 				759F7B222EC79EC30012A549 /* GoogleService-Info.plist */,
@@ -773,6 +775,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SocialSound.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -806,6 +809,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SocialSound.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
