@@ -234,7 +234,7 @@ struct ChatView: View {
             Image(systemName: "hand.raised")
                 .font(.system(size: 12, weight: .bold))
             Text("You declined this request.")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 12, weight: .semibold))
         }
         .foregroundColor(.white.opacity(0.7))
         .frame(maxWidth: .infinity)
@@ -267,7 +267,7 @@ struct ChatView: View {
             Text(vm.needsAcceptance
                  ? "Message request — accept to start chatting"
                  : "Waiting for the other user to accept your request")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 12, weight: .semibold))
         }
         .foregroundColor(.white.opacity(0.85))
         .padding(.horizontal, 12)
@@ -290,7 +290,7 @@ struct ChatView: View {
                 }
             } label: {
                 Text("Decline")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -318,7 +318,7 @@ struct ChatView: View {
                             .scaleEffect(0.8)
                     }
                     Text("Accept")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: 15, weight: .bold))
                 }
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
@@ -354,10 +354,10 @@ struct ChatView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Replying to \(message.senderId == vm.currentUserId ? "yourself" : "message")")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(AppColors.primary)
                 Text(message.text)
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.75))
                     .lineLimit(1)
             }
@@ -436,7 +436,7 @@ private struct DateSeparator: View {
         HStack(spacing: 10) {
             line
             Text(label)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundColor(.white.opacity(0.5))
             line
         }
@@ -456,7 +456,7 @@ private struct SeenIndicator: View {
         HStack {
             Spacer()
             Text("Seen")
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.white.opacity(0.5))
         }
         .padding(.trailing, 4)
@@ -642,7 +642,7 @@ private struct ChatBubble: View {
             }
 
             Text(message.createdAt.formatted(date: .omitted, time: .shortened))
-                .font(.system(size: 11, weight: .regular, design: .rounded))
+                .font(.system(size: 11, weight: .regular))
                 .foregroundColor(.white.opacity(0.75))
         }
     }
@@ -656,10 +656,10 @@ private struct ChatBubble: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(reply.senderId == currentUserId ? "You" : "Reply")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundColor(AppColors.primary)
                 Text(reply.textPreview)
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(size: 12))
                     .foregroundColor(.white.opacity(0.75))
                     .lineLimit(2)
             }
@@ -685,7 +685,7 @@ private struct ChatBubble: View {
                     Text(emoji).font(.system(size: 12))
                     if count > 1 {
                         Text("\(count)")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundColor(.white.opacity(0.85))
                     }
                 }

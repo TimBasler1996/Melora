@@ -37,7 +37,7 @@ struct HiddenAndBlockedView: View {
                             Button("Unblock") {
                                 Task { await unblock(user) }
                             }
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.system(size: 13, weight: .semibold))
                             .buttonStyle(.bordered)
                             .tint(AppColors.primary)
                         }
@@ -62,7 +62,7 @@ struct HiddenAndBlockedView: View {
                             Button("Show again") {
                                 hidden.unhideUser(id: user.id)
                             }
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.system(size: 13, weight: .semibold))
                             .buttonStyle(.bordered)
                             .tint(AppColors.primary)
                         }
@@ -96,7 +96,7 @@ struct HiddenAndBlockedView: View {
                             Button("Show again") {
                                 hidden.unhideTrack(id: track.id)
                             }
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.system(size: 13, weight: .semibold))
                             .buttonStyle(.bordered)
                             .tint(AppColors.primary)
                         }

@@ -118,7 +118,7 @@ struct UserProfilePreviewView: View {
                             .font(.system(size: 13, weight: .bold))
                     }
                     Text(vm.isFollowing ? "Following" : "Follow")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(.system(size: 15, weight: .semibold))
                 }
                 .foregroundColor(vm.isFollowing ? AppColors.primaryText : .white)
                 .frame(maxWidth: .infinity)
@@ -143,7 +143,7 @@ struct UserProfilePreviewView: View {
                         Image(systemName: "paperplane.fill")
                             .font(.system(size: 13, weight: .bold))
                         Text("Message")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold))
                     }
                     .foregroundColor(AppColors.primaryText)
                     .frame(maxWidth: .infinity)

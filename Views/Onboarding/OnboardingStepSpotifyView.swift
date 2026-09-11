@@ -7,11 +7,11 @@ struct OnboardingStepSpotifyView: View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Connect Spotify")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundColor(AppColors.primaryText)
 
                 Text("Melora shows the track you’re playing on Spotify when you go live.")
-                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundColor(AppColors.secondaryText)
             }
 
@@ -39,7 +39,7 @@ struct OnboardingStepSpotifyView: View {
                 VStack(spacing: 8) {
                     if viewModel.spotifyConnected {
                         Text("Connected")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(AppColors.primaryText)
 
                         Text("You’re ready to go live")
@@ -48,7 +48,7 @@ struct OnboardingStepSpotifyView: View {
                             .multilineTextAlignment(.center)
                     } else {
                         Text("Not Connected")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .font(.system(size: 20, weight: .bold))
                             .foregroundColor(AppColors.primaryText)
 
                         Text("Connect now, or skip and do it in Settings later. Without Spotify you can browse and chat, but not go live.")
@@ -104,7 +104,7 @@ private struct FeatureRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(AppColors.primaryText)
 
                 Text(description)

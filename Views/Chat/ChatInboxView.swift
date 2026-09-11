@@ -62,7 +62,7 @@ struct ChatInboxView: View {
             Image(systemName: "exclamationmark.circle.fill")
                 .foregroundColor(AppColors.primary)
             Text(text)
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
@@ -110,7 +110,7 @@ struct ChatInboxView: View {
             VStack(spacing: 12) {
                 Spacer()
                 Text("No chats yet")
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
                 Text("Message someone from Discover or their profile. Chats start once they reply.")
                     .font(AppFonts.footnote())
@@ -224,7 +224,7 @@ struct ChatInboxView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Message Requests")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
                 Text("\(count) new \(count == 1 ? "request" : "requests")")
                     .font(AppFonts.footnote())
@@ -245,7 +245,7 @@ struct ChatInboxView: View {
     private func chatSectionHeader(_ title: String) -> some View {
         HStack {
             Text(title)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.white.opacity(0.5))
             Spacer()
         }

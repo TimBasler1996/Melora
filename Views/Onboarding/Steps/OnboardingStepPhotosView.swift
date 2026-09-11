@@ -16,11 +16,11 @@ struct OnboardingStepPhotosView: View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Add photos")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundColor(AppColors.primaryText)
 
                 Text("Add 2-5 photos. Your first photo will be your profile picture.")
-                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundColor(AppColors.secondaryText)
             }
             
@@ -31,7 +31,7 @@ struct OnboardingStepPhotosView: View {
                     .foregroundColor(photoStatusColor)
                 
                 Text("\(viewModel.selectedImagesCount)/5 photos")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(AppColors.primaryText)
                 
                 if !photoStatusMessage.isEmpty {
@@ -154,7 +154,7 @@ private struct PhotoPickerCard: View {
                                     Spacer()
                                     
                                     Text("Profile")
-                                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        .font(.system(size: 11, weight: .bold))
                                         .foregroundColor(AppColors.primaryText)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 5)
@@ -194,7 +194,7 @@ private struct PhotoPickerCard: View {
                             if isFirst {
                                 VStack(spacing: 4) {
                                     Text("Profile Photo")
-                                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                                        .font(.system(size: 14, weight: .bold))
                                         .foregroundColor(AppColors.primaryText)
                                     
                                     Text("Required")
@@ -203,7 +203,7 @@ private struct PhotoPickerCard: View {
                                 }
                             } else {
                                 Text("Add photo")
-                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                    .font(.system(size: 13, weight: .semibold))
                                     .foregroundColor(AppColors.secondaryText)
                             }
                         }

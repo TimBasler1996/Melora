@@ -40,10 +40,12 @@ struct DiscoverView: View {
             }
             .animation(.easeInOut(duration: 0.2), value: viewModel.undo)
             .melScreenBackground()
-            .navigationTitle("Discover")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    MeloraWordmark(size: 26)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showUserSearch = true
@@ -144,31 +146,35 @@ struct DiscoverView: View {
             router.goLive()
         } label: {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(broadcast.isBroadcasting ? AppColors.live.opacity(0.2) : AppColors.primary.opacity(0.2))
-                        .frame(width: 40, height: 40)
-                    Image(systemName: broadcast.isBroadcasting ? "dot.radiowaves.left.and.right" : "music.note")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(broadcast.isBroadcasting ? AppColors.live : .white)
+                if broadcast.isBroadcasting {
+                    LiveRipple(size: 40)
+                } else {
+                    RippleMark(size: 40, color: AppColors.mutedText)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(goLiveTitle)
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(.system(size: 15, weight: .heavy))
+                        .foregroundColor(broadcast.isBroadcasting ? AppColors.live : AppColors.primaryText)
                         .lineLimit(1)
-                    Text(goLiveSubtitle)
-                        .font(AppFonts.footnote())
-                        .foregroundColor(.white.opacity(0.65))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                    if broadcast.isBroadcasting, let track = broadcast.currentTrack {
+                        (Text(track.title).font(AppFonts.song(size: 17)).foregroundColor(AppColors.primaryText)
+                         + Text(track.artist.isEmpty ? "" : "  ·  \(track.artist)").font(AppFonts.footnote()).foregroundColor(AppColors.secondaryText))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    } else {
+                        Text(goLiveSubtitle)
+                            .font(AppFonts.footnote())
+                            .foregroundColor(AppColors.secondaryText)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(broadcast.isBroadcasting ? "Manage" : "Go live")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundColor(broadcast.isBroadcasting ? AppColors.primaryText : AppColors.background)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
                     .background(Capsule().fill(broadcast.isBroadcasting ? AppColors.surfaceElevated : AppColors.live))
@@ -224,7 +230,7 @@ struct DiscoverView: View {
             HStack(spacing: 8) {
                 ProgressView().tint(.white).scaleEffect(0.8)
                 Text("Finding your location…")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.65))
                 Spacer()
             }
@@ -243,10 +249,10 @@ struct DiscoverView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Location is off")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
                 Text("Turn it on to see who is near you and how far away they are.")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.65))
             }
 
@@ -257,7 +263,7 @@ struct DiscoverView: View {
                     UIApplication.shared.open(url)
                 }
             }
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .font(.system(size: 13, weight: .semibold))
             .foregroundColor(.white)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -277,13 +283,13 @@ struct DiscoverView: View {
                     .foregroundColor(.white.opacity(0.65))
 
                 Text("Within")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.65))
 
                 Spacer()
 
                 Text(formatRadius(viewModel.maxRadiusKm))
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
                     .monospacedDigit()
             }
@@ -316,7 +322,7 @@ struct DiscoverView: View {
                     .tint(.white)
                     .scaleEffect(1.2)
                 Text("Looking for people…")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white.opacity(0.7))
                 Spacer()
             }
@@ -377,11 +383,11 @@ struct DiscoverView: View {
     private func sectionHeader(_ title: String, count: Int) -> some View {
         HStack {
             Text(title)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.white.opacity(0.6))
             Spacer()
             Text("\(count)")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.white.opacity(0.4))
                 .monospacedDigit()
         }
@@ -449,14 +455,14 @@ struct DiscoverView: View {
     private func undoToast(_ undo: DiscoverViewModel.UndoAction) -> some View {
         HStack(spacing: 12) {
             Text(undo.message)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white)
                 .lineLimit(1)
             Spacer()
             Button("Undo") {
                 viewModel.performUndo()
             }
-            .font(.system(size: 14, weight: .bold, design: .rounded))
+            .font(.system(size: 14, weight: .bold))
             .foregroundColor(AppColors.live)
         }
         .padding(.horizontal, 16)
@@ -481,7 +487,7 @@ struct DiscoverView: View {
 
             if viewModel.liveOutsideRadiusCount > 0 {
                 Text("Nobody is live within \(formatRadius(viewModel.maxRadiusKm))")
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.white)
                 Text(viewModel.liveOutsideRadiusCount == 1
                      ? "1 person is live a bit further away."
@@ -494,7 +500,7 @@ struct DiscoverView: View {
                     viewModel.widenRadiusToNearestLive()
                 } label: {
                     Label("Widen radius", systemImage: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 18)
                         .padding(.vertical, 10)
@@ -503,7 +509,7 @@ struct DiscoverView: View {
                 }
             } else {
                 Text(viewModel.discoverMode == .friends ? "None of your friends are live" : "No one is live right now")
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.white)
                 Text("Go live yourself: the moment someone nearby starts playing, they show up here and you get notified.")
                     .font(AppFonts.footnote())
@@ -514,7 +520,7 @@ struct DiscoverView: View {
                     router.goLive()
                 } label: {
                     Label("Go live", systemImage: "dot.radiowaves.left.and.right")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 18)
                         .padding(.vertical, 10)
@@ -539,7 +545,7 @@ struct DiscoverView: View {
                 .foregroundColor(.white.opacity(0.3))
 
             Text("You're not following anyone yet")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
 
             Text("Follow people to see when they go live here.")
@@ -552,7 +558,7 @@ struct DiscoverView: View {
                 showUserSearch = true
             } label: {
                 Label("Find People", systemImage: "magnifyingglass")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)

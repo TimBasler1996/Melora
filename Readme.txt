@@ -18,6 +18,16 @@ Bottom tab bar: Discover (home, with a Go live banner) · Live (player and
 the live toggle) · Inbox (Messages | Activity, one badge) · Profile. Every
 avatar or name opens the person's profile.
 
+## Identity ("Ember")
+One idea: a point and the waves it sends out. `RippleMark` / `LiveRipple` /
+`MeloraWordmark` (Views/Components/RippleMark.swift) are the mark, the
+live indicator and the wordmark. Tokens live in `Utils/AppTheme.swift`:
+Ember `#FF5A3C` for live and the one primary action, warm "vinyl" black
+`#0E0C0B`, cream text `#F4EFE6`, radii 12/20. Names and UI use the system
+grotesk; song titles use `AppFonts.song` (italic serif) and nothing else
+does. Album covers tint Discover cards (`ArtworkColorCache`). The design
+canvas: https://claude.ai/code/artifact/738ee33e-0097-4cfa-b88f-3771ac1e307b
+
 ## The social loop
 Three verbs, each with one meaning:
 - **Like** – react to a track someone is playing live. A signal only; the

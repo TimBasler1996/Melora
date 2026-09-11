@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 57 items — P0 15 · P1 23 · P2 15 · P3 4 · done 54
+Totals: 58 items — P0 15 · P1 24 · P2 15 · P3 4 · done 55
 
 ## Your to-dos (need the project owner)
 
@@ -15,6 +15,7 @@ Totals: 57 items — P0 15 · P1 23 · P2 15 · P3 4 · done 54
 - [ ] **OWN-5** Delete the seven fully merged claude/* remote branches — chat-reply-reactions-seen, cool-darwin, discover-radius-slider, fix-follow-messaging-issues, melora-design-system, melora-profile-cleanup, unified-profile-follow are ancestors of Dev3.
 - [ ] **OWN-6** Optionally purge the .p8 key and functions/.env from git history with a force push — They are untracked now but still in history; say the word and it can be done.
 - [ ] **OWN-7** Finish the legal pages: fill in the bracketed operator name, address, governing law and support email in hosting/privacy.html and hosting/terms.html, set supportEmail in Utils/LegalLinks.swift, then deploy hosting — The privacy policy and terms are written and the app already links to https://socialsound-5fdd9.web.app/privacy and /terms; they go live with `firebase deploy --only hosting` (included in the OWN-3 deploy). App Store review expects the privacy link to work. Decided: no 18+ rule. The pages say 13+ (the Spotify minimum) with parental consent under 16 in the EU/CH; the app does not check age yet.
+- [ ] **OWN-8** Optional: add the Archivo and Instrument Serif font files (Google Fonts, OFL) to the Xcode target and switch AppFonts to Font.custom — The identity currently uses the system fonts as stand-ins; the canvas shows the intended faces. Needs Xcode: drag the .ttf files in, add them under Fonts provided by application in Info, then change the two lines in Utils/AppTheme.swift.
 
 ## Decisions taken
 
@@ -499,6 +500,15 @@ _Calm, premium tone means one vocabulary and no debug text._
 - **Problem:** 'Not authenticated.', 'User document not found.' and verbatim Firestore or Storage messages reach the screen.
 - **Fix:** One error-to-copy mapping used by all screens; technical detail stays in logs.
 - **Progress:** UserFacingError maps offline, Firestore, Storage, Auth and Spotify errors; used by onboarding, Now, broadcasts, chats, inboxes, profile load/save and Discover. "Not authenticated" copy replaced.
+
+### UX-58 · Ember identity: mark, palette, type and app icon
+
+**P1 · next** · effort large (1–2 weeks) · **Done**
+
+- **Problem:** Violet on blue-black with rounded type looked like every other app; nothing said music, nothing said 'someone near you is playing this right now'.
+- **Fix:** One image, the ripple, as icon, live indicator and the o in the wordmark. Ember on warm black, cream text, song titles in italic serif, everything else a heavy grotesk. Discover cards glow in their cover's color.
+- **Needs:** Fonts are the system ones (SF Pro, New York italic) so nothing has to be bundled; OWN-8 covers adding Archivo and Instrument Serif files if wanted.
+- **Progress:** AppTheme tokens, AppFonts.song, RippleMark/LiveRipple/MeloraWordmark, new AppIcon set, Discover wordmark and cover glow, serif titles on Discover, Live, Activity and Music taste.
 
 ### UX-52 · Calm system copy: no emoji toasts, lowercase status pills
 

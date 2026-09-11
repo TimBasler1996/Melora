@@ -129,7 +129,7 @@ struct ActivityView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .font(.system(size: 13, weight: .semibold))
             .foregroundColor(.white.opacity(0.5))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 8)
@@ -149,7 +149,7 @@ struct ActivityView: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(count == 1 ? "1 message request" : "\(count) message requests")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
                     Text("Someone wants to chat with you")
                         .font(AppFonts.footnote())
@@ -211,14 +211,14 @@ private struct ActivityRow: View {
                 HStack(spacing: 6) {
                     if case .like(_, let artist, _) = item.kind, !artist.isEmpty {
                         Text(artist)
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.white.opacity(0.55))
                             .lineLimit(1)
                         Text("·")
                             .foregroundColor(.white.opacity(0.4))
                     }
                     Text(ChatInboxRowView.relativeLabel(for: item.date))
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.white.opacity(0.4))
                 }
             }
@@ -243,12 +243,12 @@ private struct ActivityRow: View {
         let name = Text(item.displayName ?? "Someone").bold()
         switch item.kind {
         case .like(let title, _, _):
-            return (name + Text(" liked ") + Text(title).italic())
-                .font(.system(size: 15, design: .rounded))
+            return (name + Text(" liked ") + Text(title).font(AppFonts.song(size: 18)))
+                .font(.system(size: 15))
                 .foregroundColor(.white)
         case .follow:
             return (name + Text(" started following you"))
-                .font(.system(size: 15, design: .rounded))
+                .font(.system(size: 15))
                 .foregroundColor(.white)
         }
     }
@@ -261,7 +261,7 @@ private struct ActivityRow: View {
         case .like:
             Button(action: onSayHi) {
                 Text("Say hi")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
@@ -271,7 +271,7 @@ private struct ActivityRow: View {
         case .follow:
             Button(action: onFollow) {
                 Text(isFollowing ? "Following" : "Follow back")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(isFollowing ? .white.opacity(0.7) : .white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)

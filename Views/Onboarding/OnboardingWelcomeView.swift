@@ -9,21 +9,12 @@ struct OnboardingWelcomeView: View {
             Spacer(minLength: 24)
 
             VStack(spacing: 18) {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.live.opacity(0.15))
-                        .frame(width: 112, height: 112)
-                    Image(systemName: "dot.radiowaves.left.and.right")
-                        .font(.system(size: 48, weight: .semibold))
-                        .foregroundColor(AppColors.live)
-                }
+                RippleMark(size: 112)
 
-                Text("Melora")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.primaryText)
+                MeloraWordmark(size: 44)
 
                 Text("Share what you’re playing.\nMeet the people around you through music.")
-                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundColor(AppColors.secondaryText)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -40,7 +31,7 @@ struct OnboardingWelcomeView: View {
 
             Button(action: onContinue) {
                 Text("Get started")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.system(size: 17, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 54)
@@ -63,7 +54,7 @@ struct OnboardingWelcomeView: View {
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(AppColors.primaryText)
                 Text(text)
                     .font(AppFonts.footnote())

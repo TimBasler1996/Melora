@@ -21,6 +21,7 @@ struct DiscoverCardView: View {
     @Environment(\.openURL) private var openURL
 
     @State private var showHeartAnimation: Bool = false
+    @State private var glow: Color?
     @State private var showMessageField: Bool = false
     @State private var messageText: String = ""
     @FocusState private var isMessageFieldFocused: Bool
@@ -61,14 +62,34 @@ struct DiscoverCardView: View {
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(AppColors.surfaceElevated)
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
+                        .fill(AppColors.cardBackground)
+                    // The cover tints the card: a soft glow from the top-right.
+                    if let glow {
+                        RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
+                            .fill(
+                                RadialGradient(
+                                    colors: [glow.opacity(0.55), glow.opacity(0.0)],
+                                    center: .topTrailing,
+                                    startRadius: 0,
+                                    endRadius: 320
+                                )
+                            )
+                    }
+                }
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
                     .stroke(AppColors.stroke, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.25), radius: 10, x: 0, y: 4)
+            .task(id: broadcast.track.artworkURL) {
+                guard let urlString = broadcast.track.artworkURL, let url = URL(string: urlString) else {
+                    glow = nil
+                    return
+                }
+                glow = await ArtworkColorCache.shared.color(for: url)
+            }
 
             // Heart animation overlay
             if showHeartAnimation {
@@ -92,23 +113,28 @@ struct DiscoverCardView: View {
             userPhoto
 
             // Center: Name, Track · Artist, Distance
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(broadcast.user.displayName)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .font(.system(size: 16, weight: .heavy))
+                    .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
 
-                Text("\(trackTitle) · \(trackArtist)")
+                // The song gets the serif; that is the app's signature.
+                Text(trackTitle)
+                    .font(AppFonts.song(size: 21))
+                    .foregroundColor(AppColors.primaryText)
+                    .lineLimit(1)
+
+                Text(trackArtist)
                     .font(AppFonts.footnote())
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(AppColors.secondaryText)
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
                     if broadcast.isLive {
-                        Circle()
-                            .fill(AppColors.live)
-                            .frame(width: 6, height: 6)
+                        RippleMark(size: 12, rings: 1)
                         Text("Live")
+                            .fontWeight(.bold)
                             .foregroundColor(AppColors.live)
                     } else {
                         Text("Live \(broadcast.lastSeenText)")
@@ -119,7 +145,7 @@ struct DiscoverCardView: View {
                             .foregroundColor(.white.opacity(0.5))
                     }
                 }
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: 12, weight: .medium))
             }
 
             Spacer(minLength: 0)
@@ -216,7 +242,7 @@ struct DiscoverCardView: View {
 
                 if !label.isEmpty {
                     Text(label)
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(color.opacity(0.85))
                 }
             }
@@ -234,7 +260,7 @@ struct DiscoverCardView: View {
         HStack(spacing: 10) {
             TextField("Send a message...", text: $messageText, axis: .vertical)
                 .focused($isMessageFieldFocused)
-                .font(.system(size: 14, weight: .regular, design: .rounded))
+                .font(.system(size: 14, weight: .regular))
                 .foregroundColor(.white)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)

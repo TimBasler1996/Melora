@@ -28,12 +28,12 @@ struct ChatInboxRowView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(row.displayName ?? "New member")
-                    .font(.system(size: 16, weight: row.isUnread ? .bold : .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: row.isUnread ? .bold : .semibold))
                     .foregroundColor(AppColors.primaryText)
                     .lineLimit(1)
 
                 Text(row.lastMessageText ?? "Say hi 👋")
-                    .font(.system(size: 13, weight: row.isUnread ? .semibold : .regular, design: .rounded))
+                    .font(.system(size: 13, weight: row.isUnread ? .semibold : .regular))
                     .foregroundColor(row.isUnread ? AppColors.primaryText : AppColors.secondaryText)
                     .lineLimit(1)
             }
@@ -43,7 +43,7 @@ struct ChatInboxRowView: View {
             VStack(alignment: .trailing, spacing: 6) {
                 if let date = row.lastMessageAt ?? row.updatedAt {
                     Text(Self.relativeLabel(for: date))
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(row.isUnread ? AppColors.primary : AppColors.mutedText)
                 }
 

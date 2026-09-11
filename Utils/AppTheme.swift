@@ -29,57 +29,41 @@ enum AppTheme {
 /// Color palette used throughout the app. All values are fixed dark tokens.
 enum AppColors {
 
-    // MARK: - Brand
+    // MARK: - Brand ("Ember")
 
-    /// Primary accent color for key actions (broadcast button, active tab, sent bubbles).
-    /// #5B46F5
-    static let primary = Color(red: 0.357, green: 0.275, blue: 0.961)
+    /// Ember: live, and the one primary action per screen. Nothing else.
+    /// #FF5A3C
+    static let primary = Color(hex: 0xFF5A3C)
 
-    /// Secondary accent (subtle highlights, gradients).
-    static let secondary = Color(red: 0.15, green: 0.75, blue: 0.95)
+    /// Slate: recently live, muted states.
+    static let secondary = Color(hex: 0x6E6A78)
 
-    /// The one and only live / broadcast green. #1ACC66
-    /// Replaces every hardcoded `Color(red: 0.2, green: 0.85, blue: 0.4)` in the codebase.
-    static let live = Color(red: 0.10, green: 0.80, blue: 0.40)
+    /// Live is Ember too; the dot with rings is the mark of being on air.
+    static let live = Color(hex: 0xFF5A3C)
 
-    /// Color used for destructive actions (stop, errors).
-    static let destructive = Color.red
+    static let destructive = Color(hex: 0xFF5A3C)
 
-    // MARK: - Backgrounds (dark, fixed)
+    // MARK: - Surfaces (warm "vinyl" black, never blue)
 
-    /// Near-black base background for screens. #08080C
-    static let background = Color(hex: 0x08080C)
-
-    /// Top of the standard screen gradient. #15151D
-    static let backgroundElevated = Color(hex: 0x15151D)
-
-    /// Standard card / surface fill sitting on the background.
-    static let surface = Color.white.opacity(0.06)
-
-    /// Slightly brighter surface for elevated cards / received chat bubbles.
-    static let surfaceElevated = Color.white.opacity(0.09)
-
-    /// Hairline stroke used around cards and surfaces.
-    static let stroke = Color.white.opacity(0.10)
-
-    /// Legacy alias — old code referenced `cardBackground`; routes to `surface`.
-    static let cardBackground = surface
-
-    /// A slightly tinted background used behind artwork / inside input fields.
+    static let background = Color(hex: 0x0E0C0B)
+    static let backgroundElevated = Color(hex: 0x171412)
+    static let surface = Color(hex: 0xF4EFE6).opacity(0.06)
+    static let surfaceElevated = Color(hex: 0xF4EFE6).opacity(0.09)
+    static let stroke = Color(hex: 0xF4EFE6).opacity(0.10)
+    static let cardBackground = Color(hex: 0x171412)
     static let tintedBackground = Color.black.opacity(0.25)
 
-    // MARK: - Text
+    // MARK: - Text (cream, not white)
 
-    static let primaryText = Color.white
-    static let secondaryText = Color.white.opacity(0.62)
-    static let mutedText = Color.white.opacity(0.40)
+    static let primaryText = Color(hex: 0xF4EFE6)
+    static let secondaryText = Color(hex: 0xF4EFE6).opacity(0.62)
+    static let mutedText = Color(hex: 0xF4EFE6).opacity(0.40)
 }
 
-/// Layout constants (spacing, corner radii, etc.).
 enum AppLayout {
-    static let cornerRadiusLarge: CGFloat = 24
-    static let cornerRadiusMedium: CGFloat = 16
-    static let cornerRadiusSmall: CGFloat = 10
+    static let cornerRadiusLarge: CGFloat = 20
+    static let cornerRadiusMedium: CGFloat = 12
+    static let cornerRadiusSmall: CGFloat = 8
 
     static let cardPadding: CGFloat = 16
     static let screenPadding: CGFloat = 20
@@ -88,17 +72,27 @@ enum AppLayout {
     static let shadowOpacity: Double = 0.15
 }
 
-/// Locked type ramp. Everything is rounded (the app's chosen voice); no view
-/// should hardcode `.system(size:)` for a standard text role anymore.
+/// Two voices: a plain, heavy grotesk for names and UI, and an italic serif
+/// reserved for song titles. That contrast is the app's signature.
+///
+/// Both come from the system (SF Pro and New York) so nothing has to be
+/// bundled; swap `Font.system` for `Font.custom("Archivo", ...)` /
+/// `Font.custom("InstrumentSerif-Italic", ...)` here once the font files
+/// are added to the project.
 enum AppFonts {
-    static func largeTitle() -> Font { .system(size: 28, weight: .bold, design: .rounded) }
-    static func title() -> Font { .system(size: 24, weight: .bold, design: .rounded) }
-    static func sectionTitle() -> Font { .system(size: 20, weight: .semibold, design: .rounded) }
-    static func headline() -> Font { .system(size: 16, weight: .semibold, design: .rounded) }
-    static func body() -> Font { .system(size: 15, weight: .medium, design: .rounded) }
-    static func subheadline() -> Font { .system(size: 14, weight: .semibold, design: .rounded) }
-    static func footnote() -> Font { .system(size: 13, weight: .medium, design: .rounded) }
-    static func caption() -> Font { .system(size: 11, weight: .medium, design: .rounded) }
+    static func largeTitle() -> Font { .system(size: 30, weight: .heavy) }
+    static func title() -> Font { .system(size: 24, weight: .bold) }
+    static func sectionTitle() -> Font { .system(size: 20, weight: .bold) }
+    static func headline() -> Font { .system(size: 16, weight: .semibold) }
+    static func body() -> Font { .system(size: 15, weight: .medium) }
+    static func subheadline() -> Font { .system(size: 14, weight: .semibold) }
+    static func footnote() -> Font { .system(size: 13, weight: .medium) }
+    static func caption() -> Font { .system(size: 11, weight: .medium) }
+
+    /// Song titles only.
+    static func song(size: CGFloat) -> Font {
+        .system(size: size, weight: .regular, design: .serif).italic()
+    }
 }
 
 // MARK: - Reusable View Modifiers

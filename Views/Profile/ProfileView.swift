@@ -200,7 +200,7 @@ struct ProfileView: View {
                 VStack(spacing: 14) {
                     if viewModel.hasDraftChanges, let hint = viewModel.validationMessage {
                         Text(hint)
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundColor(AppColors.secondaryText)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -238,7 +238,7 @@ struct ProfileView: View {
                         showDiscardAlert = true
                     } label: {
                         Text("Discard Changes")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(
@@ -510,7 +510,7 @@ struct ProfileView: View {
                 .foregroundColor(AppColors.primary.opacity(0.7))
 
             Text("Add Photo")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(AppColors.secondaryText)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -525,7 +525,7 @@ struct ProfileView: View {
 
     private func photoBadge(_ badge: String) -> some View {
         Text(badge)
-            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .font(.system(size: 13, weight: .bold))
             .foregroundColor(.white)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -587,7 +587,7 @@ struct ProfileView: View {
                     Spacer()
                     if let age = draft.birthday.age() {
                         Text("\(age)")
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .font(.system(size: 15, weight: .bold))
                             .foregroundColor(AppColors.primaryText)
                     }
                 }
@@ -740,7 +740,7 @@ struct ProfileView: View {
                 .foregroundColor(.orange)
 
             Text(message)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundColor(AppColors.primaryText)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -751,7 +751,7 @@ struct ProfileView: View {
                         if didSave { mode = .preview }
                     }
                 }
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
@@ -777,7 +777,7 @@ struct ProfileView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 16, weight: .semibold))
             Text("Profile saved")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: 14, weight: .semibold))
         }
         .foregroundColor(.white)
         .padding(.vertical, 12)

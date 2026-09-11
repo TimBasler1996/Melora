@@ -118,7 +118,7 @@ struct OnboardingFlowView: View {
                 let isEnabled = viewModel.canContinueCurrentStep
                 Button(action: viewModel.goNext) {
                     Text(viewModel.stepIndex == 1 ? "Looks good" : "Continue")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)
@@ -136,7 +136,7 @@ struct OnboardingFlowView: View {
                         Task { await viewModel.connectSpotify(using: spotifyAuth) }
                     } label: {
                         Text(viewModel.isConnectingSpotify ? "Connecting…" : "Connect Spotify")
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .font(.system(size: 17, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 54)
@@ -164,7 +164,7 @@ struct OnboardingFlowView: View {
                         Task { await viewModel.finish(using: spotifyAuth) }
                     } label: {
                         Text(viewModel.isFinishing ? (viewModel.finishProgressText ?? "Finishing…") : "Finish")
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .font(.system(size: 17, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 54)

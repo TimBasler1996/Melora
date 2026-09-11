@@ -17,7 +17,7 @@ struct ProfileChip: View {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .semibold))
             Text(text)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 12, weight: .semibold))
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)

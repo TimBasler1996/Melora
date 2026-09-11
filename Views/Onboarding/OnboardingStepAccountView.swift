@@ -13,11 +13,11 @@ struct OnboardingStepAccountView: View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Keep your profile")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundColor(AppColors.primaryText)
 
                 Text("Right now your profile lives only on this phone. Sign in with Apple to keep it if you reinstall or switch devices.")
-                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundColor(AppColors.secondaryText)
             }
 
@@ -59,7 +59,7 @@ struct OnboardingStepAccountView: View {
                 .foregroundColor(AppColors.live)
                 .frame(width: 24)
             Text(text)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundColor(AppColors.primaryText)
         }
     }

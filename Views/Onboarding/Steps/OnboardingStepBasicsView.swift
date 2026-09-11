@@ -9,11 +9,11 @@ struct OnboardingStepBasicsView: View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Create your profile")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .font(.system(size: 32, weight: .bold))
                     .foregroundColor(AppColors.primaryText)
 
                 Text("Tell us about yourself")
-                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundColor(AppColors.secondaryText)
             }
 
@@ -63,7 +63,7 @@ struct OnboardingStepBasicsView: View {
                         viewModel.lookingFor = option
                     } label: {
                         Text(option)
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(AppColors.primaryText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
@@ -96,7 +96,7 @@ struct OnboardingStepBasicsView: View {
 
             fieldContainer {
                 content()
-                    .font(isProminent ? .system(size: 18, weight: .semibold, design: .rounded) : .system(size: 16, weight: .medium, design: .rounded))
+                    .font(isProminent ? .system(size: 18, weight: .semibold) : .system(size: 16, weight: .medium))
                     .foregroundColor(AppColors.primaryText)
                     .disableAutocorrection(true)
             }
@@ -125,7 +125,7 @@ struct OnboardingStepBasicsView: View {
 
                     if let age = viewModel.birthday.age() {
                         Text("\(age)")
-                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .font(.system(size: 15, weight: .bold))
                             .foregroundColor(AppColors.primaryText)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
@@ -155,7 +155,7 @@ struct OnboardingStepBasicsView: View {
                         viewModel.gender = option
                     } label: {
                         Text(option)
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(AppColors.primaryText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)

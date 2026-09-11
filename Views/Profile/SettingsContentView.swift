@@ -45,10 +45,10 @@ struct SettingsContentView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Label("Notification radius", systemImage: "location.circle")
-                                .font(.system(size: 16, weight: .regular, design: .rounded))
+                                .font(.system(size: 16, weight: .regular))
                             Spacer()
                             Text(formatRadius(radiusMeters))
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(AppColors.primary)
                         }
                         Slider(
@@ -67,7 +67,7 @@ struct SettingsContentView: View {
                                 .foregroundColor(AppColors.secondaryText)
                         }
                         Text("You’ll be notified when someone goes live within this distance.")
-                            .font(.system(size: 12, weight: .regular, design: .rounded))
+                            .font(.system(size: 12, weight: .regular))
                             .foregroundColor(AppColors.secondaryText)
                     }
                 }
@@ -120,7 +120,7 @@ struct SettingsContentView: View {
                         Button("Disconnect") {
                             showSpotifyDisconnectConfirm = true
                         }
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: 13, weight: .semibold))
                         .buttonStyle(.bordered)
                         .tint(AppColors.primary)
                     }
@@ -174,7 +174,7 @@ struct SettingsContentView: View {
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Your profile lives only on this phone. Sign in with Apple to keep it if you reinstall or switch devices.")
-                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .font(.system(size: 13, weight: .regular))
                             .foregroundColor(AppColors.secondaryText)
 
                         SignInWithAppleButton(.continue) { request in
@@ -314,16 +314,16 @@ struct SettingsContentView: View {
         Section {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Notifications are off", systemImage: "bell.slash")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: .semibold))
                 Text("Melora can’t tell you about likes, messages or people going live nearby until you allow notifications in iOS Settings.")
-                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                    .font(.system(size: 13, weight: .regular))
                     .foregroundColor(AppColors.secondaryText)
                 Button("Open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
                 }
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: 14, weight: .semibold))
                 .buttonStyle(.bordered)
                 .tint(AppColors.primary)
             }

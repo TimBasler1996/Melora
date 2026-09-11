@@ -110,7 +110,7 @@ struct NowPlayingView: View {
                 // Error message if any
                 if let err = vm.errorMessage, !err.isEmpty {
                     Text(err)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.white.opacity(0.7))
                         .padding(.horizontal, 20)
                         .padding(.bottom, 8)
@@ -128,19 +128,19 @@ struct NowPlayingView: View {
                         // Track info
                         VStack(alignment: .leading, spacing: 6) {
                             Text(track.title)
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
+                                .font(AppFonts.song(size: 28))
+                                .foregroundColor(AppColors.primaryText)
                                 .lineLimit(2)
                                 .minimumScaleFactor(0.8)
 
                             Text(track.artist)
                                 .font(AppFonts.subheadline())
-                                .foregroundColor(.white.opacity(0.7))
+                                .foregroundColor(AppColors.secondaryText)
                                 .lineLimit(1)
 
                             if let album = track.album, !album.isEmpty {
                                 Text(album)
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .font(.system(size: 12, weight: .medium))
                                     .foregroundColor(.white.opacity(0.4))
                                     .lineLimit(1)
                             }
@@ -277,7 +277,7 @@ struct NowPlayingView: View {
                             .foregroundColor(.white)
 
                         Text("Start playing music on Spotify\nto see it here")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
+                            .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white.opacity(0.6))
                             .multilineTextAlignment(.center)
                     }
@@ -291,7 +291,7 @@ struct NowPlayingView: View {
                                 .font(.system(size: 15, weight: .bold))
 
                             Text("Open Spotify")
-                                .font(.system(size: 17, weight: .bold, design: .rounded))
+                                .font(.system(size: 17, weight: .bold))
                         }
                         .foregroundColor(.black)
                         .padding(.horizontal, 36)
@@ -324,11 +324,11 @@ struct NowPlayingView: View {
 
                 VStack(spacing: 12) {
                     Text("Spotify Not Connected")
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .font(.system(size: 26, weight: .bold))
                         .foregroundColor(.white)
 
                     Text("Connect your Spotify account to see\nwhat's playing and go live nearby.")
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
                 }
@@ -342,7 +342,7 @@ struct NowPlayingView: View {
                             .font(.system(size: 15, weight: .bold))
 
                         Text("Connect Spotify")
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .font(.system(size: 17, weight: .bold))
                     }
                     .foregroundColor(.black)
                     .padding(.horizontal, 36)
@@ -444,21 +444,12 @@ private struct CompactBroadcastToggle: View {
 
     private var toggleRow: some View {
         HStack(spacing: 12) {
-            // Indicator dot
-            Circle()
-                .fill(broadcast.isBroadcasting ? AppColors.live : AppColors.mutedText)
-                .frame(width: 8, height: 8)
-                .overlay(
-                    Circle()
-                        .fill(broadcast.isBroadcasting ? AppColors.live : Color.clear)
-                        .scaleEffect(broadcast.isBroadcasting ? 2.0 : 1.0)
-                        .opacity(broadcast.isBroadcasting ? 0.3 : 0)
-                        .animation(
-                            broadcast.isBroadcasting ?
-                            .easeInOut(duration: 1.5).repeatForever(autoreverses: false) : .default,
-                            value: broadcast.isBroadcasting
-                        )
-                )
+            // The mark: breathing while live, still otherwise.
+            if broadcast.isBroadcasting {
+                LiveRipple(size: 26)
+            } else {
+                RippleMark(size: 18, color: AppColors.mutedText, rings: 1)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(broadcast.isBroadcasting ? "You’re live nearby" : "Go live nearby")
@@ -467,7 +458,7 @@ private struct CompactBroadcastToggle: View {
 
                 if let hint {
                     Text(hint)
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.white.opacity(0.6))
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -524,7 +515,7 @@ private struct CompactBroadcastToggle: View {
             Image(systemName: "location.slash")
                 .foregroundColor(AppColors.primary)
             Text("Location is off, so nobody nearby can find you. Turn it on in Settings.")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white.opacity(0.85))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
@@ -533,7 +524,7 @@ private struct CompactBroadcastToggle: View {
                     UIApplication.shared.open(url)
                 }
             }
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .font(.system(size: 12, weight: .semibold))
             .foregroundColor(.white)
         }
         .padding(.horizontal, 14)
@@ -669,14 +660,14 @@ private struct SpotifyProgressBar: View {
             // Time labels
             HStack {
                 Text(format(ms: Int(isScrubbing ? localProgress : Double(progressMs))))
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.6))
                     .monospacedDigit()
 
                 Spacer()
 
                 Text(format(ms: Int(isScrubbing ? localProgress : Double(progressMs)), showRemaining: showRemaining))
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.6))
                     .monospacedDigit()
                     .onTapGesture {

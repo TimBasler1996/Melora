@@ -73,7 +73,7 @@ struct CitySearchFieldOnboarding: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             TextField("Which city?", text: $completer.query)
-                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(AppColors.primaryText)
                 .disableAutocorrection(true)
                 .focused($isFocused)

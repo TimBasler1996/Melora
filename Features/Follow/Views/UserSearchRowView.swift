@@ -80,7 +80,7 @@ struct UserSearchRowView: View {
         ZStack {
             Circle().fill(AppColors.surfaceElevated)
             Text(user.initials)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundColor(.white)
         }
     }

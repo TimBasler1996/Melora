@@ -197,7 +197,7 @@ struct SharedProfilePreviewView: View {
     private func statItem(value: String, label: String) -> some View {
         VStack(spacing: 3) {
             Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: 20, weight: .bold))
                 .foregroundColor(AppColors.primaryText)
             Text(label)
                 .font(AppFonts.caption())
@@ -223,7 +223,7 @@ struct SharedProfilePreviewView: View {
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: 12, weight: .semibold))
                 Text("Spotify Profile")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold))
             }
             .foregroundColor(AppColors.live)
             .padding(.horizontal, 14)
@@ -574,7 +574,7 @@ struct MusicTasteCard: View {
                                     VStack(spacing: 6) {
                                         image(artist.imageURL, size: 56, circle: true)
                                         Text(artist.name)
-                                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                                            .font(.system(size: 12, weight: .medium))
                                             .foregroundColor(AppColors.primaryText)
                                             .lineLimit(1)
                                             .frame(width: 64)
@@ -596,7 +596,7 @@ struct MusicTasteCard: View {
                                 image(track.imageURL, size: 40, circle: false)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(track.name)
-                                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                        .font(AppFonts.song(size: 18))
                                         .foregroundColor(AppColors.primaryText)
                                         .lineLimit(1)
                                     if let subtitle = track.subtitle {
@@ -627,7 +627,7 @@ struct MusicTasteCard: View {
                                     VStack(alignment: .leading, spacing: 6) {
                                         image(playlist.imageURL, size: 96, circle: false)
                                         Text(playlist.name)
-                                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                            .font(.system(size: 12, weight: .semibold))
                                             .foregroundColor(AppColors.primaryText)
                                             .lineLimit(1)
                                         if let subtitle = playlist.subtitle {
