@@ -19,6 +19,9 @@ struct DiscoverView: View {
     @State private var chatToOpen: ChatTarget?
     /// The song sheet, when a track was tapped.
     @State private var trackSheetBroadcast: DiscoverBroadcast?
+    /// What to present once the song sheet has finished dismissing
+    /// (profile or chat): two sheets on top of each other would fight.
+    @State private var pendingAfterTrackSheet: (() -> Void)?
 
     /// A chat to push, with the peer so the thread can recover if the
     /// conversation was deleted meanwhile.
@@ -73,7 +76,11 @@ struct DiscoverView: View {
             .sheet(isPresented: $showUserSearch) {
                 UserSearchView()
             }
-            .sheet(item: $trackSheetBroadcast) { broadcast in
+            .sheet(item: $trackSheetBroadcast, onDismiss: {
+                let next = pendingAfterTrackSheet
+                pendingAfterTrackSheet = nil
+                next?()
+            }) { broadcast in
                 trackSheet(for: broadcast)
             }
             .sheet(item: $viewModel.selectedBroadcast) { broadcast in
@@ -539,13 +546,8 @@ struct DiscoverView: View {
             hasLiked: viewModel.isLiked(broadcast),
             hasMessaged: viewModel.hasMessage(broadcast),
             onLike: {
-                Task {
-                    do {
-                        try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: nil)
-                    } catch {
-                        viewModel.presentActionError(error, fallback: "Couldn’t send your like. Please try again.")
-                    }
-                }
+                // Thrown errors show inside the sheet.
+                try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: nil)
             },
             onMessage: { message in
                 Task {
@@ -557,12 +559,12 @@ struct DiscoverView: View {
                 }
             },
             onOpenChat: {
+                pendingAfterTrackSheet = { openChat(with: broadcast) }
                 trackSheetBroadcast = nil
-                afterSheetDismiss { openChat(with: broadcast) }
             },
             onViewProfile: {
+                pendingAfterTrackSheet = { viewModel.selectBroadcast(broadcast) }
                 trackSheetBroadcast = nil
-                afterSheetDismiss { viewModel.selectBroadcast(broadcast) }
             },
             onHideTrack: {
                 viewModel.muteTrack(for: broadcast)
@@ -577,11 +579,6 @@ struct DiscoverView: View {
                 chatToOpen = ChatTarget(conversationId: id, peerId: broadcast.user.id)
             }
         }
-    }
-
-    /// Waits for the sheet's dismiss animation before presenting the next thing.
-    private func afterSheetDismiss(_ action: @escaping () -> Void) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: action)
     }
 
     // MARK: - Undo toast

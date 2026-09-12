@@ -91,6 +91,8 @@ enum SpotifyAPIError: Error {
     case noActiveDevice
     /// 403 with the stored login: it predates a scope we now need.
     case insufficientScope
+    /// 403 PREMIUM_REQUIRED: playback control is a Premium feature.
+    case premiumRequired
 }
 
 struct NowPlayingState: Equatable {
@@ -495,8 +497,10 @@ final class SpotifyService {
 
         if http.statusCode == 403 {
             // Same rule as getJSON: only a missing scope is fixed by reconnecting.
+            // Free accounts get PREMIUM_REQUIRED for play/queue; say so.
             let responseBody = String(data: data, encoding: .utf8) ?? ""
             if responseBody.lowercased().contains("scope") { throw SpotifyAPIError.insufficientScope }
+            if responseBody.uppercased().contains("PREMIUM_REQUIRED") { throw SpotifyAPIError.premiumRequired }
             print("❌ Spotify /\(path) HTTP 403: \(responseBody)")
         }
 

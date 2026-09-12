@@ -10,7 +10,9 @@ struct DiscoverTrackSheet: View {
     var hasLiked: Bool = false
     var hasMessaged: Bool = false
 
-    let onLike: () -> Void
+    /// Sends the like; the sheet shows the error itself because an alert on
+    /// Discover would sit underneath the presented sheet.
+    let onLike: () async throws -> Void
     let onMessage: (String) -> Void
     let onOpenChat: () -> Void
     let onViewProfile: () -> Void
@@ -87,11 +89,14 @@ struct DiscoverTrackSheet: View {
         .presentationBackground(AppColors.background)
         .task(id: track.artworkURL) {
             guard let url = track.artworkURLValue else { glow = nil; return }
-            glow = await ArtworkColorCache.shared.color(for: url)
+            let color = await ArtworkColorCache.shared.color(for: url)
+            withAnimation(.easeOut(duration: 0.35)) { glow = color }
         }
         .task { await loadSavedState() }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: status)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: playState)
+        .animation(.easeInOut(duration: 0.18), value: isQueueing)
+        .animation(.easeInOut(duration: 0.18), value: isSaving)
     }
 
     // MARK: - Background
@@ -133,12 +138,14 @@ struct DiscoverTrackSheet: View {
 
     private var header: some View {
         VStack(spacing: 18) {
-            ZStack {
-                artwork
-                if showLikeBurst {
-                    RippleBurst(size: 260, trigger: likeBurst)
+            // The burst is an overlay so it never takes part in layout:
+            // the cover and titles must not move when a like fires.
+            artwork
+                .overlay {
+                    if showLikeBurst {
+                        RippleBurst(size: 260, trigger: likeBurst)
+                    }
                 }
-            }
 
             VStack(spacing: 6) {
                 Text(trackTitle)
@@ -497,11 +504,19 @@ struct DiscoverTrackSheet: View {
                 show(Status(text: "Now playing on your Spotify.", kind: .success))
             } catch SpotifyAPIError.noActiveDevice {
                 // Nothing is open to play on: hand over to the Spotify app.
-                playState = .idle
+                // Stay in .starting until the hand-over lands so the button
+                // doesn't flash "Play on Spotify" in between.
+                openInSpotifyApp()
+            } catch SpotifyAPIError.premiumRequired {
+                // Playback control is Premium-only; the app itself still works.
+                show(Status(text: "Playing from Melora needs Spotify Premium — opening Spotify instead.", kind: .info))
                 openInSpotifyApp()
             } catch SpotifyAPIError.insufficientScope {
                 playState = .idle
                 show(Status(text: "Reconnect Spotify to control playback.", kind: .reconnect), sticky: true)
+            } catch SpotifyAuthError.notAuthorized, SpotifyAuthError.refreshRejected {
+                playState = .idle
+                show(Status(text: "Your Spotify login expired.", kind: .reconnect), sticky: true)
             } catch {
                 playState = .idle
                 show(Status(text: "Couldn’t reach Spotify. Try again.", kind: .info))
@@ -523,8 +538,12 @@ struct DiscoverTrackSheet: View {
                 show(Status(text: "Added to your queue.", kind: .success))
             } catch SpotifyAPIError.noActiveDevice {
                 show(Status(text: "Open Spotify and play something first.", kind: .info))
+            } catch SpotifyAPIError.premiumRequired {
+                show(Status(text: "The queue needs Spotify Premium.", kind: .info))
             } catch SpotifyAPIError.insufficientScope {
                 show(Status(text: "Reconnect Spotify to use the queue.", kind: .reconnect), sticky: true)
+            } catch SpotifyAuthError.notAuthorized, SpotifyAuthError.refreshRejected {
+                show(Status(text: "Your Spotify login expired.", kind: .reconnect), sticky: true)
             } catch {
                 show(Status(text: "Couldn’t reach Spotify. Try again.", kind: .info))
             }
@@ -547,6 +566,8 @@ struct DiscoverTrackSheet: View {
                 show(Status(text: target ? "Saved to your Liked Songs." : "Removed from your Liked Songs.", kind: .success))
             } catch SpotifyAPIError.insufficientScope {
                 show(Status(text: "Reconnect Spotify to save songs.", kind: .reconnect), sticky: true)
+            } catch SpotifyAuthError.notAuthorized, SpotifyAuthError.refreshRejected {
+                show(Status(text: "Your Spotify login expired.", kind: .reconnect), sticky: true)
             } catch {
                 show(Status(text: "Couldn’t reach Spotify. Try again.", kind: .info))
             }
@@ -569,7 +590,17 @@ struct DiscoverTrackSheet: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
             showLikeBurst = false
         }
-        onLike()
+        Task {
+            do {
+                try await onLike()
+            } catch {
+                // Same mapping as DiscoverViewModel.presentActionError.
+                let text = error is LikeApiService.LikeError || error is ChatApiService.ChatError
+                    ? error.localizedDescription
+                    : UserFacingError.message(for: error, fallback: "Couldn’t send your like. Please try again.")
+                show(Status(text: text, kind: .info))
+            }
+        }
     }
 
     private func handleMessageAction() {
