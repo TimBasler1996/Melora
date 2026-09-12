@@ -495,6 +495,11 @@ final class SpotifyService {
             throw SpotifyAPIError.noActiveDevice
         }
 
+        // The token was invalidated server-side: same remedy as a rejected refresh.
+        if http.statusCode == 401 {
+            throw SpotifyAuthError.notAuthorized
+        }
+
         if http.statusCode == 403 {
             // Same rule as getJSON: only a missing scope is fixed by reconnecting.
             // Free accounts get PREMIUM_REQUIRED for play/queue; say so.

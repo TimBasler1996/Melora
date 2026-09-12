@@ -94,12 +94,15 @@ actor LikeApiService {
             .document(toUser.uid)
             .collection("likesReceived")
 
-        // Prevent duplicates: same liker + same track
+        // Prevent duplicates: same liker + same track. These checks read from
+        // the server on purpose: offline they fail fast ("You're offline")
+        // instead of answering from a stale cache and queueing a write that
+        // would go out silently later.
         let dupCheck = try await receivedCollection
             .whereField("fromUserId", isEqualTo: fromUserId)
             .whereField("trackId", isEqualTo: track.id)
             .limit(to: 1)
-            .getDocuments()
+            .getDocuments(source: .server)
 
         let trimmedMessage: String? = {
             let t = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -134,7 +137,7 @@ actor LikeApiService {
             .whereField("fromUserId", isEqualTo: fromUserId)
             .whereField("status", isEqualTo: TrackLike.Status.rejected.rawValue)
             .limit(to: 1)
-            .getDocuments()
+            .getDocuments(source: .server)
         if !priorDeclined.documents.isEmpty {
             throw LikeError.alreadyReachedOut(name: toUser.displayName)
         }
@@ -145,7 +148,7 @@ actor LikeApiService {
             .whereField("fromUserId", isEqualTo: fromUserId)
             .whereField("status", isEqualTo: TrackLike.Status.accepted.rawValue)
             .limit(to: 1)
-            .getDocuments()
+            .getDocuments(source: .server)
         let autoAccept = !priorAccepted.documents.isEmpty
         let initialStatus: TrackLike.Status = autoAccept ? .accepted : .pending
 

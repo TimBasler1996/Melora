@@ -116,6 +116,12 @@ enum RemoteImagePhase {
     case empty
     case success(Image)
     case failure
+
+    /// For `.animation(value:)` on a fade-in.
+    var isSuccess: Bool {
+        if case .success = self { return true }
+        return false
+    }
 }
 
 /// Drop-in for `AsyncImage(url:) { phase in }` with a display size, so the

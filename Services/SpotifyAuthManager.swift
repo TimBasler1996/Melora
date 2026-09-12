@@ -13,6 +13,10 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
     // MARK: - Public state
 
     @Published var isAuthorized: Bool = false
+    /// Spotify rejected the stored refresh token: the user was connected and
+    /// has to reconnect. Distinguishes "expired" from "never connected" so
+    /// screens can offer Reconnect instead of pointing at Settings.
+    @Published private(set) var loginExpired: Bool = false
 
     /// Why the last interactive login did not end with tokens. Cleared when a
     /// new login starts, so screens waiting on `isAuthorized` can stop
@@ -118,6 +122,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
     func disconnect() {
         tokens = nil
         isAuthorized = false
+        loginExpired = false
         KeychainStore.remove(forKey: Self.keychainKey)
     }
 
@@ -142,6 +147,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
             // Spotify explicitly invalidated the refresh token → reconnect.
             print("❌ [Auth] Refresh token rejected → user must reconnect Spotify")
             disconnect()
+            loginExpired = true
             throw SpotifyAuthError.notAuthorized
         } catch {
             // Offline / 5xx / decoding hiccup: keep everything, try again later.
@@ -204,6 +210,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
                 do {
                     try await self.exchangeCodeForTokens(code: code, verifier: verifier)
                     self.isAuthorized = true
+                    self.loginExpired = false
                     // A fresh login carries every scope: refresh the
                     // profile's music taste right away.
                     Task { await SpotifyTasteSync.syncIfNeeded(force: true) }

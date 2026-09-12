@@ -13,7 +13,8 @@ struct DiscoverTrackSheet: View {
     /// Sends the like; the sheet shows the error itself because an alert on
     /// Discover would sit underneath the presented sheet.
     let onLike: () async throws -> Void
-    let onMessage: (String) -> Void
+    /// Sends the message; like `onLike`, errors are shown inside the sheet.
+    let onMessage: (String) async throws -> Void
     let onOpenChat: () -> Void
     let onViewProfile: () -> Void
     let onHideTrack: () -> Void
@@ -29,6 +30,7 @@ struct DiscoverTrackSheet: View {
     @State private var isSaved: Bool = false
     @State private var isSaving: Bool = false
     @State private var isQueueing: Bool = false
+    @State private var isSendingMessage: Bool = false
     @State private var status: Status?
     @State private var statusToken: Int = 0
 
@@ -41,7 +43,7 @@ struct DiscoverTrackSheet: View {
     @State private var showLikeBurst: Bool = false
 
     private enum PlayState: Equatable {
-        case idle, starting, playing, opened
+        case idle, starting, playing, opened, openedWeb
     }
 
     /// A line under the primary button: what just happened, or what to do.
@@ -96,6 +98,7 @@ struct DiscoverTrackSheet: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: status)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: playState)
         .animation(.easeInOut(duration: 0.18), value: isQueueing)
+        .animation(.easeInOut(duration: 0.18), value: isSendingMessage)
         .animation(.easeInOut(duration: 0.18), value: isSaving)
     }
 
@@ -125,7 +128,8 @@ struct DiscoverTrackSheet: View {
                 MIcon("x", size: 16, color: AppColors.primaryText)
                     .frame(width: 36, height: 36)
                     .background(Circle().fill(AppColors.surface))
-                    .contentShape(Circle())
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Close")
@@ -172,12 +176,17 @@ struct DiscoverTrackSheet: View {
     private var artwork: some View {
         ZStack {
             if let url = track.artworkURLValue {
+                // The card cached a 50pt cover; the sheet wants 220pt, so the
+                // first open usually misses the cache. Fade instead of pop.
                 RemoteImage(url: url, size: 220) { phase in
-                    if case .success(let image) = phase {
-                        image.resizable().scaledToFill()
-                    } else {
+                    ZStack {
                         artworkPlaceholder
+                        if case .success(let image) = phase {
+                            image.resizable().scaledToFill()
+                                .transition(.opacity)
+                        }
                     }
+                    .animation(.easeOut(duration: 0.2), value: phase.isSuccess)
                 }
             } else {
                 artworkPlaceholder
@@ -287,7 +296,7 @@ struct DiscoverTrackSheet: View {
                         ProgressView().tint(AppColors.background).scaleEffect(0.85)
                     case .playing:
                         MIcon("check", size: 18, color: AppColors.background)
-                    case .opened:
+                    case .opened, .openedWeb:
                         MIcon("arrow-up-right", size: 18, color: AppColors.background)
                     case .idle:
                         MIcon("play", size: 18, color: AppColors.background)
@@ -312,7 +321,8 @@ struct DiscoverTrackSheet: View {
 
     private var primaryTitle: String {
         switch playState {
-        case .idle: return spotifyAuth.isAuthorized ? "Play on Spotify" : "Open in Spotify"
+        case .idle: return (spotifyAuth.isAuthorized || spotifyAuth.loginExpired) ? "Play on Spotify" : "Open in Spotify"
+        case .openedWeb: return "Opened in browser"
         case .starting: return "Starting…"
         case .playing: return "Playing on Spotify"
         case .opened: return "Opened in Spotify"
@@ -353,7 +363,8 @@ struct DiscoverTrackSheet: View {
             actionButton(
                 icon: "send",
                 label: hasMessaged ? "Open chat" : "Message",
-                color: hasMessaged ? AppColors.live : AppColors.primaryText
+                color: hasMessaged ? AppColors.live : AppColors.primaryText,
+                isBusy: isSendingMessage
             ) {
                 handleMessageAction()
             }
@@ -376,7 +387,11 @@ struct DiscoverTrackSheet: View {
                 handleSave()
             }
 
-            ShareLink(item: spotifyWebURL, message: Text("\(trackTitle) – \(trackArtist)")) {
+            ShareLink(
+                item: spotifyWebURL,
+                message: Text("\(trackTitle) – \(trackArtist)"),
+                preview: sharePreview
+            ) {
                 actionLabel(icon: "arrow-up-right", label: "Share", color: AppColors.primaryText)
             }
             .buttonStyle(.plain)
@@ -475,8 +490,9 @@ struct DiscoverTrackSheet: View {
             .buttonStyle(.plain)
 
             Button {
+                // The parent takes the sheet down and hides the song once the
+                // feed is visible, so the card fade and the undo toast are seen.
                 onHideTrack()
-                dismiss()
             } label: {
                 Text("Hide this song")
                     .font(AppFonts.footnote())
@@ -492,7 +508,11 @@ struct DiscoverTrackSheet: View {
     private func handlePlay() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         guard spotifyAuth.isAuthorized else {
-            openInSpotifyApp()
+            if spotifyAuth.loginExpired {
+                show(Status(text: "Your Spotify login expired.", kind: .reconnect), sticky: true)
+            } else {
+                openInSpotifyApp()
+            }
             return
         }
         playState = .starting
@@ -527,7 +547,7 @@ struct DiscoverTrackSheet: View {
     private func handleQueue() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         guard spotifyAuth.isAuthorized else {
-            show(Status(text: "Connect Spotify in Settings to use the queue.", kind: .info))
+            showNotConnected(action: "use the queue")
             return
         }
         isQueueing = true
@@ -553,7 +573,7 @@ struct DiscoverTrackSheet: View {
     private func handleSave() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         guard spotifyAuth.isAuthorized else {
-            show(Status(text: "Connect Spotify in Settings to save songs.", kind: .info))
+            showNotConnected(action: "save songs")
             return
         }
         let target = !isSaved
@@ -571,6 +591,15 @@ struct DiscoverTrackSheet: View {
             } catch {
                 show(Status(text: "Couldn’t reach Spotify. Try again.", kind: .info))
             }
+        }
+    }
+
+    /// "Expired" offers Reconnect right here; "never connected" points at Settings.
+    private func showNotConnected(action: String) {
+        if spotifyAuth.loginExpired {
+            show(Status(text: "Your Spotify login expired.", kind: .reconnect), sticky: true)
+        } else {
+            show(Status(text: "Connect Spotify in Settings to \(action).", kind: .info))
         }
     }
 
@@ -594,11 +623,7 @@ struct DiscoverTrackSheet: View {
             do {
                 try await onLike()
             } catch {
-                // Same mapping as DiscoverViewModel.presentActionError.
-                let text = error is LikeApiService.LikeError || error is ChatApiService.ChatError
-                    ? error.localizedDescription
-                    : UserFacingError.message(for: error, fallback: "Couldn’t send your like. Please try again.")
-                show(Status(text: text, kind: .info))
+                show(Status(text: userFacingText(for: error, fallback: "Couldn’t send your like. Please try again."), kind: .info))
             }
         }
     }
@@ -615,22 +640,49 @@ struct DiscoverTrackSheet: View {
 
     private func handleSendMessage() {
         let trimmed = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        onMessage(trimmed)
+        guard !trimmed.isEmpty, !isSendingMessage else { return }
         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
             showMessageField = false
         }
         messageText = ""
         isMessageFieldFocused = false
+        isSendingMessage = true
+        Task {
+            defer { isSendingMessage = false }
+            do {
+                try await onMessage(trimmed)
+                show(Status(text: "Message sent.", kind: .success))
+            } catch {
+                show(Status(text: userFacingText(for: error, fallback: "Couldn’t send your message. Please try again."), kind: .info))
+                // Give the text back so a retry doesn't mean retyping.
+                messageText = trimmed
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                    showMessageField = true
+                }
+            }
+        }
+    }
+
+    /// Same mapping as DiscoverViewModel.presentActionError.
+    private func userFacingText(for error: Error, fallback: String) -> String {
+        if error is LikeApiService.LikeError || error is ChatApiService.ChatError {
+            return error.localizedDescription
+        }
+        return UserFacingError.message(for: error, fallback: fallback)
     }
 
     private func openInSpotifyApp() {
         openURL(spotifyDeepLink) { success in
             if success {
                 playState = .opened
-            } else {
-                openURL(spotifyWebURL)
-                playState = .opened
+                return
+            }
+            // No Spotify app: the browser gets it, and the button says so.
+            openURL(spotifyWebURL) { ok in
+                playState = ok ? .openedWeb : .idle
+                if ok {
+                    show(Status(text: "Spotify isn’t installed — opened in your browser.", kind: .info))
+                }
             }
         }
     }
@@ -647,6 +699,16 @@ struct DiscoverTrackSheet: View {
     }
 
     // MARK: - Helpers
+
+    /// The share sheet shows the song and its cover, not a fetched link card.
+    private var sharePreview: SharePreview<Image, Never> {
+        let title = "\(trackTitle) – \(trackArtist)"
+        if let url = track.artworkURLValue,
+           let cached = RemoteImageLoader.cached(url, pixelSize: RemoteImageLoader.pixelSize(forPoints: 220)) {
+            return SharePreview(title, image: Image(uiImage: cached))
+        }
+        return SharePreview(title, image: Image("icon-music"))
+    }
 
     private var trackTitle: String {
         let t = track.title.trimmingCharacters(in: .whitespacesAndNewlines)

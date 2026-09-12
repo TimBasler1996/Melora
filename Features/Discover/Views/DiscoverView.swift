@@ -460,7 +460,7 @@ struct DiscoverView: View {
             .refreshable {
                 await viewModel.refresh()
             }
-            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: viewModel.visibleBroadcasts.map(\.id))
+            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: viewModel.visibleBroadcasts.map(\.id) + viewModel.recentBroadcasts.map(\.id))
         }
     }
 
@@ -550,13 +550,8 @@ struct DiscoverView: View {
                 try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: nil)
             },
             onMessage: { message in
-                Task {
-                    do {
-                        try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: message)
-                    } catch {
-                        viewModel.presentActionError(error, fallback: "Couldn’t send your message. Please try again.")
-                    }
-                }
+                // Thrown errors show inside the sheet.
+                try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: message)
             },
             onOpenChat: {
                 pendingAfterTrackSheet = { openChat(with: broadcast) }
@@ -567,7 +562,10 @@ struct DiscoverView: View {
                 trackSheetBroadcast = nil
             },
             onHideTrack: {
-                viewModel.muteTrack(for: broadcast)
+                // Hide once the feed is visible again: the card fade and the
+                // undo toast happen where the user can see them.
+                pendingAfterTrackSheet = { viewModel.muteTrack(for: broadcast) }
+                trackSheetBroadcast = nil
             }
         )
         .environmentObject(spotifyAuth)
