@@ -13,6 +13,8 @@ struct DiscoverCardView: View {
     let onToggleFollow: () -> Void
     /// Opens the conversation once a message has been sent.
     var onOpenChat: () -> Void = {}
+    /// The song itself was tapped (cover or title): open the song sheet.
+    var onOpenTrack: () -> Void = {}
 
     var hasLiked: Bool = false
     var hasMessaged: Bool = false
@@ -30,18 +32,11 @@ struct DiscoverCardView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                // Card header — tap to expand/collapse
-                Button {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        isExpanded.toggle()
-                        if !isExpanded {
-                            showMessageField = false
-                        }
-                    }
-                } label: {
-                    cardHeader
-                }
-                .buttonStyle(.plain)
+                // Card header — the song opens the song sheet, everything
+                // else expands/collapses the card.
+                cardHeader
+                    .contentShape(Rectangle())
+                    .onTapGesture { toggleExpanded() }
 
                 // Expanded: divider + actions
                 if isExpanded {
@@ -108,6 +103,15 @@ struct DiscoverCardView: View {
 
     // MARK: - Card Header
 
+    private func toggleExpanded() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            isExpanded.toggle()
+            if !isExpanded {
+                showMessageField = false
+            }
+        }
+    }
+
     private var cardHeader: some View {
         HStack(spacing: 12) {
             // User photo (circle) on the LEFT
@@ -121,15 +125,24 @@ struct DiscoverCardView: View {
                     .lineLimit(1)
 
                 // The song gets the serif; that is the app's signature.
-                Text(trackTitle)
-                    .font(AppFonts.song(size: 21))
-                    .foregroundColor(AppColors.primaryText)
-                    .lineLimit(1)
+                // Tapping it opens the song sheet.
+                Button(action: onOpenTrack) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(trackTitle)
+                            .font(AppFonts.song(size: 21))
+                            .foregroundColor(AppColors.primaryText)
+                            .lineLimit(1)
 
-                Text(trackArtist)
-                    .font(AppFonts.footnote())
-                    .foregroundColor(AppColors.secondaryText)
-                    .lineLimit(1)
+                        Text(trackArtist)
+                            .font(AppFonts.footnote())
+                            .foregroundColor(AppColors.secondaryText)
+                            .lineLimit(1)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(trackTitle) by \(trackArtist)")
+                .accessibilityHint("Opens the song")
 
                 HStack(spacing: 6) {
                     if broadcast.isLive {
@@ -151,8 +164,18 @@ struct DiscoverCardView: View {
 
             Spacer(minLength: 0)
 
-            // Album artwork (square) on the RIGHT
-            albumArtwork
+            // Album artwork (square) on the RIGHT — opens the song sheet.
+            Button(action: onOpenTrack) {
+                albumArtwork
+                    .overlay(alignment: .bottomTrailing) {
+                        MIcon("play", size: 9, color: AppColors.background)
+                            .frame(width: 18, height: 18)
+                            .background(Circle().fill(AppColors.primary))
+                            .offset(x: 4, y: 4)
+                    }
+            }
+            .buttonStyle(.pressable)
+            .accessibilityLabel("Open \(trackTitle)")
 
             // Chevron
             MIcon(isExpanded ? "chev-up" : "chev-down", size: 16, color: AppColors.mutedText)

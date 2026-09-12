@@ -17,6 +17,8 @@ struct DiscoverView: View {
     @State private var showNothingPlaying = false
     @State private var expandedCardId: String?
     @State private var chatToOpen: ChatTarget?
+    /// The song sheet, when a track was tapped.
+    @State private var trackSheetBroadcast: DiscoverBroadcast?
 
     /// A chat to push, with the peer so the thread can recover if the
     /// conversation was deleted meanwhile.
@@ -70,6 +72,9 @@ struct DiscoverView: View {
             }
             .sheet(isPresented: $showUserSearch) {
                 UserSearchView()
+            }
+            .sheet(item: $trackSheetBroadcast) { broadcast in
+                trackSheet(for: broadcast)
             }
             .sheet(item: $viewModel.selectedBroadcast) { broadcast in
                 NavigationStack {
@@ -505,11 +510,11 @@ struct DiscoverView: View {
                 Task { await viewModel.toggleFollow(broadcast) }
             },
             onOpenChat: {
-                Task {
-                    if let id = await viewModel.conversationId(with: broadcast) {
-                        chatToOpen = ChatTarget(conversationId: id, peerId: broadcast.user.id)
-                    }
-                }
+                openChat(with: broadcast)
+            },
+            onOpenTrack: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                trackSheetBroadcast = broadcast
             },
             hasLiked: viewModel.isLiked(broadcast),
             hasMessaged: viewModel.hasMessage(broadcast),
@@ -520,6 +525,63 @@ struct DiscoverView: View {
             insertion: .move(edge: .top).combined(with: .opacity),
             removal: .opacity
         ))
+    }
+
+    // MARK: - Song sheet
+
+    /// The song sheet reads live like/message state from the view model, so
+    /// a like sent from the sheet shows on the card and vice versa. Profile
+    /// and chat are presented from Discover after the sheet is down: two
+    /// sheets on top of each other would fight.
+    private func trackSheet(for broadcast: DiscoverBroadcast) -> some View {
+        DiscoverTrackSheet(
+            broadcast: broadcast,
+            hasLiked: viewModel.isLiked(broadcast),
+            hasMessaged: viewModel.hasMessage(broadcast),
+            onLike: {
+                Task {
+                    do {
+                        try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: nil)
+                    } catch {
+                        viewModel.presentActionError(error, fallback: "Couldn’t send your like. Please try again.")
+                    }
+                }
+            },
+            onMessage: { message in
+                Task {
+                    do {
+                        try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: message)
+                    } catch {
+                        viewModel.presentActionError(error, fallback: "Couldn’t send your message. Please try again.")
+                    }
+                }
+            },
+            onOpenChat: {
+                trackSheetBroadcast = nil
+                afterSheetDismiss { openChat(with: broadcast) }
+            },
+            onViewProfile: {
+                trackSheetBroadcast = nil
+                afterSheetDismiss { viewModel.selectBroadcast(broadcast) }
+            },
+            onHideTrack: {
+                viewModel.muteTrack(for: broadcast)
+            }
+        )
+        .environmentObject(spotifyAuth)
+    }
+
+    private func openChat(with broadcast: DiscoverBroadcast) {
+        Task {
+            if let id = await viewModel.conversationId(with: broadcast) {
+                chatToOpen = ChatTarget(conversationId: id, peerId: broadcast.user.id)
+            }
+        }
+    }
+
+    /// Waits for the sheet's dismiss animation before presenting the next thing.
+    private func afterSheetDismiss(_ action: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45, execute: action)
     }
 
     // MARK: - Undo toast

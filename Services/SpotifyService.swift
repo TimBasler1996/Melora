@@ -425,10 +425,44 @@ final class SpotifyService {
         )
     }
 
+    // MARK: - Track Actions (Discover song sheet)
+
+    /// Starts `trackId` on the active device. Throws `noActiveDevice` when
+    /// Spotify isn't open anywhere; callers fall back to the deep link.
+    func playTrack(id trackId: String) async throws {
+        let body = try JSONSerialization.data(withJSONObject: ["uris": ["spotify:track:\(trackId)"]])
+        try await sendPlayerCommand(path: "me/player/play", method: "PUT", body: body)
+    }
+
+    /// Appends `trackId` to the queue of the active device.
+    func addToQueue(trackId: String) async throws {
+        try await sendPlayerCommand(
+            path: "me/player/queue",
+            method: "POST",
+            queryItems: [URLQueryItem(name: "uri", value: "spotify:track:\(trackId)")]
+        )
+    }
+
+    /// Whether the track is in the user's Liked Songs. Needs `user-library-read`.
+    func isTrackSaved(id trackId: String) async throws -> Bool {
+        let flags: [Bool] = try await getJSON(path: "me/tracks/contains", query: ["ids": trackId])
+        return flags.first ?? false
+    }
+
+    /// Adds / removes the track from Liked Songs. Needs `user-library-modify`.
+    func setTrackSaved(id trackId: String, saved: Bool) async throws {
+        try await sendPlayerCommand(
+            path: "me/tracks",
+            method: saved ? "PUT" : "DELETE",
+            queryItems: [URLQueryItem(name: "ids", value: trackId)]
+        )
+    }
+
     private func sendPlayerCommand(
         path: String,
         method: String,
-        queryItems: [URLQueryItem]? = nil
+        queryItems: [URLQueryItem]? = nil,
+        body: Data? = nil
     ) async throws {
         let accessToken = try await SpotifyAuthManager.shared.getValidAccessToken()
 
@@ -439,8 +473,12 @@ final class SpotifyService {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        if let body {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
 
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
             throw SpotifyAPIError.invalidResponse
@@ -453,6 +491,13 @@ final class SpotifyService {
 
         if http.statusCode == 404 {
             throw SpotifyAPIError.noActiveDevice
+        }
+
+        if http.statusCode == 403 {
+            // Same rule as getJSON: only a missing scope is fixed by reconnecting.
+            let responseBody = String(data: data, encoding: .utf8) ?? ""
+            if responseBody.lowercased().contains("scope") { throw SpotifyAPIError.insufficientScope }
+            print("❌ Spotify /\(path) HTTP 403: \(responseBody)")
         }
 
         throw SpotifyAPIError.invalidResponse

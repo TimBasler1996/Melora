@@ -72,3 +72,6 @@ functions/lib/
 
 # Firebase CLI cache
 .firebase/
+
+# Secrets / local tooling
+authkeys/

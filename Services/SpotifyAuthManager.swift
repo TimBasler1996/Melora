@@ -42,7 +42,10 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
         "user-read-currently-playing",
         // Profile: top artists, top tracks, public playlists.
         "user-top-read",
-        "playlist-read-private"
+        "playlist-read-private",
+        // Discover song sheet: save a song to Liked Songs.
+        "user-library-read",
+        "user-library-modify"
     ].joined(separator: " ")
 
     private var authSession: ASWebAuthenticationSession?
