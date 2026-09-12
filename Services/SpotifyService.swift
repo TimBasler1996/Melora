@@ -110,6 +110,16 @@ final class SpotifyService {
 
     private let apiBaseURL = URL(string: "https://api.spotify.com/v1")!
 
+    /// Spotify calls sit behind a button: on a bad connection a spinner must
+    /// give up in seconds, not URLSession's default 60.
+    static let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 15
+        config.timeoutIntervalForResource = 20
+        config.waitsForConnectivity = false
+        return URLSession(configuration: config)
+    }()
+
     // MARK: - Now Playing
 
     /// Fetches full now-playing state (track + isPlaying).
@@ -121,7 +131,7 @@ final class SpotifyService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
             throw SpotifyAPIError.invalidResponse
@@ -180,7 +190,7 @@ final class SpotifyService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw SpotifyAPIError.invalidResponse
         }
@@ -221,7 +231,7 @@ final class SpotifyService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
             throw SpotifyAPIError.invalidResponse
@@ -260,7 +270,7 @@ final class SpotifyService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
             throw SpotifyAPIError.invalidResponse
@@ -355,8 +365,12 @@ final class SpotifyService {
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw SpotifyAPIError.invalidResponse }
+        if http.statusCode == 401 {
+            await SpotifyAuthManager.shared.invalidateAccessToken()
+            throw SpotifyAuthError.notAuthorized
+        }
         if http.statusCode == 403 {
             // Only a scope problem is fixed by reconnecting; other 403s
             // (dev-mode allow list, region) are not.
@@ -400,7 +414,7 @@ final class SpotifyService {
         request.httpMethod = "PUT"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (_, response) = try await Self.session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw SpotifyAPIError.invalidResponse
         }
@@ -480,7 +494,7 @@ final class SpotifyService {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
             throw SpotifyAPIError.invalidResponse
@@ -495,8 +509,10 @@ final class SpotifyService {
             throw SpotifyAPIError.noActiveDevice
         }
 
-        // The token was invalidated server-side: same remedy as a rejected refresh.
+        // The token was invalidated server-side: force a refresh next time so
+        // a dead grant becomes `loginExpired` instead of another round-trip.
         if http.statusCode == 401 {
+            await SpotifyAuthManager.shared.invalidateAccessToken()
             throw SpotifyAuthError.notAuthorized
         }
 

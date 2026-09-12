@@ -371,7 +371,10 @@ final class DiscoverViewModel: ObservableObject {
 
         let key = Self.interactionKey(for: broadcast)
         let wasLiked = likedBroadcastIds.contains(key)
-        likedBroadcastIds.insert(key)
+        // A plain like flips the heart optimistically; a message send has its
+        // own spinner, so the heart waits for the server and can't flash red.
+        let isPlainLike = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if isPlainLike { likedBroadcastIds.insert(key) }
 
         let receiverUser = AppUser(
             uid: broadcast.user.id,
@@ -402,6 +405,7 @@ final class DiscoverViewModel: ObservableObject {
             if !wasLiked { likedBroadcastIds.remove(key) }
             throw error
         }
+        likedBroadcastIds.insert(key)
         saveLikedBroadcastsToCache()
 
         let trimmedMessage = (message ?? "").trimmingCharacters(in: .whitespacesAndNewlines)

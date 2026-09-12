@@ -28,6 +28,7 @@ struct SettingsContentView: View {
     /// Same key `SpotifyTasteSync.needsReconnect` writes; observed here so
     /// the row updates the moment a sync succeeds.
     @AppStorage("spotifyTaste.needsReconnect") private var needsSpotifyReconnect = false
+    @State private var showIntro = false
     /// Mirrors `SpotifyTasteSync.hidden` (uid-scoped, fed by the user document).
     @State private var spotifyTasteHidden = SpotifyTasteSync.hidden
 
@@ -227,6 +228,11 @@ struct SettingsContentView: View {
 
             // MARK: - About
             Section {
+                Button {
+                    showIntro = true
+                } label: {
+                    Label("How Melora works", systemImage: "sparkles")
+                }
                 if let url = LegalLinks.privacyPolicy {
                     Link(destination: url) {
                         Label("Privacy policy", systemImage: "hand.raised")
@@ -270,6 +276,9 @@ struct SettingsContentView: View {
             Button("Keep it", role: .cancel) {}
         } message: {
             Text("There is no way to recover a deleted profile.")
+        }
+        .fullScreenCover(isPresented: $showIntro) {
+            IntroWalkthroughView { showIntro = false }
         }
         .scrollContentBackground(.hidden)
         .melScreenBackground()

@@ -22,6 +22,8 @@ struct DiscoverView: View {
     /// What to present once the song sheet has finished dismissing
     /// (profile or chat): two sheets on top of each other would fight.
     @State private var pendingAfterTrackSheet: (() -> Void)?
+    /// One hint, once: the song is tappable. Gone after the first song tap.
+    @AppStorage("intro.songHintSeen") private var songHintSeen = false
 
     /// A chat to push, with the peer so the thread can recover if the
     /// conversation was deleted meanwhile.
@@ -440,6 +442,10 @@ struct DiscoverView: View {
                         nobodyLiveCard
                     } else {
                         sectionHeader("Live now", count: viewModel.visibleBroadcasts.count)
+                        if !songHintSeen {
+                            songHint
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                         ForEach(viewModel.visibleBroadcasts) { broadcast in
                             card(for: broadcast)
                                 .transition(.opacity.combined(with: .scale(scale: 0.96)))
@@ -462,6 +468,34 @@ struct DiscoverView: View {
             }
             .animation(.spring(response: 0.45, dampingFraction: 0.85), value: viewModel.visibleBroadcasts.map(\.id) + viewModel.recentBroadcasts.map(\.id))
         }
+    }
+
+    /// Shown above the first live card until the first song tap.
+    private var songHint: some View {
+        HStack(spacing: 10) {
+            MIcon("play", size: 12, color: AppColors.background)
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(AppColors.primary))
+            Text("Tap a song to play it, like it or say hi.")
+                .font(AppFonts.footnote())
+                .foregroundColor(AppColors.primaryText)
+                .lineLimit(2)
+            Spacer(minLength: 4)
+            Button {
+                withAnimation(.easeOut(duration: 0.25)) { songHintSeen = true }
+            } label: {
+                MIcon("x", size: 12, color: AppColors.mutedText)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Dismiss hint")
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 4)
+        .padding(.vertical, 8)
+        .melCard(cornerRadius: 14)
+        .padding(.horizontal, max(AppLayout.screenPadding, 20))
     }
 
     private func sectionHeader(_ title: String, count: Int) -> some View {
@@ -521,6 +555,7 @@ struct DiscoverView: View {
             },
             onOpenTrack: {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                withAnimation(.easeOut(duration: 0.25)) { songHintSeen = true }
                 trackSheetBroadcast = broadcast
             },
             hasLiked: viewModel.isLiked(broadcast),
@@ -546,12 +581,14 @@ struct DiscoverView: View {
             hasLiked: viewModel.isLiked(broadcast),
             hasMessaged: viewModel.hasMessage(broadcast),
             onLike: {
-                // Thrown errors show inside the sheet.
-                try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: nil)
+                try await runSheetAction(for: broadcast, fallback: "Couldn’t send your like. Please try again.") {
+                    try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: nil)
+                }
             },
             onMessage: { message in
-                // Thrown errors show inside the sheet.
-                try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: message)
+                try await runSheetAction(for: broadcast, fallback: "Couldn’t send your message. Please try again.") {
+                    try await viewModel.sendLike(for: broadcast, from: currentUserStore.user, message: message)
+                }
             },
             onOpenChat: {
                 pendingAfterTrackSheet = { openChat(with: broadcast) }
@@ -569,6 +606,24 @@ struct DiscoverView: View {
             }
         )
         .environmentObject(spotifyAuth)
+    }
+
+    /// Runs a sheet action. Errors normally show inside the sheet; if the
+    /// user swiped it away before the call failed, the sheet is gone and the
+    /// error goes to Discover's own alert instead of a dismissed view.
+    private func runSheetAction(
+        for broadcast: DiscoverBroadcast,
+        fallback: String,
+        _ body: () async throws -> Void
+    ) async throws {
+        do {
+            try await body()
+        } catch {
+            if trackSheetBroadcast?.id == broadcast.id {
+                throw error
+            }
+            viewModel.presentActionError(error, fallback: fallback)
+        }
     }
 
     private func openChat(with broadcast: DiscoverBroadcast) {

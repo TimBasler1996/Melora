@@ -18,6 +18,12 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
     /// screens can offer Reconnect instead of pointing at Settings.
     @Published private(set) var loginExpired: Bool = false
 
+    /// A refresh token is stored: the user connected Spotify at some point.
+    /// `isAuthorized` only says the access token is fresh right now, which
+    /// is false for a while after a cold launch; this is the "connected" bit
+    /// screens should gate on.
+    var hasStoredLogin: Bool { tokens?.refreshToken != nil }
+
     /// Why the last interactive login did not end with tokens. Cleared when a
     /// new login starts, so screens waiting on `isAuthorized` can stop
     /// waiting as soon as the user closes the sheet.
@@ -117,6 +123,17 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
     /// until the new one succeeds, so cancelling costs nothing.
     func reconnect() {
         startAuthFlow()
+    }
+
+    /// The Web API answered 401 with a token we thought was valid: force the
+    /// next call to refresh so a dead grant surfaces as `loginExpired` now,
+    /// not on the next hour boundary.
+    func invalidateAccessToken() {
+        guard let t = tokens else { return }
+        let stale = SpotifyTokens(accessToken: t.accessToken, refreshToken: t.refreshToken, expiresAt: .distantPast)
+        tokens = stale
+        isAuthorized = false
+        saveTokensToStorage(stale)
     }
 
     func disconnect() {
@@ -286,7 +303,7 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
         request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = Self.formEncoded(parameters)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await SpotifyService.session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
             throw SpotifyAuthError.invalidResponse

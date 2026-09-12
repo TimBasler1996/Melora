@@ -8,6 +8,8 @@ struct MainView: View {
     @StateObject private var chatBadge = ChatBadgeViewModel()
     @StateObject private var activityBadge = LikesBadgeViewModel()
     @State private var routedProfileUserId: String?
+    /// The three-page intro, once, the first time someone lands here.
+    @State private var showIntro: Bool = !IntroWalkthrough.hasBeenSeen
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
@@ -51,12 +53,24 @@ struct MainView: View {
             activityBadge.stopListening()
             if let uid { activityBadge.startListening(userId: uid) }
         }
+        .fullScreenCover(isPresented: $showIntro) {
+            IntroWalkthroughView {
+                IntroWalkthrough.markSeen()
+                showIntro = false
+                // Ask for notifications once the intro is out of the way, so
+                // the system prompt doesn't land on top of it.
+                Task { await BroadcastNotificationService.requestPermissionIfNeeded() }
+            }
+        }
         .onAppear {
             chatBadge.startListening()
             if let uid = currentUserStore.user?.uid { activityBadge.startListening(userId: uid) }
             // First time the user reaches the main app (after onboarding) is
             // the right moment to ask for notifications, not at cold launch.
-            Task { await BroadcastNotificationService.requestPermissionIfNeeded() }
+            // When the intro shows, it asks after the intro instead.
+            if !showIntro {
+                Task { await BroadcastNotificationService.requestPermissionIfNeeded() }
+            }
         }
         .onDisappear {
             chatBadge.stopListening()

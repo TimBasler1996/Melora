@@ -24,6 +24,9 @@ struct DiscoverTrackSheet: View {
     @Environment(\.openURL) private var openURL
 
     @State private var glow: Color?
+    /// The 220pt cover, loaded once for the share preview (the card only
+    /// warmed the small bucket, so a plain cache lookup misses on first open).
+    @State private var coverImage: UIImage?
 
     // Spotify state
     @State private var playState: PlayState = .idle
@@ -31,6 +34,8 @@ struct DiscoverTrackSheet: View {
     @State private var isSaving: Bool = false
     @State private var isQueueing: Bool = false
     @State private var isSendingMessage: Bool = false
+    /// Once the user toggled Save, a slow "contains" reply must not undo it.
+    @State private var didToggleSave: Bool = false
     @State private var status: Status?
     @State private var statusToken: Int = 0
 
@@ -54,6 +59,11 @@ struct DiscoverTrackSheet: View {
     }
 
     private var track: DiscoverTrack { broadcast.track }
+
+    /// Connected = a login is stored. `isAuthorized` alone is false for a
+    /// moment after a cold launch (until the silent refresh returns), and a
+    /// refresh happens on demand inside every call anyway.
+    private var canUseSpotify: Bool { spotifyAuth.isAuthorized || spotifyAuth.hasStoredLogin }
 
     private var spotifyWebURL: URL {
         track.spotifyURLValue ?? URL(string: "https://open.spotify.com/track/\(track.id)")!
@@ -90,15 +100,19 @@ struct DiscoverTrackSheet: View {
         .presentationDragIndicator(.visible)
         .presentationBackground(AppColors.background)
         .task(id: track.artworkURL) {
-            guard let url = track.artworkURLValue else { glow = nil; return }
+            guard let url = track.artworkURLValue else { glow = nil; coverImage = nil; return }
             let color = await ArtworkColorCache.shared.color(for: url)
             withAnimation(.easeOut(duration: 0.35)) { glow = color }
+            // Shares the in-flight download with the RemoteImage above.
+            let image = await RemoteImageLoader.load(url, pixelSize: RemoteImageLoader.pixelSize(forPoints: 220))
+            if !Task.isCancelled { coverImage = image }
         }
-        .task { await loadSavedState() }
+        .task(id: spotifyAuth.tokens?.refreshToken) { await loadSavedState() }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: status)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: playState)
         .animation(.easeInOut(duration: 0.18), value: isQueueing)
         .animation(.easeInOut(duration: 0.18), value: isSendingMessage)
+        .animation(.easeInOut(duration: 0.18), value: isSaved)
         .animation(.easeInOut(duration: 0.18), value: isSaving)
     }
 
@@ -240,8 +254,8 @@ struct DiscoverTrackSheet: View {
                         if let distance = broadcast.distanceMeters {
                             Text("· \(DiscoverCardView.formatDistance(distance))")
                                 .foregroundColor(AppColors.secondaryText)
-                        } else if !broadcast.user.locationText.isEmpty {
-                            Text("· \(broadcast.user.locationText)")
+                        } else if let city = knownCity {
+                            Text("· \(city)")
                                 .foregroundColor(AppColors.secondaryText)
                         }
                     }
@@ -321,7 +335,7 @@ struct DiscoverTrackSheet: View {
 
     private var primaryTitle: String {
         switch playState {
-        case .idle: return (spotifyAuth.isAuthorized || spotifyAuth.loginExpired) ? "Play on Spotify" : "Open in Spotify"
+        case .idle: return (canUseSpotify || spotifyAuth.loginExpired) ? "Play on Spotify" : "Open in Spotify"
         case .openedWeb: return "Opened in browser"
         case .starting: return "Starting…"
         case .playing: return "Playing on Spotify"
@@ -475,8 +489,9 @@ struct DiscoverTrackSheet: View {
 
     // MARK: - Footer
 
+    /// Text links, but with 44pt rows: one-handed on a small phone.
     private var footer: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
             Button {
                 openInSpotifyApp()
             } label: {
@@ -486,6 +501,8 @@ struct DiscoverTrackSheet: View {
                         .font(AppFonts.subheadline())
                         .foregroundColor(AppColors.secondaryText)
                 }
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -497,17 +514,19 @@ struct DiscoverTrackSheet: View {
                 Text("Hide this song")
                     .font(AppFonts.footnote())
                     .foregroundColor(AppColors.mutedText)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
-        .padding(.top, 6)
+        .padding(.top, 2)
     }
 
     // MARK: - Actions
 
     private func handlePlay() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        guard spotifyAuth.isAuthorized else {
+        guard canUseSpotify else {
             if spotifyAuth.loginExpired {
                 show(Status(text: "Your Spotify login expired.", kind: .reconnect), sticky: true)
             } else {
@@ -529,7 +548,8 @@ struct DiscoverTrackSheet: View {
                 openInSpotifyApp()
             } catch SpotifyAPIError.premiumRequired {
                 // Playback control is Premium-only; the app itself still works.
-                show(Status(text: "Playing from Melora needs Spotify Premium — opening Spotify instead.", kind: .info))
+                // Sticky: the user comes back from Spotify and should still see why.
+                show(Status(text: "Playing from Melora needs Spotify Premium — opened Spotify instead.", kind: .info), sticky: true)
                 openInSpotifyApp()
             } catch SpotifyAPIError.insufficientScope {
                 playState = .idle
@@ -545,8 +565,9 @@ struct DiscoverTrackSheet: View {
     }
 
     private func handleQueue() {
+        guard !isQueueing else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        guard spotifyAuth.isAuthorized else {
+        guard canUseSpotify else {
             showNotConnected(action: "use the queue")
             return
         }
@@ -571,13 +592,15 @@ struct DiscoverTrackSheet: View {
     }
 
     private func handleSave() {
+        guard !isSaving else { return }
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        guard spotifyAuth.isAuthorized else {
+        guard canUseSpotify else {
             showNotConnected(action: "save songs")
             return
         }
         let target = !isSaved
         isSaving = true
+        didToggleSave = true
         Task {
             defer { isSaving = false }
             do {
@@ -604,9 +627,9 @@ struct DiscoverTrackSheet: View {
     }
 
     private func loadSavedState() async {
-        guard spotifyAuth.isAuthorized, !isRunningInPreview else { return }
+        guard canUseSpotify, !isRunningInPreview else { return }
         // Best effort: an older login without the library scope just shows "Save".
-        if let saved = try? await SpotifyService.shared.isTrackSaved(id: track.id) {
+        if let saved = try? await SpotifyService.shared.isTrackSaved(id: track.id), !didToggleSave, !isSaving {
             isSaved = saved
         }
     }
@@ -703,11 +726,23 @@ struct DiscoverTrackSheet: View {
     /// The share sheet shows the song and its cover, not a fetched link card.
     private var sharePreview: SharePreview<Image, Never> {
         let title = "\(trackTitle) – \(trackArtist)"
-        if let url = track.artworkURLValue,
-           let cached = RemoteImageLoader.cached(url, pixelSize: RemoteImageLoader.pixelSize(forPoints: 220)) {
-            return SharePreview(title, image: Image(uiImage: cached))
+        // No cover yet: a plain dark tile beats a tinted template glyph.
+        return SharePreview(title, image: Image(uiImage: coverImage ?? Self.placeholderCover))
+    }
+
+    /// A 256px vinyl-black square for the share preview while the cover loads.
+    private static let placeholderCover: UIImage = {
+        let size = CGSize(width: 256, height: 256)
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            UIColor(red: 0x17 / 255, green: 0x14 / 255, blue: 0x12 / 255, alpha: 1).setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
         }
-        return SharePreview(title, image: Image("icon-music"))
+    }()
+
+    /// The city only when one is known; never the "Somewhere" placeholder.
+    private var knownCity: String? {
+        let city = broadcast.user.city.trimmingCharacters(in: .whitespacesAndNewlines)
+        return city.isEmpty ? nil : city
     }
 
     private var trackTitle: String {
