@@ -478,9 +478,16 @@ export const expireStaleBroadcasts = onSchedule(
     if (!stale.empty) {
       const batch = db.batch();
       for (const doc of stale.docs) {
+        // A broadcast that ended without a clean Stop (app killed) must not
+        // keep the position around: it is shared only while live.
         batch.set(
           doc.ref,
-          {isLive: false, endedAt: doc.data().updatedAt ?? liveCutoff},
+          {
+            isLive: false,
+            endedAt: doc.data().updatedAt ?? liveCutoff,
+            latitude: admin.firestore.FieldValue.delete(),
+            longitude: admin.firestore.FieldValue.delete(),
+          },
           {merge: true}
         );
         const userId: string | undefined = doc.data().userId;
@@ -490,6 +497,7 @@ export const expireStaleBroadcasts = onSchedule(
             {
               isBroadcasting: false,
               currentTrack: admin.firestore.FieldValue.delete(),
+              lastLocation: admin.firestore.FieldValue.delete(),
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             },
             {merge: true}

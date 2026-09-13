@@ -312,13 +312,19 @@ final class BroadcastManager: ObservableObject {
         }
 
         // Keep the document so Discover can show "recently live" for a day;
-        // the `expireStaleBroadcasts` function removes it after that.
+        // the `expireStaleBroadcasts` function removes it after that. The
+        // position goes now: it is shared only while you're live.
         do {
             try await db.collection(broadcastsCollection).document(uid).setData([
                 "userId": uid,
                 "isLive": false,
+                "latitude": FieldValue.delete(),
+                "longitude": FieldValue.delete(),
                 "endedAt": FieldValue.serverTimestamp(),
                 "updatedAt": FieldValue.serverTimestamp()
+            ], merge: true)
+            try await db.collection("users").document(uid).setData([
+                "lastLocation": FieldValue.delete()
             ], merge: true)
         } catch {
             errorMessage = "Couldn’t end your live session cleanly. It will expire on its own."

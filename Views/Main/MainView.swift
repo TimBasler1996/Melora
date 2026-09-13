@@ -5,6 +5,7 @@ struct MainView: View {
 
     @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var currentUserStore: CurrentUserStore
+    @EnvironmentObject private var locationService: LocationService
     @StateObject private var chatBadge = ChatBadgeViewModel()
     @StateObject private var activityBadge = LikesBadgeViewModel()
     @State private var routedProfileUserId: String?
@@ -53,13 +54,15 @@ struct MainView: View {
             activityBadge.stopListening()
             if let uid { activityBadge.startListening(userId: uid) }
         }
-        .fullScreenCover(isPresented: $showIntro) {
+        .fullScreenCover(isPresented: $showIntro, onDismiss: {
+            // The intro is down and Discover is visible: now location, which
+            // Discover needs right away. Notifications wait for the next
+            // launch so two system alerts never stack after "Let's go".
+            locationService.requestAuthorizationIfNeeded()
+        }) {
             IntroWalkthroughView {
                 IntroWalkthrough.markSeen()
                 showIntro = false
-                // Ask for notifications once the intro is out of the way, so
-                // the system prompt doesn't land on top of it.
-                Task { await BroadcastNotificationService.requestPermissionIfNeeded() }
             }
         }
         .onAppear {
@@ -67,7 +70,7 @@ struct MainView: View {
             if let uid = currentUserStore.user?.uid { activityBadge.startListening(userId: uid) }
             // First time the user reaches the main app (after onboarding) is
             // the right moment to ask for notifications, not at cold launch.
-            // When the intro shows, it asks after the intro instead.
+            // While the intro is pending nothing is asked; see onDismiss.
             if !showIntro {
                 Task { await BroadcastNotificationService.requestPermissionIfNeeded() }
             }

@@ -11,6 +11,7 @@ struct IntroWalkthroughView: View {
     let onDone: () -> Void
 
     @State private var page: Int = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let pageCount = 3
 
     var body: some View {
@@ -24,7 +25,7 @@ struct IntroWalkthroughView: View {
                     songPage.tag(2)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(.easeInOut(duration: 0.3), value: page)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: page)
 
                 controls
             }
@@ -40,12 +41,19 @@ struct IntroWalkthroughView: View {
         HStack {
             MeloraWordmark(size: 22)
             Spacer()
-            Button("Skip") { finish() }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(AppColors.secondaryText)
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-                .accessibilityLabel("Skip introduction")
+            // Sizing lives on the label: SwiftUI hit-tests a button on its
+            // label's bounds, so a frame on the Button alone changes nothing.
+            Button {
+                finish()
+            } label: {
+                Text("Skip")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(AppColors.secondaryText)
+                    .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Skip introduction")
         }
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.top, 8)
@@ -64,7 +72,7 @@ struct IntroWalkthroughView: View {
 
             Button {
                 if page < pageCount - 1 {
-                    withAnimation { page += 1 }
+                    page += 1
                 } else {
                     finish()
                 }
@@ -137,7 +145,7 @@ struct IntroWalkthroughView: View {
     private var discoverPage: some View {
         pageLayout(
             title: "See who’s around",
-            text: "Discover shows the people near you and the song they’re playing right now. Slide the radius to go wider.",
+            text: "Discover shows the people near you and the song they’re playing right now. Slide “Within” to see further.",
             footnote: "Your distance is shown in rough steps — never your exact location."
         ) {
             VStack(spacing: 12) {
@@ -197,7 +205,7 @@ struct IntroWalkthroughView: View {
     private var songPage: some View {
         pageLayout(
             title: "A song is the door",
-            text: "Tap a song to play it on your Spotify, like it, or say something. A like is a signal — if they like you back, you can chat."
+            text: "Tap a song to play it on your Spotify, like it, or say something. If they say hi back, you’re chatting."
         ) {
             VStack(spacing: 16) {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -215,25 +223,38 @@ struct IntroWalkthroughView: View {
                         .foregroundColor(AppColors.secondaryText)
                 }
 
-                HStack(spacing: 0) {
-                    miniAction(icon: "play", label: "Play", accent: true)
-                    miniAction(icon: "heart", label: "Like")
-                    miniAction(icon: "send", label: "Message")
-                    miniAction(icon: "arrow-up-right", label: "Share")
+                // Mirrors the real sheet: one Ember primary, then the row.
+                VStack(spacing: 10) {
+                    HStack(spacing: 8) {
+                        MIcon("play", size: 16, color: AppColors.background)
+                        Text("Play on Spotify")
+                            .font(.system(size: 15, weight: .heavy))
+                            .foregroundColor(AppColors.background)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(Capsule().fill(AppColors.primary))
+
+                    HStack(spacing: 0) {
+                        miniAction(icon: "heart", label: "Like")
+                        miniAction(icon: "send", label: "Message")
+                        miniAction(icon: "next", label: "Queue")
+                        miniAction(icon: "arrow-up-right", label: "Share")
+                    }
+                    .padding(.vertical, 2)
+                    .melCard(cornerRadius: 16)
                 }
-                .padding(.vertical, 4)
                 .frame(width: 300)
-                .melCard(cornerRadius: 16)
             }
         }
     }
 
-    private func miniAction(icon: String, label: String, accent: Bool = false) -> some View {
+    private func miniAction(icon: String, label: String) -> some View {
         VStack(spacing: 6) {
-            MIcon(icon, size: 20, color: accent ? AppColors.primary : AppColors.primaryText)
+            MIcon(icon, size: 20, color: AppColors.primaryText)
             Text(label)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor((accent ? AppColors.primary : AppColors.primaryText).opacity(0.85))
+                .foregroundColor(AppColors.primaryText.opacity(0.85))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)

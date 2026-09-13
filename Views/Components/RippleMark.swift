@@ -34,22 +34,33 @@ struct LiveRipple: View {
     var color: Color = AppColors.primary
 
     @State private var animate = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
-            ForEach(0..<3, id: \.self) { index in
-                Circle()
-                    .stroke(color, lineWidth: 2)
-                    .frame(width: size * 0.5, height: size * 0.5)
-                    .scaleEffect(animate ? 2.2 : 0.6)
-                    .opacity(animate ? 0 : 0.9)
-                    // One ring every 1.3 s: calm, not a siren.
-                    .animation(
-                        .easeOut(duration: 3.9)
-                            .repeatForever(autoreverses: false)
-                            .delay(Double(index) * 1.3),
-                        value: animate
-                    )
+            if reduceMotion {
+                // Still "on air", just not moving: two fixed rings.
+                ForEach(0..<2, id: \.self) { index in
+                    Circle()
+                        .stroke(color.opacity(index == 0 ? 0.45 : 0.18), lineWidth: 2)
+                        .frame(width: size * 0.5, height: size * 0.5)
+                        .scaleEffect(index == 0 ? 1.2 : 1.8)
+                }
+            } else {
+                ForEach(0..<3, id: \.self) { index in
+                    Circle()
+                        .stroke(color, lineWidth: 2)
+                        .frame(width: size * 0.5, height: size * 0.5)
+                        .scaleEffect(animate ? 2.2 : 0.6)
+                        .opacity(animate ? 0 : 0.9)
+                        // One ring every 1.3 s: calm, not a siren.
+                        .animation(
+                            .easeOut(duration: 3.9)
+                                .repeatForever(autoreverses: false)
+                                .delay(Double(index) * 1.3),
+                            value: animate
+                        )
+                }
             }
             Circle()
                 .fill(color)
@@ -57,6 +68,7 @@ struct LiveRipple: View {
         }
         .frame(width: size, height: size)
         .onAppear {
+            guard !reduceMotion else { return }
             // Restart cleanly even when the view is re-inserted with its
             // state preserved (a same-value set would not animate).
             animate = false

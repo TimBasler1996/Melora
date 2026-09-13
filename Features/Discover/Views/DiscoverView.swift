@@ -154,7 +154,10 @@ struct DiscoverView: View {
                 // Discover is the first screen: make sure the banner knows
                 // whether Spotify is connected before anyone visits Live.
                 spotifyAuth.refreshAuthorizationSilently()
-                locationService.requestAuthorizationIfNeeded()
+                // Not while the intro is up: MainView asks once it is down.
+                if IntroWalkthrough.hasBeenSeen {
+                    locationService.requestAuthorizationIfNeeded()
+                }
                 viewModel.updateCurrentLocation(locationService.currentLocationPoint)
                 viewModel.startListening()
             }
