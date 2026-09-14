@@ -75,3 +75,9 @@ functions/lib/
 
 # Secrets / local tooling
 authkeys/
+
+# Agent scripts (see agents/README.md)
+agents/serviceAccount.json
+agents/node_modules/
+agents/.env
+agents/package-lock.json

@@ -1,0 +1,19 @@
+{
+  "name": "melora-agents",
+  "private": true,
+  "description": "Virtual test users for Melora: seed, tick loop, chat replies, purge",
+  "type": "commonjs",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "personas": "node genPersonas.js",
+    "pool": "node buildTrackPool.js",
+    "seed": "node seedAgents.js",
+    "tick": "node agentTick.js",
+    "chat": "node agentChat.js",
+    "purge": "node agentPurge.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0",
+    "firebase-admin": "^14.0.0"
+  }
+}

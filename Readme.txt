@@ -63,6 +63,13 @@ Everything server-side lives in this repo and deploys with the Firebase CLI:
 
 Schema reference: `Docs/Firebase_Schema.txt`.
 
+## Test agents
+`agents/` holds Node scripts that run virtual users (listening sessions,
+movement, likes, requests, chat replies) against the live project for
+testing and demos. Every document they write carries `agentId`;
+`agents/agentPurge.js --confirm` removes all of it. Start with
+`agents/README.md` and `agents/SCHEMA_NOTES.md`.
+
 ## Secrets
 Never commit `*.p8` keys, `functions/.env` or anything under `functions/lib`.
 APNs keys are uploaded in the Firebase console (Cloud Messaging → APNs), not

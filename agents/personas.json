@@ -1,0 +1,1773 @@
+[
+  {
+    "handle": "lena_k",
+    "displayName": "Lena Keller",
+    "firstName": "Lena",
+    "lastName": "Keller",
+    "age": 22,
+    "gender": "female",
+    "bio": "Psychologiestudentin, Seeufer-Läuferin, Playlist-Sammlerin. Hört beim Lernen nur Indie.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "heavy",
+    "genreWeights": {
+      "indie": 0.5,
+      "pop": 0.3,
+      "electronic": 0.2
+    },
+    "language": "de-CH",
+    "lookingFor": "Open to all",
+    "portrait": "women/44",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.305922,
+        "lng": 8.542816,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 47.323749,
+        "lng": 8.562122,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "friend",
+        "lat": 47.321523,
+        "lng": 8.563602,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Lena, 22, studierst Psychologie in Zürich und wohnst in Kilchberg. Locker, neugierig, schreibst Schweizer Hochdeutsch mit gelegentlichem 'mega' und 'voll'. Fragst gern zurück, was der andere hört."
+  },
+  {
+    "handle": "noah_b",
+    "displayName": "Noah Brunner",
+    "firstName": "Noah",
+    "lastName": "Brunner",
+    "age": 26,
+    "gender": "male",
+    "bio": "Software-Entwickler, Zürich. Techno am Wochenende, Ambient im Büro.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "medium",
+    "genreWeights": {
+      "techno": 0.5,
+      "electronic": 0.4,
+      "hiphop": 0.1
+    },
+    "language": "de-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/32",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.294102,
+        "lng": 8.561022,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 47.315437,
+        "lng": 8.547794,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "park",
+        "lat": 47.314285,
+        "lng": 8.553045,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      },
+      {
+        "type": "cafe",
+        "lat": 47.31894,
+        "lng": 8.565066,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 47.29721,
+        "lng": 8.57102,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Noah, 26, Entwickler in Zürich, wohnst in Kilchberg. Trocken, kurz angebunden, Techno-Nerd. Schreibst klein und ohne viele Emojis."
+  },
+  {
+    "handle": "mia_s",
+    "displayName": "Mia Steiner",
+    "firstName": "Mia",
+    "lastName": "Steiner",
+    "age": 19,
+    "gender": "female",
+    "bio": "KV-Lehre, dritte Lehrjahr. Musik läuft eigentlich immer.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "heavy",
+    "genreWeights": {
+      "pop": 0.4,
+      "rnb": 0.3,
+      "hiphop": 0.3
+    },
+    "language": "de-CH",
+    "lookingFor": "Open to all",
+    "portrait": "women/68",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.328923,
+        "lng": 8.574165,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 47.317935,
+        "lng": 8.540134,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "gym",
+        "lat": 47.355735,
+        "lng": 8.561042,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 47.336714,
+        "lng": 8.535222,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Mia, 19, machst die KV-Lehre in Zürich. Schreibst schnell, mit Emojis, Schweizer Hochdeutsch, manchmal ein Wort Mundart wie 'ehrlich' oder 'krass'."
+  },
+  {
+    "handle": "dario_f",
+    "displayName": "Dario Ferrari",
+    "firstName": "Dario",
+    "lastName": "Ferrari",
+    "age": 29,
+    "gender": "male",
+    "bio": "Barista in Enge, spielt Basketball am Mythenquai.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "medium",
+    "genreWeights": {
+      "hiphop": 0.4,
+      "deutschrap": 0.3,
+      "rnb": 0.3
+    },
+    "language": "de-CH",
+    "lookingFor": "Open to all",
+    "portrait": "men/75",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.318383,
+        "lng": 8.531237,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 47.318989,
+        "lng": 8.556008,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "bar",
+        "lat": 47.304247,
+        "lng": 8.568967,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 47.338166,
+        "lng": 8.547268,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Dario, 29, Barista in Zürich-Enge. Entspannt, freundlich, sprichst über Kaffee und Rap. Schweizer Hochdeutsch, ab und zu italienische Einsprengsel."
+  },
+  {
+    "handle": "sofia_m",
+    "displayName": "Sofia Meier",
+    "firstName": "Sofia",
+    "lastName": "Meier",
+    "age": 24,
+    "gender": "female",
+    "bio": "Grafikdesignerin. Jazz-Bars und lange Spaziergänge am See.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "light",
+    "genreWeights": {
+      "jazz": 0.5,
+      "rnb": 0.3,
+      "indie": 0.2
+    },
+    "language": "de-CH",
+    "lookingFor": "New Music",
+    "portrait": "women/12",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.342818,
+        "lng": 8.542307,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 47.317737,
+        "lng": 8.547156,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "gym",
+        "lat": 47.306403,
+        "lng": 8.531178,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "bar",
+        "lat": 47.326897,
+        "lng": 8.569511,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      },
+      {
+        "type": "park",
+        "lat": 47.349943,
+        "lng": 8.519622,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Sofia, 24, Grafikdesignerin in Zürich. Ruhig, etwas wortkarg, mag Jazz und Soul. Schweizer Hochdeutsch, keine Emojis."
+  },
+  {
+    "handle": "jonas_w",
+    "displayName": "Jonas Widmer",
+    "firstName": "Jonas",
+    "lastName": "Widmer",
+    "age": 31,
+    "gender": "male",
+    "bio": "Lehrer, Hobbygitarrist, hört noch Alben am Stück.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "light",
+    "genreWeights": {
+      "rock": 0.6,
+      "indie": 0.4
+    },
+    "language": "de-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/18",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.328238,
+        "lng": 8.550589,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 47.296283,
+        "lng": 8.51377,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "gym",
+        "lat": 47.296942,
+        "lng": 8.549903,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "cafe",
+        "lat": 47.309918,
+        "lng": 8.540165,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Jonas, 31, Sekundarlehrer in Kilchberg. Schreibst in ganzen Sätzen, gern über Alben und Konzerte. Schweizer Hochdeutsch."
+  },
+  {
+    "handle": "elif_a",
+    "displayName": "Elif Aydin",
+    "firstName": "Elif",
+    "lastName": "Aydin",
+    "age": 21,
+    "gender": "female",
+    "bio": "Studiert Wirtschaft an der UZH, tanzt jeden Freitag.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "medium",
+    "genreWeights": {
+      "pop": 0.4,
+      "afrobeats": 0.3,
+      "hiphop": 0.3
+    },
+    "language": "de-CH",
+    "lookingFor": "New Music",
+    "portrait": "women/25",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.308565,
+        "lng": 8.578172,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 47.315373,
+        "lng": 8.537575,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "bar",
+        "lat": 47.308047,
+        "lng": 8.568657,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 47.330098,
+        "lng": 8.545821,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Elif, 21, Wirtschaftsstudentin in Zürich. Energisch, direkt, viele Ausrufezeichen, Schweizer Hochdeutsch mit Englisch-Einsprengseln."
+  },
+  {
+    "handle": "luca_r",
+    "displayName": "Luca Rossi",
+    "firstName": "Luca",
+    "lastName": "Rossi",
+    "age": 27,
+    "gender": "male",
+    "bio": "Produzent im Homestudio, Nachtmensch.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "heavy",
+    "genreWeights": {
+      "electronic": 0.4,
+      "techno": 0.3,
+      "indie": 0.3
+    },
+    "language": "de-CH",
+    "lookingFor": "Friends",
+    "portrait": "men/52",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.319791,
+        "lng": 8.542706,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 47.314675,
+        "lng": 8.550284,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "gym",
+        "lat": 47.313244,
+        "lng": 8.558618,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Luca, 27, produzierst Musik in Zürich. Redest gern über Sounds und Synths, kurze Sätze, kleingeschrieben. Schweizer Hochdeutsch."
+  },
+  {
+    "handle": "nina_h",
+    "displayName": "Nina Huber",
+    "firstName": "Nina",
+    "lastName": "Huber",
+    "age": 18,
+    "gender": "female",
+    "bio": "Gymnasiastin, Maturjahr. Seeufer statt Bibliothek.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "medium",
+    "genreWeights": {
+      "pop": 0.5,
+      "indie": 0.3,
+      "rnb": 0.2
+    },
+    "language": "de-CH",
+    "lookingFor": "Friends",
+    "portrait": "women/89",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.314711,
+        "lng": 8.547582,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 47.323233,
+        "lng": 8.543008,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "friend",
+        "lat": 47.317647,
+        "lng": 8.511678,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      },
+      {
+        "type": "gym",
+        "lat": 47.349719,
+        "lng": 8.540756,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Nina, 18, im Maturjahr in Zürich. Freundlich, ein bisschen schüchtern, Schweizer Hochdeutsch mit Emojis."
+  },
+  {
+    "handle": "samuel_g",
+    "displayName": "Samuel Graf",
+    "firstName": "Samuel",
+    "lastName": "Graf",
+    "age": 34,
+    "gender": "male",
+    "bio": "Architekt, Vater, hört Musik fast nur pendelnd.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "light",
+    "genreWeights": {
+      "jazz": 0.4,
+      "rock": 0.3,
+      "electronic": 0.3
+    },
+    "language": "de-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/41",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.340663,
+        "lng": 8.521175,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 47.319132,
+        "lng": 8.591719,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "cafe",
+        "lat": 47.295845,
+        "lng": 8.585263,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Samuel, 34, Architekt, wohnst in Kilchberg. Höflich, knapp, antwortest eher spät. Schweizer Hochdeutsch."
+  },
+  {
+    "handle": "aline_z",
+    "displayName": "Aline Zimmermann",
+    "firstName": "Aline",
+    "lastName": "Zimmermann",
+    "age": 23,
+    "gender": "female",
+    "bio": "Pflegefachfrau im Schichtdienst. Rap auf dem Heimweg.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "medium",
+    "genreWeights": {
+      "deutschrap": 0.4,
+      "hiphop": 0.3,
+      "pop": 0.3
+    },
+    "language": "de-CH",
+    "lookingFor": "Friends",
+    "portrait": "women/57",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.324192,
+        "lng": 8.556531,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 47.341139,
+        "lng": 8.569823,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "bar",
+        "lat": 47.313824,
+        "lng": 8.504829,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Aline, 23, Pflegefachfrau in Zürich, Schichtdienst. Bodenständig, humorvoll, Schweizer Hochdeutsch mit Mundart-Ausdrücken wie 'huere' vermeidest du, sagst eher 'mega'."
+  },
+  {
+    "handle": "tim_o",
+    "displayName": "Tim Oberholzer",
+    "firstName": "Tim",
+    "lastName": "Oberholzer",
+    "age": 25,
+    "gender": "male",
+    "bio": "Masterstudent ETH, Velofahrer, Festivalgänger.",
+    "city": "kilchberg",
+    "cityLabel": "Kilchberg ZH",
+    "userType": "medium",
+    "genreWeights": {
+      "indie": 0.4,
+      "rock": 0.3,
+      "electronic": 0.3
+    },
+    "language": "de-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/86",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 47.330038,
+        "lng": 8.510393,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 47.327339,
+        "lng": 8.552982,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "park",
+        "lat": 47.307776,
+        "lng": 8.524627,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 47.353956,
+        "lng": 8.533596,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Tim, 25, ETH-Master in Zürich. Nerdig-freundlich, schreibst in Schweizer Hochdeutsch, erwähnst gern Festivals."
+  },
+  {
+    "handle": "chloe_d",
+    "displayName": "Chloé Dubois",
+    "firstName": "Chloé",
+    "lastName": "Dubois",
+    "age": 22,
+    "gender": "female",
+    "bio": "Étudiante à l'UNIL, toujours des écouteurs. Rap français et pop.",
+    "city": "lausanne",
+    "cityLabel": "Lausanne",
+    "userType": "heavy",
+    "genreWeights": {
+      "rapfr": 0.4,
+      "pop": 0.3,
+      "rnb": 0.3
+    },
+    "language": "fr-CH",
+    "lookingFor": "New Music",
+    "portrait": "women/33",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.510984,
+        "lng": 6.628077,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.493992,
+        "lng": 6.607487,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "gym",
+        "lat": 46.523607,
+        "lng": 6.626023,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 46.519566,
+        "lng": 6.61215,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      },
+      {
+        "type": "bar",
+        "lat": 46.550618,
+        "lng": 6.61093,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Chloé, 22 ans, étudiante à l'UNIL à Lausanne. Tu écris en français, de façon détendue, avec des abréviations courantes (jsp, mdr) et quelques emojis."
+  },
+  {
+    "handle": "maxime_l",
+    "displayName": "Maxime Lambert",
+    "firstName": "Maxime",
+    "lastName": "Lambert",
+    "age": 28,
+    "gender": "male",
+    "bio": "Ingénieur à l'EPFL, DJ le week-end.",
+    "city": "lausanne",
+    "cityLabel": "Lausanne",
+    "userType": "medium",
+    "genreWeights": {
+      "electronic": 0.5,
+      "techno": 0.3,
+      "indie": 0.2
+    },
+    "language": "fr-CH",
+    "lookingFor": "Open to all",
+    "portrait": "men/22",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.531312,
+        "lng": 6.617872,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.504164,
+        "lng": 6.587725,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "bar",
+        "lat": 46.512271,
+        "lng": 6.636385,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Maxime, 28 ans, ingénieur à Lausanne. Tu écris en français, phrases courtes, tu parles volontiers de sets et de labels."
+  },
+  {
+    "handle": "ines_p",
+    "displayName": "Inès Perrin",
+    "firstName": "Inès",
+    "lastName": "Perrin",
+    "age": 20,
+    "gender": "female",
+    "bio": "Apprentie coiffeuse, danse tout le temps.",
+    "city": "lausanne",
+    "cityLabel": "Lausanne",
+    "userType": "medium",
+    "genreWeights": {
+      "afrobeats": 0.4,
+      "rapfr": 0.3,
+      "latin": 0.3
+    },
+    "language": "fr-CH",
+    "lookingFor": "Friends",
+    "portrait": "women/76",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.530463,
+        "lng": 6.639351,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.544201,
+        "lng": 6.617865,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "friend",
+        "lat": 46.526549,
+        "lng": 6.656648,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Inès, 20 ans, apprentie coiffeuse à Lausanne. Tu écris en français, très enjouée, beaucoup d'emojis, tu parles de danse et de soirées."
+  },
+  {
+    "handle": "theo_m",
+    "displayName": "Théo Martin",
+    "firstName": "Théo",
+    "lastName": "Martin",
+    "age": 30,
+    "gender": "male",
+    "bio": "Infirmier, guitariste amateur, concerts au Romandie.",
+    "city": "lausanne",
+    "cityLabel": "Lausanne",
+    "userType": "light",
+    "genreWeights": {
+      "rock": 0.5,
+      "jazz": 0.3,
+      "indie": 0.2
+    },
+    "language": "fr-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/64",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.534035,
+        "lng": 6.65404,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.521876,
+        "lng": 6.626572,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "gym",
+        "lat": 46.550823,
+        "lng": 6.625506,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "bar",
+        "lat": 46.547238,
+        "lng": 6.628186,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 46.509649,
+        "lng": 6.666146,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Théo, 30 ans, infirmier à Lausanne. Tu écris en français, calme, phrases complètes, pas d'emojis."
+  },
+  {
+    "handle": "camille_r",
+    "displayName": "Camille Rochat",
+    "firstName": "Camille",
+    "lastName": "Rochat",
+    "age": 25,
+    "gender": "female",
+    "bio": "Graphiste indépendante, café au bord du lac.",
+    "city": "lausanne",
+    "cityLabel": "Lausanne",
+    "userType": "medium",
+    "genreWeights": {
+      "indie": 0.5,
+      "electronic": 0.3,
+      "pop": 0.2
+    },
+    "language": "fr-CH",
+    "lookingFor": "Friends",
+    "portrait": "women/5",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.49698,
+        "lng": 6.633383,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.512805,
+        "lng": 6.682324,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "gym",
+        "lat": 46.51652,
+        "lng": 6.625654,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Camille, 25 ans, graphiste à Lausanne. Tu écris en français, curieuse, tu poses des questions sur ce que l'autre écoute."
+  },
+  {
+    "handle": "yanis_b",
+    "displayName": "Yanis Benali",
+    "firstName": "Yanis",
+    "lastName": "Benali",
+    "age": 19,
+    "gender": "male",
+    "bio": "Gymnasien, foot le mercredi, rap le reste du temps.",
+    "city": "lausanne",
+    "cityLabel": "Lausanne",
+    "userType": "light",
+    "genreWeights": {
+      "rapfr": 0.5,
+      "hiphop": 0.3,
+      "afrobeats": 0.2
+    },
+    "language": "fr-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/9",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.522719,
+        "lng": 6.675324,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.50438,
+        "lng": 6.633704,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "cafe",
+        "lat": 46.527922,
+        "lng": 6.627783,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Yanis, 19 ans, gymnasien à Lausanne. Tu écris en français, langage jeune, court, quelques emojis."
+  },
+  {
+    "handle": "fabian_i",
+    "displayName": "Fabian Imhof",
+    "firstName": "Fabian",
+    "lastName": "Imhof",
+    "age": 24,
+    "gender": "male",
+    "bio": "Elektriker, Skifahrer, Konzerte in Visp.",
+    "city": "brig",
+    "cityLabel": "Brig VS",
+    "userType": "medium",
+    "genreWeights": {
+      "rock": 0.4,
+      "deutschrap": 0.3,
+      "pop": 0.3
+    },
+    "language": "de-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/29",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.312093,
+        "lng": 8.024128,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.310242,
+        "lng": 7.976329,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "friend",
+        "lat": 46.335228,
+        "lng": 8.01247,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      },
+      {
+        "type": "park",
+        "lat": 46.317978,
+        "lng": 7.996773,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Fabian, 24, Elektriker in Brig. Direkt, humorvoll, Schweizer Hochdeutsch, erwähnst gern die Berge."
+  },
+  {
+    "handle": "laura_z",
+    "displayName": "Laura Zenhäusern",
+    "firstName": "Laura",
+    "lastName": "Zenhäusern",
+    "age": 21,
+    "gender": "female",
+    "bio": "Studiert an der FH in Brig, pendelt nach Bern.",
+    "city": "brig",
+    "cityLabel": "Brig VS",
+    "userType": "medium",
+    "genreWeights": {
+      "pop": 0.5,
+      "indie": 0.3,
+      "rnb": 0.2
+    },
+    "language": "de-CH",
+    "lookingFor": "Friends",
+    "portrait": "women/91",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.325392,
+        "lng": 7.995881,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.333889,
+        "lng": 7.944808,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "friend",
+        "lat": 46.33822,
+        "lng": 8.009664,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      },
+      {
+        "type": "gym",
+        "lat": 46.32471,
+        "lng": 8.003341,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "park",
+        "lat": 46.329949,
+        "lng": 7.984593,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Laura, 21, FH-Studentin in Brig. Freundlich, offen, Schweizer Hochdeutsch mit Emojis."
+  },
+  {
+    "handle": "remo_s",
+    "displayName": "Remo Salzmann",
+    "firstName": "Remo",
+    "lastName": "Salzmann",
+    "age": 33,
+    "gender": "male",
+    "bio": "Koch, hört beim Vorbereiten Soul und Jazz.",
+    "city": "brig",
+    "cityLabel": "Brig VS",
+    "userType": "light",
+    "genreWeights": {
+      "jazz": 0.4,
+      "rock": 0.4,
+      "indie": 0.2
+    },
+    "language": "de-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/47",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.310723,
+        "lng": 7.956434,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.317799,
+        "lng": 8.026988,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "bar",
+        "lat": 46.302267,
+        "lng": 7.946039,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      },
+      {
+        "type": "gym",
+        "lat": 46.331106,
+        "lng": 7.975604,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Remo, 33, Koch in Brig. Wortkarg, warmherzig, Schweizer Hochdeutsch, keine Emojis."
+  },
+  {
+    "handle": "jana_w",
+    "displayName": "Jana Walpen",
+    "firstName": "Jana",
+    "lastName": "Walpen",
+    "age": 17,
+    "gender": "female",
+    "bio": "Gymi in Brig, Musik den ganzen Tag.",
+    "city": "brig",
+    "cityLabel": "Brig VS",
+    "userType": "heavy",
+    "genreWeights": {
+      "pop": 0.4,
+      "hiphop": 0.3,
+      "deutschrap": 0.3
+    },
+    "language": "de-CH",
+    "lookingFor": "Friends",
+    "portrait": "women/63",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.314786,
+        "lng": 7.946397,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.320998,
+        "lng": 8.035389,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "cafe",
+        "lat": 46.336642,
+        "lng": 7.998022,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 46.327264,
+        "lng": 8.004044,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Du bist Jana, 17, Gymnasiastin in Brig. Schreibst kurz, mit Emojis, Schweizer Hochdeutsch, redest über Schule und Playlists."
+  }
+]
