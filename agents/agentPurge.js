@@ -54,6 +54,12 @@ async function purgeAgent(uid) {
     const refs = await taggedIn(db().collection(col).where("agentId", "==", uid), `${col} (agentId)`);
     if (col === "conversations") {
       for (const r of refs) { count("messages (in agent conversations)", (await r.collection("messages").get()).size); if (CONFIRM) await db().recursiveDelete(r); }
+    } else if (col === "users") {
+      // Subcollections hold likes real users gave the agent (untagged).
+      for (const r of refs) {
+        count("users/*/likes* (own subcollections)", (await r.collection("likesReceived").get()).size + (await r.collection("likesGiven").get()).size);
+        if (CONFIRM) await db().recursiveDelete(r);
+      }
     } else {
       await deleteDocs(refs);
     }
@@ -125,7 +131,10 @@ async function main() {
     // orderBy on a field returns only documents that have it.
     const stray = await db().collection(col).orderBy("agentId").get().catch(() => ({ docs: [] }));
     const refs = stray.docs.filter((d) => !uids.includes(d.data().agentId) && d.data().agentId !== "system").map((d) => d.ref);
-    if (refs.length) { count(`${col} (stray agentId)`, refs.length); await deleteDocs(refs); }
+    if (!refs.length) continue;
+    count(`${col} (stray agentId)`, refs.length);
+    if (col === "conversations" || col === "users") { if (CONFIRM) for (const r of refs) await db().recursiveDelete(r); }
+    else await deleteDocs(refs);
   }
 
   console.log("\nCounts:");

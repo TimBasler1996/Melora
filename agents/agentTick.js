@@ -23,6 +23,10 @@ const args = process.argv.slice(2);
 const ONCE = args.includes("--once");
 const DEBUG = args.includes("--debug");
 const ONLY = args.includes("--agent") ? args[args.indexOf("--agent") + 1] : null;
+if (args.includes("--agent") && (!ONLY || ONLY.startsWith("--"))) {
+  console.error("--agent needs a persona handle, e.g. --agent lena_k");
+  process.exit(1);
+}
 const BOOST = DEBUG ? config.debugBoost : 1;
 
 const rng = make();
@@ -51,6 +55,7 @@ function defaultState() {
     session: null,
     likedKeys: {},
     decisions: {},
+    ignored: {},
   };
 }
 
@@ -369,9 +374,12 @@ async function like(p, state, b, agentUids) {
   }
 }
 
-function pruneLikedKeys(state) {
-  const entries = Object.entries(state.likedKeys).sort((a, b) => b[1] - a[1]).slice(0, 300);
-  state.likedKeys = Object.fromEntries(entries);
+function pruneLikedKeys(state) { pruneMap(state, "likedKeys"); }
+
+/** Keeps the 300 most recent entries of a `{key: timestamp}` map. */
+function pruneMap(state, field) {
+  const entries = Object.entries(state[field]).sort((a, b) => b[1] - a[1]).slice(0, 300);
+  state[field] = Object.fromEntries(entries);
 }
 
 function conversationId(a, b) {
@@ -442,7 +450,7 @@ function decide() {
 }
 
 function scheduleDecision(state, key, kind, meta) {
-  if (state.decisions[key]) return;
+  if (state.decisions[key] || state.ignored[key]) return;
   state.decisions[key] = {
     kind,
     action: decide(),
@@ -459,6 +467,7 @@ async function react(p, state, clock) {
     .where("status", "==", "pending").limit(20).get();
   for (const doc of likes.docs) {
     const d = doc.data();
+    if (!d.fromUserId) continue;
     scheduleDecision(state, `like:${doc.id}`, "like", { likeId: doc.id, fromUserId: d.fromUserId });
   }
 
@@ -466,15 +475,26 @@ async function react(p, state, clock) {
   const convos = await db().collection("conversations").where("participantIds", "array-contains", p.uid).get();
   for (const doc of convos.docs) {
     const d = doc.data();
-    if ((d.status ?? "accepted") !== "pending" || d.initiatorId === p.uid) continue;
+    if ((d.status ?? "accepted") !== "pending" || !d.initiatorId || d.initiatorId === p.uid) continue;
     scheduleDecision(state, `convo:${doc.id}`, "request", { conversationId: doc.id, likeId: d.createdFromLikeId ?? null, fromUserId: d.initiatorId });
   }
 
   const now = Date.now();
   for (const [key, dec] of Object.entries(state.decisions)) {
     if (dec.decideAt > now) continue;
+    // A paired like/request decision may already have been settled below.
+    if (!state.decisions[key]) continue;
     delete state.decisions[key];
-    if (dec.action === "ignore") { log(p.handle, `ignored ${dec.kind} from ${dec.fromUserId}`); continue; }
+    if (dec.action === "ignore") {
+      // Final: the like or request stays pending forever, as when a person
+      // never reacts. Remembered so the next tick doesn't roll again.
+      state.ignored[key] = now;
+      if (dec.kind === "request" && dec.likeId) state.ignored[`like:${dec.likeId}`] = now;
+      if (dec.kind === "like") state.ignored[`convo:${conversationId(p.uid, dec.fromUserId)}`] = now;
+      pruneMap(state, "ignored");
+      log(p.handle, `ignored ${dec.kind} from ${dec.fromUserId}`);
+      continue;
+    }
     const status = dec.action === "accept" ? "accepted" : "rejected";
     if (dec.kind === "request") {
       await db().collection("conversations").doc(dec.conversationId).set(
@@ -501,19 +521,21 @@ async function react(p, state, clock) {
 /** Mirrors LikeApiService.setLikeStatus: both docs, status + respondedAt. */
 async function setLikeStatus(p, likeId, fromUserId, status) {
   const update = { status, respondedAt: FieldValue.serverTimestamp() };
-  const batch = db().batch();
-  batch.set(db().collection("users").doc(p.uid).collection("likesReceived").doc(likeId), update, { merge: true });
-  if (fromUserId) {
-    batch.set(db().collection("users").doc(fromUserId).collection("likesGiven").doc(likeId), update, { merge: true });
+  const refs = [db().collection("users").doc(p.uid).collection("likesReceived").doc(likeId)];
+  if (fromUserId) refs.push(db().collection("users").doc(fromUserId).collection("likesGiven").doc(likeId));
+  for (const ref of refs) {
+    try {
+      await ref.update(update);
+    } catch (err) {
+      // 5 = NOT_FOUND: the like was deleted meanwhile; never recreate a stub.
+      if (err.code !== 5) throw err;
+    }
   }
-  await batch.commit();
 }
 
 // ─── Tick ─────────────────────────────────────────────────────────────
 
-async function tickAgent(p, live, agentUids) {
-  const clock = time.local();
-  const state = await loadState(p);
+async function tickAgent(p, state, clock, live, agentUids) {
   if (state.dateKey !== clock.dateKey) planDay(p, state, clock.dateKey);
 
   if (state.session) {
@@ -542,7 +564,22 @@ async function tickAgent(p, live, agentUids) {
     }
   }
 
-  await react(p, state, clock);
+}
+
+async function tickAgentSafely(p, live, agentUids) {
+  const clock = time.local();
+  const state = await loadState(p);
+  try {
+    await tickAgent(p, state, clock, live, agentUids);
+  } catch (err) {
+    log(p.handle, `ERROR ${err.message}`);
+  }
+  try {
+    await react(p, state, clock);
+  } catch (err) {
+    log(p.handle, `ERROR reacting: ${err.message}`);
+  }
+  // Whatever failed above, what did happen is persisted.
   await saveState(p, state);
 }
 
@@ -565,7 +602,11 @@ async function main() {
   console.log(`agentTick: ${list.length} agents, tick ${config.tickMs / 1000}s${DEBUG ? `, debug ×${BOOST}` : ""}`);
 
   let stopping = false;
-  process.on("SIGINT", () => { stopping = true; console.log("\nstopping after this tick…"); });
+  process.on("SIGINT", () => {
+    if (stopping) process.exit(130);
+    stopping = true;
+    console.log("\nstopping after this tick… (Ctrl-C again to quit now)");
+  });
 
   while (!stopping) {
     const started = Date.now();
@@ -577,15 +618,11 @@ async function main() {
     await loadProfiles(list);
     const live = await fetchLiveBroadcasts();
     for (const p of list) {
-      try {
-        await tickAgent(p, live, agentUids);
-      } catch (err) {
-        log(p.handle, `ERROR ${err.message}`);
-      }
+      await tickAgentSafely(p, live, agentUids);
     }
     if (ONCE) return;
     const wait = Math.max(0, config.tickMs - (Date.now() - started));
-    await sleep(wait);
+    await sleep(wait, () => stopping);
   }
 }
 

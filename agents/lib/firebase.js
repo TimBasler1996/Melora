@@ -48,8 +48,16 @@ function tagged(agentId, data) {
   return { ...data, agentId };
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+/** Sleeps `ms`, waking early (checked every second) once `shouldStop()` is true. */
+function sleep(ms, shouldStop = () => false) {
+  return new Promise((resolve) => {
+    const end = Date.now() + ms;
+    const tick = () => {
+      if (shouldStop() || Date.now() >= end) return resolve();
+      setTimeout(tick, Math.min(1000, end - Date.now()));
+    };
+    tick();
+  });
 }
 
 module.exports = { init, db, auth, bucket, FieldValue, Timestamp, agentsEnabled, tagged, sleep };

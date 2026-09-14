@@ -44,15 +44,17 @@ function replyDelayMs() {
   return rng.between(...config.chat.replyDelayMinutes) * MIN;
 }
 
-function schedule(convoId, agentUid) {
-  const delay = replyDelayMs();
+function schedule(convoId, agentUid, lastAt) {
   const existing = scheduled.get(convoId);
+  // Only a newer message moves the reply; read markers and heartbeats don't.
+  if (existing && existing.lastAt >= lastAt) return;
+  const delay = replyDelayMs();
   if (existing) clearTimeout(existing.timer);
   const timer = setTimeout(() => {
     scheduled.delete(convoId);
     reply(convoId, agentUid).catch((err) => log(`reply ${convoId} failed: ${err.message}`));
   }, delay);
-  scheduled.set(convoId, { timer, dueAt: Date.now() + delay });
+  scheduled.set(convoId, { timer, dueAt: Date.now() + delay, lastAt });
   log(`${byUid.get(agentUid).handle}: reply to ${convoId} in ${Math.round(delay / MIN)} min`);
 }
 
@@ -66,8 +68,10 @@ function rateLimited(convoId) {
 
 function countReply(convoId) {
   repliesThisHour.n += 1;
-  const key = `${convoId}|${time.local().dateKey}`;
+  const today = time.local().dateKey;
+  const key = `${convoId}|${today}`;
   repliesPerConversation.set(key, (repliesPerConversation.get(key) ?? 0) + 1);
+  for (const k of repliesPerConversation.keys()) if (!k.endsWith(`|${today}`)) repliesPerConversation.delete(k);
 }
 
 // ─── Prompt ───────────────────────────────────────────────────────────
@@ -141,7 +145,11 @@ async function reply(convoId, agentUid) {
       messages,
     });
   } catch (err) {
-    if (err instanceof Anthropic.RateLimitError) { log("Anthropic rate limit; retry in 5 min"); setTimeout(() => schedule(convoId, agentUid), 5 * MIN); return; }
+    if (err instanceof Anthropic.RateLimitError) {
+      log("Anthropic rate limit; retry in 5 min");
+      setTimeout(() => schedule(convoId, agentUid, Date.now()), 5 * MIN);
+      return;
+    }
     if (err instanceof Anthropic.AuthenticationError) { console.error("ANTHROPIC_API_KEY invalid"); process.exit(1); }
     throw err;
   }
@@ -194,7 +202,7 @@ function handle(doc, startedAt) {
   if (at < startedAt - 24 * 60 * MIN) return;
   const readAt = c.lastReadAt?.[agentUid]?.toMillis?.() ?? 0;
   if (at <= readAt) return;
-  schedule(doc.id, agentUid);
+  schedule(doc.id, agentUid, at);
 }
 
 function main() {
