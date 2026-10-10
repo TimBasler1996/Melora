@@ -20,6 +20,7 @@ struct DiscoverTrackSheet: View {
     let onHideTrack: () -> Void
 
     @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
+    @StateObject private var preview = PreviewPlayer.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -36,6 +37,8 @@ struct DiscoverTrackSheet: View {
     @State private var isSendingMessage: Bool = false
     /// Once the user toggled Save, a slow "contains" reply must not undo it.
     @State private var didToggleSave: Bool = false
+    /// Set once a lookup came back empty, so the badge stops inviting taps.
+    @State private var previewUnavailable: Bool = false
     @State private var status: Status?
     @State private var statusToken: Int = 0
 
@@ -108,6 +111,7 @@ struct DiscoverTrackSheet: View {
             if !Task.isCancelled { coverImage = image }
         }
         .task(id: spotifyAuth.tokens?.refreshToken) { await loadSavedState() }
+        .onDisappear { preview.stop() }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: status)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: playState)
         .animation(.easeInOut(duration: 0.18), value: isQueueing)
@@ -158,12 +162,18 @@ struct DiscoverTrackSheet: View {
         VStack(spacing: 18) {
             // The burst is an overlay so it never takes part in layout:
             // the cover and titles must not move when a like fires.
-            artwork
-                .overlay {
-                    if showLikeBurst {
-                        RippleBurst(size: 260, trigger: likeBurst)
+            Button(action: handlePreview) {
+                artwork
+                    .overlay { previewBadge }
+                    .overlay { previewRing }
+                    .overlay {
+                        if showLikeBurst {
+                            RippleBurst(size: 260, trigger: likeBurst)
+                        }
                     }
-                }
+            }
+            .buttonStyle(.pressable)
+            .accessibilityLabel(preview.isPlaying(trackId: track.id) ? "Stop preview" : "Play a 30 second preview")
 
             VStack(spacing: 6) {
                 Text(trackTitle)
@@ -219,6 +229,47 @@ struct DiscoverTrackSheet: View {
         ZStack {
             AppColors.surfaceElevated
             MIcon("music", size: 48, color: AppColors.mutedText)
+        }
+    }
+
+    /// Runs around the cover while the 30 s snippet plays.
+    @ViewBuilder
+    private var previewRing: some View {
+        if preview.isPlaying(trackId: track.id) {
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadiusLarge, style: .continuous)
+                .trim(from: 0, to: preview.progress)
+                .stroke(AppColors.primary, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .animation(.linear(duration: 0.1), value: preview.progress)
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// A small play/stop mark so the cover reads as tappable.
+    @ViewBuilder
+    private var previewBadge: some View {
+        if !previewUnavailable {
+            ZStack {
+                Circle().fill(.black.opacity(0.45))
+                if preview.isLoading(trackId: track.id) {
+                    ProgressView().tint(.white).scaleEffect(0.7)
+                } else {
+                    MIcon(preview.isPlaying(trackId: track.id) ? "pause" : "play", size: 20, color: .white)
+                }
+            }
+            .frame(width: 52, height: 52)
+            .allowsHitTesting(false)
+            .transition(.opacity)
+        }
+    }
+
+    private func handlePreview() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Task {
+            let found = await preview.toggle(trackId: track.id, title: trackTitle, artist: trackArtist)
+            if !found {
+                withAnimation { previewUnavailable = true }
+                show(Status(text: "No preview for this one — open it in Spotify.", kind: .info))
+            }
         }
     }
 
@@ -526,6 +577,8 @@ struct DiscoverTrackSheet: View {
 
     private func handlePlay() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        // The full song takes over from the snippet.
+        preview.stop()
         guard canUseSpotify else {
             if spotifyAuth.loginExpired {
                 show(Status(text: "Your Spotify login expired.", kind: .reconnect), sticky: true)

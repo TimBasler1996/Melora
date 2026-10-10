@@ -10,6 +10,8 @@
 		5746A839B1FC422C834FCAA4 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D54E966CF84FA6BEAB7605 /* RemoteImage.swift */; };
 		66F0BAF76C08432388F0A0FD /* MIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9D752374FB4725A261C395 /* MIcon.swift */; };
 		513FB17B8E044CF49074EB5C /* ArtworkColorCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E9FF9396BD46DFAF326058 /* ArtworkColorCache.swift */; };
+		7E1A2B3C4D5E6F7A8B9C0D03 /* PreviewPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1A2B3C4D5E6F7A8B9C0D04 /* PreviewPlayer.swift */; };
+		7E1A2B3C4D5E6F7A8B9C0D01 /* TrackPreviewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E1A2B3C4D5E6F7A8B9C0D02 /* TrackPreviewService.swift */; };
 		B075EC834C844EEF9FE01036 /* RippleMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = F314DB3340394791A68ACC0D /* RippleMark.swift */; };
 		66F9387B231E4215AE65215B /* SpotifyTasteSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF2F988231D4E0BA3D52E77 /* SpotifyTasteSync.swift */; };
 		50B2D8794ADC4FFD8B29DDD5 /* SpotifyTaste.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4EB0EB4417434D81505547 /* SpotifyTaste.swift */; };
@@ -94,6 +96,8 @@
 		00D54E966CF84FA6BEAB7605 /* RemoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteImage.swift; sourceTree = "<group>"; };
 		4E9D752374FB4725A261C395 /* MIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIcon.swift; sourceTree = "<group>"; };
 		18E9FF9396BD46DFAF326058 /* ArtworkColorCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkColorCache.swift; sourceTree = "<group>"; };
+		7E1A2B3C4D5E6F7A8B9C0D04 /* PreviewPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewPlayer.swift; sourceTree = "<group>"; };
+		7E1A2B3C4D5E6F7A8B9C0D02 /* TrackPreviewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackPreviewService.swift; sourceTree = "<group>"; };
 		F314DB3340394791A68ACC0D /* RippleMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RippleMark.swift; sourceTree = "<group>"; };
 		0AF2F988231D4E0BA3D52E77 /* SpotifyTasteSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTasteSync.swift; sourceTree = "<group>"; };
 		EE4EB0EB4417434D81505547 /* SpotifyTaste.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTaste.swift; sourceTree = "<group>"; };
@@ -336,6 +340,8 @@
 				759F7B162EC78DB70012A549 /* SpotifyAuthManager.swift */,
 				759F7B0F2EC78B5C0012A549 /* SpotifyService.swift */,
 				18E9FF9396BD46DFAF326058 /* ArtworkColorCache.swift */,
+				7E1A2B3C4D5E6F7A8B9C0D04 /* PreviewPlayer.swift */,
+				7E1A2B3C4D5E6F7A8B9C0D02 /* TrackPreviewService.swift */,
 				0AF2F988231D4E0BA3D52E77 /* SpotifyTasteSync.swift */,
 				759F7B0B2EC784920012A549 /* BroadcastManager.swift */,
 			);
@@ -635,6 +641,8 @@
 				D7C3F433FAA341BC8EAD1656 /* BlockService.swift in Sources */,
 				759F7B102EC78B5C0012A549 /* SpotifyService.swift in Sources */,
 				513FB17B8E044CF49074EB5C /* ArtworkColorCache.swift in Sources */,
+				7E1A2B3C4D5E6F7A8B9C0D03 /* PreviewPlayer.swift in Sources */,
+				7E1A2B3C4D5E6F7A8B9C0D01 /* TrackPreviewService.swift in Sources */,
 				66F9387B231E4215AE65215B /* SpotifyTasteSync.swift in Sources */,
 				7A2B2C2D3E4F5A6B7C8D9E00 /* ProfileService.swift in Sources */,
 				75834A862F0C2E3D008C51F8 /* CurrentUserStore.swift in Sources */,

@@ -20,6 +20,7 @@ module.exports = {
     kilchberg: { name: "Kilchberg", label: "Kilchberg ZH", lat: 47.3225, lng: 8.55, language: "de-CH", count: 12 },
     lausanne: { name: "Lausanne", label: "Lausanne", lat: 46.5197, lng: 6.6323, language: "fr-CH", count: 6 },
     brig: { name: "Brig", label: "Brig VS", lat: 46.3167, lng: 7.9875, language: "de-CH", count: 4 },
+    cransmontana: { name: "Crans-Montana", label: "Crans-Montana", lat: 46.3122, lng: 7.4792, language: "fr-CH", count: 5 },
   },
 
   // Anchors are scattered this far from the city centre (metres).

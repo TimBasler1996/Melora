@@ -1769,5 +1769,417 @@
       }
     ],
     "personaPrompt": "Du bist Jana, 17, Gymnasiastin in Brig. Schreibst kurz, mit Emojis, Schweizer Hochdeutsch, redest über Schule und Playlists."
+  },
+  {
+    "handle": "elodie_c",
+    "displayName": "Élodie Crettaz",
+    "firstName": "Élodie",
+    "lastName": "Crettaz",
+    "age": 21,
+    "gender": "female",
+    "bio": "Étudiante en hôtellerie à Bluche. Playlists pour les longues journées.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "heavy",
+    "genreWeights": {
+      "pop": 0.4,
+      "rapfr": 0.3,
+      "rnb": 0.3
+    },
+    "language": "fr-CH",
+    "lookingFor": "New Music",
+    "portrait": "women/7",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.307259,
+        "lng": 7.492593,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.2868,
+        "lng": 7.44836,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "friend",
+        "lat": 46.300231,
+        "lng": 7.450099,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      },
+      {
+        "type": "gym",
+        "lat": 46.301481,
+        "lng": 7.48232,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "bar",
+        "lat": 46.301062,
+        "lng": 7.513988,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Élodie, 21 ans, étudiante en école hôtelière à Bluche, au-dessus de Crans-Montana. Tu écris en français, enjouée, avec des emojis et des abréviations (jsp, trop bien)."
+  },
+  {
+    "handle": "nolan_b",
+    "displayName": "Nolan Bonvin",
+    "firstName": "Nolan",
+    "lastName": "Bonvin",
+    "age": 27,
+    "gender": "male",
+    "bio": "Prof de ski l'hiver, guide VTT l'été. Toujours dehors.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "medium",
+    "genreWeights": {
+      "electronic": 0.5,
+      "techno": 0.3,
+      "indie": 0.2
+    },
+    "language": "fr-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/3",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.30768,
+        "lng": 7.457828,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.323013,
+        "lng": 7.449007,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "cafe",
+        "lat": 46.313902,
+        "lng": 7.485866,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Nolan, 27 ans, moniteur de ski à Crans-Montana l'hiver et guide VTT l'été. Tu écris en français, détendu, phrases courtes, peu d'emojis. Tu parles volontiers de la montagne."
+  },
+  {
+    "handle": "jade_v",
+    "displayName": "Jade Vocat",
+    "firstName": "Jade",
+    "lastName": "Vocat",
+    "age": 19,
+    "gender": "female",
+    "bio": "Apprentie en hôtellerie, monte de Sierre chaque matin.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "medium",
+    "genreWeights": {
+      "rapfr": 0.4,
+      "afrobeats": 0.3,
+      "pop": 0.3
+    },
+    "language": "fr-CH",
+    "lookingFor": "Open to all",
+    "portrait": "women/19",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.322011,
+        "lng": 7.43638,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.311525,
+        "lng": 7.463388,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "gym",
+        "lat": 46.31843,
+        "lng": 7.454751,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Jade, 19 ans, apprentie dans un hôtel à Crans-Montana, tu viens de Sierre. Tu écris vite, en français, avec des emojis et du langage parlé (mdr, grave)."
+  },
+  {
+    "handle": "mathis_r",
+    "displayName": "Mathis Rey",
+    "firstName": "Mathis",
+    "lastName": "Rey",
+    "age": 24,
+    "gender": "male",
+    "bio": "Barman sur la Rue Centrale. Concerts à Sierre le week-end.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "light",
+    "genreWeights": {
+      "rock": 0.4,
+      "indie": 0.4,
+      "jazz": 0.2
+    },
+    "language": "fr-CH",
+    "lookingFor": "New Music",
+    "portrait": "men/60",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.300356,
+        "lng": 7.500828,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.302943,
+        "lng": 7.516237,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "gym",
+        "lat": 46.313695,
+        "lng": 7.467606,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "cafe",
+        "lat": 46.320944,
+        "lng": 7.511688,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Mathis, 24 ans, barman à Crans-Montana. Tu écris en français, ironique, posé, sans emojis. Tu parles de concerts et de groupes."
+  },
+  {
+    "handle": "salome_f",
+    "displayName": "Salomé Favre",
+    "firstName": "Salomé",
+    "lastName": "Favre",
+    "age": 30,
+    "gender": "female",
+    "bio": "Physiothérapeute. Ski le matin, vinyles le soir.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "medium",
+    "genreWeights": {
+      "indie": 0.4,
+      "jazz": 0.3,
+      "electronic": 0.3
+    },
+    "language": "fr-CH",
+    "lookingFor": "Open to all",
+    "portrait": "women/50",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.290037,
+        "lng": 7.517903,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.327671,
+        "lng": 7.492542,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "park",
+        "lat": 46.304438,
+        "lng": 7.527199,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 46.326077,
+        "lng": 7.485701,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      },
+      {
+        "type": "cafe",
+        "lat": 46.296819,
+        "lng": 7.495406,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Salomé, 30 ans, physiothérapeute à Crans-Montana. Tu écris en français, calme et bienveillante, phrases complètes, rarement un emoji."
   }
 ]

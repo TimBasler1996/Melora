@@ -21,6 +21,7 @@ struct DiscoverCardView: View {
     var isFollowing: Bool = false
 
     @Environment(\.openURL) private var openURL
+    @StateObject private var preview = PreviewPlayer.shared
 
     @State private var showHeartAnimation: Bool = false
     @State private var likeBurst: Int = 0
@@ -164,18 +165,36 @@ struct DiscoverCardView: View {
 
             Spacer(minLength: 0)
 
-            // Album artwork (square) on the RIGHT — opens the song sheet.
-            Button(action: onOpenTrack) {
+            // Album artwork (square) on the RIGHT — plays the 30 s preview.
+            // The song sheet is one tap away on the title next to it.
+            Button(action: handlePreview) {
                 albumArtwork
+                    .overlay {
+                        if preview.isPlaying(trackId: broadcast.track.id) {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .trim(from: 0, to: preview.progress)
+                                .stroke(AppColors.primary, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                                .animation(.linear(duration: 0.1), value: preview.progress)
+                        }
+                    }
                     .overlay(alignment: .bottomTrailing) {
-                        MIcon("play", size: 9, color: AppColors.background)
-                            .frame(width: 18, height: 18)
-                            .background(Circle().fill(AppColors.primary))
-                            .offset(x: 4, y: 4)
+                        Group {
+                            if preview.isLoading(trackId: broadcast.track.id) {
+                                ProgressView().tint(AppColors.background).scaleEffect(0.5)
+                            } else {
+                                MIcon(preview.isPlaying(trackId: broadcast.track.id) ? "pause" : "play",
+                                      size: 9, color: AppColors.background)
+                            }
+                        }
+                        .frame(width: 18, height: 18)
+                        .background(Circle().fill(AppColors.primary))
+                        .offset(x: 4, y: 4)
                     }
             }
             .buttonStyle(.pressable)
-            .accessibilityLabel("Open \(trackTitle)")
+            .accessibilityLabel(preview.isPlaying(trackId: broadcast.track.id)
+                                ? "Stop preview"
+                                : "Play a 30 second preview of \(trackTitle)")
 
             // Chevron
             MIcon(isExpanded ? "chev-up" : "chev-down", size: 16, color: AppColors.mutedText)
@@ -313,6 +332,20 @@ struct DiscoverCardView: View {
     }
 
     // MARK: - Actions
+
+    /// The thumbnail plays the snippet; when no catalogue has one, it falls
+    /// back to opening the song sheet so the tap is never dead.
+    private func handlePreview() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Task {
+            let found = await preview.toggle(
+                trackId: broadcast.track.id,
+                title: trackTitle,
+                artist: trackArtist
+            )
+            if !found { onOpenTrack() }
+        }
+    }
 
     private func handleLikeAction() {
         guard !hasLiked else { return }

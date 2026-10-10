@@ -81,3 +81,4 @@ agents/serviceAccount.json
 agents/node_modules/
 agents/.env
 agents/package-lock.json
+agents/trackPool.json
