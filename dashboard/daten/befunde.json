@@ -1,0 +1,272 @@
+[
+  {
+    "id": "818f2e65",
+    "titel": "The last onboarding step latches on `didFinish`, so a failed profile reload leaves the user on \"Keep your profile\" with a button that does nothing and an error that is never shown",
+    "bereich": "first-run",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "79f55662",
+    "titel": "Pausing the music does not pause the broadcast, and the two go-live entry points disagree about whether a paused song even counts",
+    "bereich": "go-live",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "132c5a34",
+    "titel": "\"Radius\" means two different distances in two places, and the Discover empty state promises both in one sentence",
+    "bereich": "discover",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "Vorschlag da",
+    "beleg": "",
+    "vorschlag": {
+      "text": "Alles konsistent und beide Distanzangaben beziehen sich klar auf dasselbe Discover-Radius-Konzept, nur in unterschiedlichen Rollen (Schwellenwert vs. tatsächliche Entfernung der nächsten verdeckten Person). Damit ist der Befund widerlegt.\n\nURTEIL: nicht zutreffend\nBEGRÜNDUNG: Die beiden Texte in `nobodyLiveCard` (Features/Discover/Views/DiscoverView.swift:754 und :757-468) verwenden \"Radius\" konsequent für denselben Begriff – den konfigurierbaren Discover-Suchradius (`viewModel.maxRadiusKm`) – und ergänzen ihn bewusst um die tatsächliche Entfernung der nächstgelegenen verdeckten Person (`nearestHiddenLiveMeters`), wie der Kommentar in Zeile 459-460 explizit begründet (\"Names the real distance … was wrong by two orders of magnitude\"). Die vom Prüfbericht vermutete zweite \"Radius\"-Bedeutung (z. B. der separate Benachrichtigungsradius aus Views/Profile/SettingsContentView.swift:15 bzw. Services/BroadcastNotificationService.swift:16) taucht im Discover-Empty-State überhaupt nicht auf; es gibt keine Codestelle, an der beide Radien gemeinsam in einem Satz genannt werden. Die beiden Distanzangaben stehen zudem in getrennten `Text`-Views, nicht in \"einem Satz\".\nPATCH:\n```diff\nKEINER\n```\nRISIKO: Keine Änderung vorgeschlagen, daher kein Risiko.",
+      "patch": "",
+      "urteil": "nicht zutreffend",
+      "kosten": 0.1949,
+      "runden": 7
+    },
+    "notiz": ""
+  },
+  {
+    "id": "28e3910a",
+    "titel": "Starting a snippet leaves the primary button asserting the full song is playing on Spotify, and playState never returns to idle",
+    "bereich": "song-sheet",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "4db3a192",
+    "titel": "\"Like\" (a like request sent to a person) and \"Save\" → \"Saved to your Liked Songs\" sit side by side in identical accent styling, and \"Queue\"/\"Save\" never say whose queue and library they touch",
+    "bereich": "song-sheet",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "4e121a94",
+    "titel": "For the person who declined, a later message is swallowed: the like is written, the message is dropped, the receiver sees nothing, and the sender is told they \"already reached out\"",
+    "bereich": "social-loop",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "14be61c2",
+    "titel": "The \"N new requests\" banner counts every pending request forever, so it contradicts the tab badge it is supposed to explain",
+    "bereich": "chat",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "1a5906d4",
+    "titel": "In a request thread the bubble menu still offers Reply and React: Reply does nothing at all, React silently writes a reaction the sender can see while being told to keep waiting",
+    "bereich": "chat",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "05205cc6",
+    "titel": "\"This is how others see you\" never shows the LIVE badge or the song you're playing, which is the one thing others actually see",
+    "bereich": "profile",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "16e59ada",
+    "titel": "Music taste: \"Refresh now\" gives no feedback, a failed sync is silent, and the Settings footer claims data the profile does not show",
+    "bereich": "profile",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "f34ef6b9",
+    "titel": "Ember is no longer the one primary action per screen, and its label colour flips between near-black and white",
+    "bereich": "consistency",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "6d8b354b",
+    "titel": "Second vocabulary for \"live\", two titles for the same error alert, and the same message composer with two prompts and two different results",
+    "bereich": "consistency",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "offen",
+    "beleg": "",
+    "vorschlag": null,
+    "notiz": ""
+  },
+  {
+    "id": "786ae1c7",
+    "titel": "First-run Discover promises \"you get notified\", but permission was never asked in that session and nearby alerts only fire while the app is open",
+    "bereich": "first-run",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "Features/Discover/Views/DiscoverView.swift:698-703; Views/Main/MainView.swift:57-61,74-75; Services/BroadcastNotificationService.swift:94-112,121-145,223; Docs/UX_Backlog.md UX-31",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "18c49ec1",
+    "titel": "\"You're live\" is a device-local flag with no lifetime: the moment the app goes to the background the heartbeat stops and everyone else drops you from Live now, while your own screens keep claiming you are live",
+    "bereich": "go-live",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "SocialSound-Info.plist:21-24 declares only `remote-notification` — no background processing or location mode. The two sync loops are plain `Task { while !Task.isCancelled { … sleep } }` (Services/BroadcastManager.swift:192-210, intervals at :42-43), so they are suspended with the app; NowPlayingView.swift:68-71 additionally stops the player poll on `didEnterBackground`. Viewers compute `isLive = record.isLive && now.timeIntervalSince(lastUpdate) <= maxLiveAge` with `maxLiveAge = 5 * 60` (Features/Discover/ViewModels/DiscoverViewModel.swift:523, 561) and the server flips `isLive:false` after `BROADCAST_LIVE_TTL_MINUTES = 10` (functions/src/index.ts:450, 471-476). Nothing in BroadcastManager observes scenePhase or foreground — the only `willEnterForeground` hook in the flow is NowPlayingView.swift:63-67, and it touches the view model, not the broadcast. The same assumption breaks the idle watchdog: `maxIdlePolls = 40 // ≈ 10 minutes at 15s` (BroadcastManager.swift:49) can only elapse while the user sits in the foreground app with nothing playing.",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "bdbde593",
+    "titel": "When the Spotify grant dies while live, the broadcast neither ends nor is mentioned: the heartbeat keeps re-asserting isLive with a frozen track, the idle watchdog can no longer fire, and one UI branch has no way to stop",
+    "bereich": "go-live",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "On a rejected refresh token, SpotifyAuthManager.swift:163-168 calls `disconnect()` and sets `loginExpired = true` — but never touches BroadcastManager. (The intent is clear elsewhere: the manual Settings disconnect explicitly stops the broadcast first, SettingsContentView.swift:306-319 \"This ends your live session.\") `loginExpired` is read only in Features/Discover/Views/DiscoverTrackSheet.swift:590, 682 — not on the Live tab, not on the go-live banner, not in BroadcastManager. The idle watchdog cannot help: `if let state = try? await SpotifyService.shared.fetchNowPlayingState()` wraps the whole counter, so a throwing poll never increments `idlePolls` (BroadcastManager.swift:244-257). Worse, `syncTrack` runs regardless and `upsertBroadcast` always writes `\"isLive\": true` plus a fresh `updatedAt` (BroadcastManager.swift:259, 274-288, 334-368), so the server's staleness sweep (functions/src/index.ts:471-476) can never expire it either. And NowPlayingView.swift:92-93 routes to `spotifyDisconnectedState` (:292-337), which contains no live badge and no `CompactBroadcastToggle` — reachable while broadcasting whenever `vm.currentTrack` is nil (set to nil on `noActiveDevice`, NowPlayingViewModel.swift:73-81).",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "f23cb890",
+    "titel": "\"Recently live\" ignores the radius but still prints a distance, so the feed contradicts its own \"Within X km\" header on one screen",
+    "bereich": "discover",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "Features/Discover/ViewModels/DiscoverViewModel.swift:662-667 (recentBroadcasts = base filtered only by !isLive, sorted by lastSeenAt, prefix 20 — passesRadius is never applied); Features/Discover/ViewModels/DiscoverViewModel.swift:622-631 (distanceMeters is computed for every row in filteredBase, recent rows included); Features/Discover/Views/DiscoverView.swift:458-463 (section rendered in the same scroll view under the radius bar); Features/Discover/Views/DiscoverCardView.swift:158-161 (distance printed whenever non-nil); Features/Discover/Views/DiscoverView.swift:675-684 (\"Nobody is live within <radius>\" / \"a bit further away\"); Docs/UX_Backlog.md:45",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "911f137e",
+    "titel": "Block from Discover is offered under copy promising things can be restored, and it silently deletes the whole conversation for both people",
+    "bereich": "discover",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "Features/Discover/Views/DiscoverView.swift:100-128 (title \"Not interested?\", message \"Hidden songs and people can be restored in Settings.\", Block button alongside the two Hide buttons); Features/Discover/ViewModels/DiscoverViewModel.swift:292-310 (commit blocks, then deleteConversation); Services/ChatApiService.swift:216-218 (deletes the shared conversation document outright); Views/Profile/HiddenAndBlockedView.swift:37-49 (Unblock restores visibility only); Views/Profile/UserProfilePreviewView.swift:71-79 and Views/Chat/ChatView.swift:97-108 (\"Block\" / \"Block User\" / \"Block <name>\", three different message texts, none mentioning the chat)",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "dad548ee",
+    "titel": "The 30 s snippet is never named anywhere a sighted user can read it, so the sheet offers two identical-looking \"play\" controls (and the card offers three)",
+    "bereich": "song-sheet",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "Features/Discover/Views/DiscoverTrackSheet.swift:180, :253-266, :383-400; Features/Discover/Views/DiscoverCardView.swift:50, :170-197; Views/Components/SpotifyLinkCard.swift:86-93, :197-207",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "31c30672",
+    "titel": "\"Say hi\" on a like inverts the roles: the person who liked you now has to approve your request, and their like stays pending forever",
+    "bereich": "social-loop",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "Views/Main/ActivityView.swift:182-189 (onSayHi only computes the deterministic id and pushes ChatView; the like is untouched); Views/Chat/ChatViewModel.swift:294-297 → Services/ChatApiService.swift:167-173 (status .pending, initiatorId = me, no createdFromLikeId); Views/Chat/ChatView.swift:344 and 316-321; Services/LikeApiService.swift:147-153 (the app already has the opposite rule: a prior accepted like auto-accepts so \"the receiver doesn't have to accept the same person twice\")",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "4151b218",
+    "titel": "The first message of any request not born from a Discover like is never pushed — profile \"Message\" and Activity \"Say hi\" arrive in total silence",
+    "bereich": "social-loop",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "functions/src/index.ts:401-404 (pending + initiatorId == sender + ≤1 message → return, no push); functions/src/index.ts:84-470 (no conversation-created trigger; onLikeCreated:245 is the only other path and needs a likesReceived doc); Services/ChatApiService.swift:160-176 (createRequestConversation writes no like); Views/Chat/ChatViewModel.swift:294-300; Views/Main/ActivityView.swift:184-187",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "239a25db",
+    "titel": "Declining a message request is a one-way door with no undo, and the only escape is a destructive \"Delete Chat\" — while the error copy for the decliner is factually false",
+    "bereich": "chat",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "Views/Chat/ChatView.swift:217-227,237; Views/Chat/ChatViewModel.swift:97-105; Views/Chat/ChatInboxRow.swift:39-60; Services/ChatApiService.swift:29,145-147; Features/Discover/ViewModels/DiscoverViewModel.swift:409-419",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "b07f8a15",
+    "titel": "Settings promises sign-out and reinstall are reversible, but the only way back to an Apple-linked profile is to redo all of onboarding first",
+    "bereich": "profile",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "Views/Profile/SettingsContentView.swift:225 and :332 (copy), :328 (signOut); Services/AccountService.swift:152-154 (sign out → fresh anonymous session), :121-131 (credentialAlreadyInUse → switchedToExistingAccount); App/SocialSoundApp.swift:39-42 and ViewModels/Onboarding/OnboardingStateManager.swift:57-64,:71 (new uid has no user doc → needsOnboarding); Views/Onboarding/OnboardingWelcomeView.swift:41; Views/Onboarding/OnboardingFlowView.swift:88-98 (Apple step is case 4, after basics/photos/Spotify)",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "bb3d2471",
+    "titel": "Block is three different names, three error texts and two different safety models across the three places it can be triggered",
+    "bereich": "consistency",
+    "schwere": "high",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "Labels: Views/Chat/ChatView.swift:82 and :98 (\"Block User\"); Views/Profile/UserProfilePreviewView.swift:60 and :72 (\"Block\"); Features/Discover/Views/DiscoverView.swift:119 (\"Block <name>\"). Dialog titles: Views/Chat/ChatView.swift:97 (\"Block this user?\") vs Views/Profile/UserProfilePreviewView.swift:71 (\"Block <name>?\") vs Features/Discover/Views/DiscoverView.swift:101 (\"Not interested?\"). Explanations: Views/Chat/ChatView.swift:107 (no unblock path) vs Views/Profile/UserProfilePreviewView.swift:79 (\"You can unblock them in Settings.\") vs Features/Discover/Views/DiscoverView.swift:127 (mentions only hidden songs/people although Block is one of the buttons). Safety model: Features/Discover/ViewModels/DiscoverViewModel.swift:277-308 with the 5 s window at :110 (optimistic + Undo + deferred server write) vs Views/Chat/ChatViewModel.swift:84-94 and Views/Profile/UserProfilePreviewView.swift:375-386 (immediate, no undo, screen dismissed). Error copy: Views/Chat/ChatViewModel.swift:89 (\"this user\") / Views/Profile/UserProfilePreviewView.swift:383 (\"this person\") / Features/Discover/ViewModels/DiscoverViewModel.swift:308 (the name). Hide styling: Features/Discover/Views/DiscoverView.swift:113 (no role) vs :116 (role .destructive) vs Features/Discover/Views/DiscoverTrackSheet.swift:567-574 (muted footnote). The app's own vocabulary is \"people\", not \"user\": Views/Profile/HiddenAndBlockedView.swift:47 and :72.",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "e6119ba2",
+    "titel": "In Nearby with no location grant, Discover shows every live user on earth as \"Live now\" with no distance, directly under a banner saying you cannot see who is near you",
+    "bereich": "first-run",
+    "schwere": "medium",
+    "quelle": "Flussanalyse 10.10.2026",
+    "status": "übernommen",
+    "beleg": "Features/Discover/ViewModels/DiscoverViewModel.swift:599-603,620-630,639-641; Features/Discover/Views/DiscoverView.swift:321-340,444-456; Features/Discover/Views/DiscoverCardView.swift:158-159; Views/Onboarding/IntroWalkthroughView.swift:146-149",
+    "vorschlag": null,
+    "notiz": "In Build 12 behoben."
+  }
+]
