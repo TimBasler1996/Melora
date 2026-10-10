@@ -152,7 +152,7 @@ struct DiscoverCardView: View {
                             .foregroundColor(.white.opacity(0.5))
                     }
                     if let distance = broadcast.distanceMeters {
-                        Text("· \(Self.formatDistance(distance))")
+                        Text("· \(DistanceFormat.band(distance))")
                             .foregroundColor(.white.opacity(0.5))
                     } else if distanceUnavailable {
                         Text("· distance unavailable")
@@ -494,16 +494,4 @@ struct DiscoverCardView: View {
         return a.isEmpty ? "Unknown artist" : a
     }
 
-    /// Distance bands, never exact meters: positions are fuzzed to a ~275 m
-    /// grid before they are shared, and a band is all anyone needs.
-    static func formatDistance(_ meters: Int) -> String {
-        if meters < 500 { return "under 500 m" }
-        if meters < 1000 { return "under 1 km" }
-        let km = Double(meters) / 1000.0
-        if km < 10 {
-            let half = (km * 2).rounded() / 2
-            return half == half.rounded() ? "about \(Int(half)) km" : String(format: "about %.1f km", half)
-        }
-        return "about \(Int(km.rounded())) km"
-    }
 }

@@ -318,7 +318,7 @@ struct DiscoverTrackSheet: View {
                                 .foregroundColor(AppColors.secondaryText)
                         }
                         if let distance = broadcast.distanceMeters {
-                            Text("· \(DiscoverCardView.formatDistance(distance))")
+                            Text("· \(DistanceFormat.band(distance))")
                                 .foregroundColor(AppColors.secondaryText)
                         } else if let city = knownCity {
                             Text("· \(city)")

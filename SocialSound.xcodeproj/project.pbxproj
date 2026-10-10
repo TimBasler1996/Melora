@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A0B1C2D3E4F5000000TS000 /* DistanceFormat.swift in Sources (Tests) */ = {isa = PBXBuildFile; fileRef = 9B1C2D3E4F5061728394A5B2 /* DistanceFormat.swift */; };
+		A0B1C2D3E4F5000000TS001 /* BlockCopy.swift in Sources (Tests) */ = {isa = PBXBuildFile; fileRef = 9B1C2D3E4F5061728394A5B4 /* BlockCopy.swift */; };
+		A0B1C2D3E4F5000000TS002 /* TrackPreviewService.swift in Sources (Tests) */ = {isa = PBXBuildFile; fileRef = 7E1A2B3C4D5E6F7A8B9C0D02 /* TrackPreviewService.swift */; };
+		A0B1C2D3E4F5000000TS003 /* DiscoverModels.swift in Sources (Tests) */ = {isa = PBXBuildFile; fileRef = F5E7962926804ED6997F6667 /* DiscoverModels.swift */; };
+		A0B1C2D3E4F5000000TS004 /* LocationPoint.swift in Sources (Tests) */ = {isa = PBXBuildFile; fileRef = 759F7B092EC783CF0012A549 /* LocationPoint.swift */; };
 		5746A839B1FC422C834FCAA4 /* RemoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D54E966CF84FA6BEAB7605 /* RemoteImage.swift */; };
 		66F0BAF76C08432388F0A0FD /* MIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9D752374FB4725A261C395 /* MIcon.swift */; };
 		513FB17B8E044CF49074EB5C /* ArtworkColorCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E9FF9396BD46DFAF326058 /* ArtworkColorCache.swift */; };
@@ -82,6 +87,8 @@
 		76B0C1AD2F12345600112233 /* OnboardingStepBasicsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */; };
 		78B0C1B12F20000100112233 /* OnboardingStepPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */; };
 		79A1C0012F30000100112233 /* DateAge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0002F30000100112233 /* DateAge.swift */; };
+		9B1C2D3E4F5061728394A5B3 /* BlockCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1C2D3E4F5061728394A5B4 /* BlockCopy.swift */; };
+		9B1C2D3E4F5061728394A5B1 /* DistanceFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1C2D3E4F5061728394A5B2 /* DistanceFormat.swift */; };
 		79A1C0062F30000300112233 /* CitySearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A1C0052F30000300112233 /* CitySearchField.swift */; };
 		A1C2D3E42F60000100APDLG1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3E32F60000100APDLG1 /* AppDelegate.swift */; };
 		A1C2D3E82F60000100BCNTF1 /* BroadcastNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C2D3E72F60000100BCNTF1 /* BroadcastNotificationService.swift */; };
@@ -137,6 +144,7 @@
 		75834A8F2F0D8F0C008C51F8 /* ChatApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatApiService.swift; sourceTree = "<group>"; };
 		75834AE92F1650A3008C51F8 /* OnboardingProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProfileService.swift; sourceTree = "<group>"; };
 		759F7ADB2EC779740012A549 /* SocialSound.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SocialSound.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0B1C2D3E4F500000000T007 /* SocialSoundTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SocialSoundTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		759F7ADE2EC779740012A549 /* SocialSoundApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialSoundApp.swift; sourceTree = "<group>"; };
 		759F7AF92EC77D5B0012A549 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		759F7AFD2EC77D9A0012A549 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
@@ -172,6 +180,8 @@
 		76B0C1AC2F12345600112233 /* OnboardingStepBasicsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepBasicsView.swift; sourceTree = "<group>"; };
 		78B0C1B32F20000100112233 /* OnboardingStepPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepPhotosView.swift; sourceTree = "<group>"; };
 		79A1C0002F30000100112233 /* DateAge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateAge.swift; sourceTree = "<group>"; };
+		9B1C2D3E4F5061728394A5B4 /* BlockCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockCopy.swift; sourceTree = "<group>"; };
+		9B1C2D3E4F5061728394A5B2 /* DistanceFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DistanceFormat.swift; sourceTree = "<group>"; };
 		79A1C0052F30000300112233 /* CitySearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CitySearchField.swift; sourceTree = "<group>"; };
 		7A1B1C1D2E3F4A5B6C7D8E9F /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		7A2B2C2D3E4F5A6B7C8D9E0F /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
@@ -194,6 +204,11 @@
 			path = Chat;
 			sourceTree = "<group>";
 		};
+		A0B1C2D3E4F500000000T008 /* SocialSoundTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SocialSoundTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -206,6 +221,13 @@
 				756E44AA2EFE8FA300F49C30 /* FirebaseAuth in Frameworks */,
 				759F7B282EC7A05A0012A549 /* FirebaseFirestore in Frameworks */,
 				A1B2C3D42F3000000000FCM1 /* FirebaseMessaging in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A0B1C2D3E4F500000000T003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -295,6 +317,7 @@
 			isa = PBXGroup;
 			children = (
 				759F7ADB2EC779740012A549 /* SocialSound.app */,
+				A0B1C2D3E4F500000000T007 /* SocialSoundTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -382,6 +405,8 @@
 			children = (
 				75A174032EC7E40D00CEB48F /* AppTheme.swift */,
 				79A1C0002F30000100112233 /* DateAge.swift */,
+				9B1C2D3E4F5061728394A5B4 /* BlockCopy.swift */,
+				9B1C2D3E4F5061728394A5B2 /* DistanceFormat.swift */,
 				B21BE36111534A499759CE08 /* ImageDownscale.swift */,
 				EB05F36BE7BE4FD58CA1BC8A /* LegalLinks.swift */,
 				718DFED3B33A4C36A2BBC0B4 /* UserFacingError.swift */,
@@ -540,6 +565,25 @@
 			productReference = 759F7ADB2EC779740012A549 /* SocialSound.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A0B1C2D3E4F500000000T001 /* SocialSoundTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A0B1C2D3E4F500000000T004 /* Build configuration list for PBXNativeTarget "SocialSoundTests" */;
+			buildPhases = (
+				A0B1C2D3E4F500000000T002 /* Sources */,
+				A0B1C2D3E4F500000000T003 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A0B1C2D3E4F500000000T008 /* SocialSoundTests */,
+			);
+			name = SocialSoundTests;
+			productName = SocialSoundTests;
+			productReference = A0B1C2D3E4F500000000T007 /* SocialSoundTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -551,6 +595,9 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					759F7ADA2EC779740012A549 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					A0B1C2D3E4F500000000T001 = {
 						CreatedOnToolsVersion = 16.0;
 					};
 				};
@@ -573,6 +620,7 @@
 			projectRoot = "";
 			targets = (
 				759F7ADA2EC779740012A549 /* SocialSound */,
+				A0B1C2D3E4F500000000T001 /* SocialSoundTests */,
 			);
 		};
 /* End PBXProject section */
@@ -596,6 +644,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				79A1C0012F30000100112233 /* DateAge.swift in Sources */,
+				9B1C2D3E4F5061728394A5B3 /* BlockCopy.swift in Sources */,
+				9B1C2D3E4F5061728394A5B1 /* DistanceFormat.swift in Sources */,
 				83D91861AFFE423E9F99BC7D /* ImageDownscale.swift in Sources */,
 				37F3896CA94D43B593651D27 /* LegalLinks.swift in Sources */,
 				A1896B352E0649539024457E /* UserFacingError.swift in Sources */,
@@ -672,6 +722,18 @@
 				A1C2D3E42F60000100APDLG1 /* AppDelegate.swift in Sources */,
 				A1C2D3E82F60000100BCNTF1 /* BroadcastNotificationService.swift in Sources */,
 				A1C2D3EC2F60000100SPLNK1 /* SpotifyLinkCard.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A0B1C2D3E4F500000000T002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0B1C2D3E4F5000000TS000 /* DistanceFormat.swift in Sources (Tests) */,
+				A0B1C2D3E4F5000000TS001 /* BlockCopy.swift in Sources (Tests) */,
+				A0B1C2D3E4F5000000TS002 /* TrackPreviewService.swift in Sources (Tests) */,
+				A0B1C2D3E4F5000000TS003 /* DiscoverModels.swift in Sources (Tests) */,
+				A0B1C2D3E4F5000000TS004 /* LocationPoint.swift in Sources (Tests) */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -865,6 +927,38 @@
 			};
 			name = Release;
 		};
+		A0B1C2D3E4F500000000T005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tim.SocialSoundTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A0B1C2D3E4F500000000T006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGNING_ALLOWED = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tim.SocialSoundTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -882,6 +976,15 @@
 			buildConfigurations = (
 				759F7AEA2EC779750012A549 /* Debug */,
 				759F7AEB2EC779750012A549 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A0B1C2D3E4F500000000T004 /* Build configuration list for PBXNativeTarget "SocialSoundTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A0B1C2D3E4F500000000T005 /* Debug */,
+				A0B1C2D3E4F500000000T006 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

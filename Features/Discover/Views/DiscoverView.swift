@@ -465,12 +465,9 @@ struct DiscoverView: View {
         guard let meters = viewModel.nearestHiddenLiveMeters else {
             return "\(people) further away."
         }
-        return "\(people) further away — the nearest about \(formatDistanceCoarse(meters))."
+        return "\(people) further away — the nearest about \(DistanceFormat.coarseKilometres(meters))."
     }
 
-    private func formatDistanceCoarse(_ meters: Int) -> String {
-        meters < 1000 ? "1 km" : "\(Int((Double(meters) / 1000).rounded())) km"
-    }
 
     private func formatRadius(_ km: Double) -> String {
         "\(Int(km.rounded())) km"

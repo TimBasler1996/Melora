@@ -143,7 +143,9 @@ actor TrackPreviewService {
 
     /// Drops the remix/live/feat. suffix Spotify titles carry; the catalogues
     /// usually list the plain title.
-    private static func cleanTitle(_ title: String) -> String {
+    // Internal, not private: these two rules decide whether a song has a
+    // preview at all, so they are covered by tests.
+    static func cleanTitle(_ title: String) -> String {
         var cleaned = title
         if let dash = cleaned.range(of: " - ") {
             cleaned = String(cleaned[..<dash.lowerBound])
@@ -154,18 +156,24 @@ actor TrackPreviewService {
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Lenient on purpose: catalogues spell "&"/"and", accents and features
-    /// differently, so a shared prefix of the stripped names is the signal.
-    private static func artistMatches(_ wanted: String, _ candidate: String) -> Bool {
+    /// Lenient about spelling, strict about identity: one name has to *begin*
+    /// with the other. Substring matching was too loose — "Zaz" matched
+    /// "Baby Zaz Karaoke Band", which is how a cover ends up playing instead
+    /// of the song someone is broadcasting.
+    static func artistMatches(_ wanted: String, _ candidate: String) -> Bool {
         let a = normalized(wanted), b = normalized(candidate)
-        guard !a.isEmpty, !b.isEmpty else { return false }
-        let probe = String(a.prefix(10))
-        return b.contains(probe) || a.contains(String(b.prefix(10)))
+        guard a.count >= 2, b.count >= 2 else { return false }
+        return a == b || a.hasPrefix(b) || b.hasPrefix(a)
     }
 
+    /// Lowercased, unaccented, punctuation dropped — and "&" and a standalone
+    /// "and" removed, because the catalogues disagree about those more often
+    /// than about anything else ("Simon & Garfunkel" / "Simon and Garfunkel").
     private static func normalized(_ value: String) -> String {
         value.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
-            .filter { $0.isLetter || $0.isNumber }
+            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            .filter { $0 != "and" }
+            .joined()
     }
 
     // MARK: - Responses
