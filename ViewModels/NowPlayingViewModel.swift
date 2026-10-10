@@ -79,6 +79,9 @@ final class NowPlayingViewModel: ObservableObject {
             progressTask?.cancel()
             progressTask = nil
             errorMessage = "Open Spotify and play something first."
+        } catch SpotifyAuthError.notAuthorized, SpotifyAuthError.noRefreshToken {
+            // Not transient: no amount of retrying brings this back.
+            errorMessage = "Your Spotify login expired. Reconnect to keep going."
         } catch {
             // Transient failure (network blip, token refresh in flight): keep
             // the last known track so the UI and the live broadcast don't flap

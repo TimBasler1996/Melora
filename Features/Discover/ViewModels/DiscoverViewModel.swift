@@ -22,6 +22,9 @@ final class DiscoverViewModel: ObservableObject {
 
     /// Live broadcasts hidden only because they are outside the radius.
     @Published private(set) var liveOutsideRadiusCount: Int = 0
+    /// Distance to the closest live person the radius is hiding, so the empty
+    /// state can name it instead of saying "a bit further away".
+    @Published private(set) var nearestHiddenLiveMeters: Int?
 
     @Published var isLoading: Bool = false
     @Published var isSendingLike: Bool = false
@@ -94,7 +97,8 @@ final class DiscoverViewModel: ObservableObject {
     private var undoTimeout: Task<Void, Never>?
     /// The action whose server write is waiting for the undo window.
     private var pendingUndo: PendingUndo?
-    /// Blocks applied locally but not yet written (inside the undo window).
+    /// Blocked locally while the server write is still in flight, so the
+    /// block listener can't briefly un-hide the person again.
     private var pendingBlockIds: Set<String> = []
     private var hiddenObserver: AnyCancellable?
 
@@ -272,32 +276,22 @@ final class DiscoverViewModel: ObservableObject {
         }
     }
 
-    /// Blocks the broadcaster: hidden from Discover, Chats and search from
-    /// now on. The server write waits for the undo window so a slip of the
-    /// thumb costs nothing.
-    func blockUser(for broadcast: DiscoverBroadcast) {
-        let userId = broadcast.user.id
-        let name = broadcast.user.displayName
-
+    /// Blocks a person: hidden from Discover, Chats and search, and the
+    /// shared conversation is deleted. Confirmed explicitly by the caller —
+    /// no undo window, because the conversation delete cannot be undone.
+    func blockUser(userId: String, name: String) {
         blockedUserIds.insert(userId)
         pendingBlockIds.insert(userId)
         dismissTarget = nil
         updateVisibleBroadcasts()
 
-        // The commit must not depend on `self`: it has to land even if this
-        // view model goes away while the toast is up.
         let chatService = self.chatService
         let currentUserId = service.currentUserId() ?? ""
 
-        offerUndo("\(name) blocked") { [weak self] in
-            self?.pendingBlockIds.remove(userId)
-            self?.blockedUserIds.remove(userId)
-            self?.updateVisibleBroadcasts()
-        } commit: { [weak self] in
+        Task { [weak self] in
             do {
                 try await BlockService.shared.blockUser(userId: userId)
-                // Any chat with them is closed too, so no unread badge lingers
-                // on a conversation the user can no longer see.
+                // No unread badge may linger on a chat they can no longer open.
                 let convoId = chatService.conversationId(for: userId, and: currentUserId)
                 try? await chatService.deleteConversation(conversationId: convoId)
                 self?.pendingBlockIds.remove(userId)
@@ -305,7 +299,7 @@ final class DiscoverViewModel: ObservableObject {
                 self?.pendingBlockIds.remove(userId)
                 self?.blockedUserIds.remove(userId)
                 self?.updateVisibleBroadcasts()
-                self?.actionError = "Couldn’t block \(name). Please try again."
+                self?.actionError = BlockCopy.failure(name)
             }
         }
     }
@@ -520,7 +514,8 @@ final class DiscoverViewModel: ObservableObject {
     // MARK: - Records → broadcasts
 
     /// A live broadcast not refreshed within this window is shown as recent.
-    private static let maxLiveAge: TimeInterval = 5 * 60
+    /// Same window the broadcaster applies, so the two can't disagree.
+    private static let maxLiveAge: TimeInterval = BroadcastManager.maxLiveAge
     /// How many recently-live rows to keep.
     private static let maxRecentRows = 20
 
@@ -617,11 +612,12 @@ final class DiscoverViewModel: ObservableObject {
             base = base.filter { followingIds.contains($0.user.id) }
         }
 
-        // Distances only when we know where we are; otherwise none at all,
-        // so a stale "about 3 km" never outlives the location fix.
+        // Distances only when we know where we are, and only on live rows:
+        // "Recently live" is deliberately not radius-filtered, so printing a
+        // distance there would contradict the "Within X km" slider above it.
         return base.map { broadcast in
             var mutable = broadcast
-            if let currentLocation, let location = broadcast.location {
+            if broadcast.isLive, let currentLocation, let location = broadcast.location {
                 let target = CLLocation(latitude: location.latitude, longitude: location.longitude)
                 mutable.distanceMeters = Int(currentLocation.distance(from: target))
             } else {
@@ -642,6 +638,8 @@ final class DiscoverViewModel: ObservableObject {
         if currentLocation != nil, discoverMode == .nearby {
             visible = live.filter(passesRadius)
             liveOutsideRadiusCount = live.count - visible.count
+            nearestHiddenLiveMeters = live.filter { !passesRadius($0) }
+                .compactMap(\.distanceMeters).min()
             visible.sort { lhs, rhs in
                 let l = lhs.distanceMeters ?? Int.max
                 let r = rhs.distanceMeters ?? Int.max
@@ -650,6 +648,7 @@ final class DiscoverViewModel: ObservableObject {
             }
         } else {
             liveOutsideRadiusCount = 0
+            nearestHiddenLiveMeters = nil
             visible.sort { lhs, rhs in
                 let l = lhs.distanceMeters ?? Int.max
                 let r = rhs.distanceMeters ?? Int.max

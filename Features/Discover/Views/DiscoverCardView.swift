@@ -16,6 +16,8 @@ struct DiscoverCardView: View {
     /// The song itself was tapped (cover or title): open the song sheet.
     var onOpenTrack: () -> Void = {}
 
+    /// Nearby without a position: say so where the distance would stand.
+    var distanceUnavailable: Bool = false
     var hasLiked: Bool = false
     var hasMessaged: Bool = false
     var isFollowing: Bool = false
@@ -44,12 +46,6 @@ struct DiscoverCardView: View {
                     dividerLine
 
                     actionButtonsRow
-                        .transition(.move(edge: .top).combined(with: .opacity))
-
-                    // Spotify Link Card — rich track preview
-                    SpotifyLinkCard(discoverTrack: broadcast.track)
-                        .padding(.horizontal, 14)
-                        .padding(.bottom, 8)
                         .transition(.move(edge: .top).combined(with: .opacity))
 
                     if showMessageField {
@@ -157,6 +153,9 @@ struct DiscoverCardView: View {
                     }
                     if let distance = broadcast.distanceMeters {
                         Text("· \(Self.formatDistance(distance))")
+                            .foregroundColor(.white.opacity(0.5))
+                    } else if distanceUnavailable {
+                        Text("· distance unavailable")
                             .foregroundColor(.white.opacity(0.5))
                     }
                 }

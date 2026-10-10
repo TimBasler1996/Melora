@@ -17,6 +17,14 @@ struct DiscoverView: View {
     @State private var showNothingPlaying = false
     @State private var expandedCardId: String?
     @State private var chatToOpen: ChatTarget?
+    /// The person a block was requested for, pending confirmation.
+    @State private var blockTarget: BlockTarget?
+
+    private struct BlockTarget: Identifiable, Equatable {
+        let id: String
+        let name: String
+    }
+
     /// The song sheet, when a track was tapped.
     @State private var trackSheetBroadcast: DiscoverBroadcast?
     /// What to present once the song sheet has finished dismissing
@@ -113,11 +121,17 @@ struct DiscoverView: View {
                     Button("Hide this song") {
                         viewModel.muteTrack(for: target)
                     }
-                    Button("Hide \(target.user.displayName)", role: .destructive) {
+                    // Hiding is local and reversible, so it doesn't wear the
+                    // destructive role; blocking gets its own dialog because
+                    // it deletes the conversation and this one promises the
+                    // opposite.
+                    Button("Hide \(target.user.displayName)") {
                         viewModel.muteUser(for: target)
                     }
-                    Button("Block \(target.user.displayName)", role: .destructive) {
-                        viewModel.blockUser(for: target)
+                    Button("Block \(target.user.displayName)…", role: .destructive) {
+                        let user = target.user
+                        viewModel.cancelDismiss()
+                        blockTarget = BlockTarget(id: user.id, name: user.displayName)
                     }
                 }
                 Button("Cancel", role: .cancel) {
@@ -125,6 +139,24 @@ struct DiscoverView: View {
                 }
             } message: {
                 Text("Hidden songs and people can be restored in Settings.")
+            }
+            .confirmationDialog(
+                BlockCopy.title(blockTarget?.name ?? BlockCopy.fallbackName),
+                isPresented: Binding(
+                    get: { blockTarget != nil },
+                    set: { if !$0 { blockTarget = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                if let target = blockTarget {
+                    Button(BlockCopy.button, role: .destructive) {
+                        viewModel.blockUser(userId: target.id, name: target.name)
+                        blockTarget = nil
+                    }
+                }
+                Button("Cancel", role: .cancel) { blockTarget = nil }
+            } message: {
+                Text(BlockCopy.message)
             }
             .alert("Nothing is playing", isPresented: $showNothingPlaying) {
                 Button("Open Spotify") {
@@ -273,7 +305,9 @@ struct DiscoverView: View {
             if let track = broadcast.currentTrack {
                 return track.artist.isEmpty ? track.title : "\(track.title) · \(track.artist)"
             }
-            return "People nearby can see your track"
+            return broadcast.isVisibleToOthers
+                ? "People nearby can see your track"
+                : "Your live session ended while Melora was closed"
         }
         return spotifyAuth.isAuthorized ? "Go live and show up here for people nearby" : "Takes a minute, then you’re on the map"
     }
@@ -304,6 +338,12 @@ struct DiscoverView: View {
         .padding(.bottom, 4)
     }
 
+    /// Nearby without a position: the list is everyone who is live, not
+    /// people around the user. Every label on screen has to admit that.
+    private var distanceUnavailable: Bool {
+        viewModel.discoverMode == .nearby && locationService.currentLocationPoint == nil
+    }
+
     private var locationDenied: Bool {
         locationService.authorizationStatus == .denied || locationService.authorizationStatus == .restricted
     }
@@ -317,7 +357,7 @@ struct DiscoverView: View {
         } else if locationService.currentLocationPoint == nil {
             HStack(spacing: 8) {
                 ProgressView().tint(.white).scaleEffect(0.8)
-                Text("Finding your location…")
+                Text("Finding your location — showing everyone live until then")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.65))
                 Spacer()
@@ -339,7 +379,7 @@ struct DiscoverView: View {
                 Text("Location is off")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
-                Text("Turn it on to see who is near you and how far away they are.")
+                Text("Without it, Nearby shows everyone who is live — not just people around you.")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.65))
             }
@@ -395,6 +435,22 @@ struct DiscoverView: View {
         .padding(.bottom, 6)
     }
 
+    /// Names the real distance: "a bit further away" was wrong by two orders
+    /// of magnitude whenever the nearest live person was in another city.
+    private var outsideRadiusText: String {
+        let people = viewModel.liveOutsideRadiusCount == 1
+            ? "1 person is live"
+            : "\(viewModel.liveOutsideRadiusCount) people are live"
+        guard let meters = viewModel.nearestHiddenLiveMeters else {
+            return "\(people) further away."
+        }
+        return "\(people) further away — the nearest about \(formatDistanceCoarse(meters))."
+    }
+
+    private func formatDistanceCoarse(_ meters: Int) -> String {
+        meters < 1000 ? "1 km" : "\(Int((Double(meters) / 1000).rounded())) km"
+    }
+
     private func formatRadius(_ km: Double) -> String {
         "\(Int(km.rounded())) km"
     }
@@ -444,7 +500,8 @@ struct DiscoverView: View {
                     if viewModel.visibleBroadcasts.isEmpty {
                         nobodyLiveCard
                     } else {
-                        sectionHeader("Live now", count: viewModel.visibleBroadcasts.count)
+                        sectionHeader(distanceUnavailable ? "Live now · anywhere" : "Live now",
+                                      count: viewModel.visibleBroadcasts.count)
                         if !songHintSeen {
                             songHint
                                 .transition(.opacity.combined(with: .move(edge: .top)))
@@ -456,7 +513,9 @@ struct DiscoverView: View {
                     }
 
                     if !viewModel.recentBroadcasts.isEmpty {
-                        sectionHeader("Recently live", count: viewModel.recentBroadcasts.count)
+                        // Not radius-filtered on purpose, so the header must
+                        // not inherit the "Within X km" claim above it.
+                        sectionHeader("Recently live · anywhere", count: viewModel.recentBroadcasts.count)
                         ForEach(viewModel.recentBroadcasts) { broadcast in
                             card(for: broadcast)
                         }
@@ -561,6 +620,7 @@ struct DiscoverView: View {
                 withAnimation(.easeOut(duration: 0.25)) { songHintSeen = true }
                 trackSheetBroadcast = broadcast
             },
+            distanceUnavailable: distanceUnavailable,
             hasLiked: viewModel.isLiked(broadcast),
             hasMessaged: viewModel.hasMessage(broadcast),
             isFollowing: viewModel.isFollowing(broadcast)
@@ -676,9 +736,7 @@ struct DiscoverView: View {
                 Text("Nobody is live within \(formatRadius(viewModel.maxRadiusKm))")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.white)
-                Text(viewModel.liveOutsideRadiusCount == 1
-                     ? "1 person is live a bit further away."
-                     : "\(viewModel.liveOutsideRadiusCount) people are live a bit further away.")
+                Text(outsideRadiusText)
                     .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
@@ -700,7 +758,9 @@ struct DiscoverView: View {
                     .foregroundColor(.white)
                 Text(viewModel.discoverMode == .friends
                      ? "You’ll see them here the moment they go live, wherever they are."
-                     : "Go live yourself: the moment someone nearby starts playing, they show up here and you get notified.")
+                     // No server-side push for "someone nearby went live" yet
+                     // (UX-31), so don't promise one on the first screen.
+                     : "Go live yourself — the moment someone nearby starts playing, they show up here.")
                     .font(AppFonts.footnote())
                     .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)

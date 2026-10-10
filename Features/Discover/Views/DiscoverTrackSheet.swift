@@ -179,6 +179,15 @@ struct DiscoverTrackSheet: View {
             .buttonStyle(.pressable)
             .accessibilityLabel(preview.isPlaying(trackId: track.id) ? "Stop preview" : "Play a 30 second preview")
 
+            if !previewUnavailable {
+                // Name the snippet, so the Ember capsule below reads as the
+                // separate thing it is: the whole song, on Spotify.
+                Text(preview.isPlaying(trackId: track.id) ? "Preview · tap to stop" : "30 s preview")
+                    .font(AppFonts.caption())
+                    .foregroundColor(AppColors.mutedText)
+                    .transition(.opacity)
+            }
+
             VStack(spacing: 6) {
                 Text(trackTitle)
                     .font(AppFonts.song(size: 30))

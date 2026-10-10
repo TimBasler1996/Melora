@@ -86,7 +86,7 @@ final class ChatViewModel: ObservableObject {
         do {
             try await BlockService.shared.blockUser(userId: otherId)
         } catch {
-            actionError = "Couldn’t block this user. Please try again."
+            actionError = BlockCopy.failure(peer?.displayName ?? BlockCopy.fallbackName)
             print("❌ [Chat] block failed:", error.localizedDescription)
             return false
         }
@@ -386,8 +386,13 @@ final class ChatViewModel: ObservableObject {
 
     /// Accept a pending message request: mark the underlying like as accepted
     /// and the conversation as accepted.
+    /// Accepts a pending request, or reopens one this user declined. Block
+    /// can be undone from Settings and a hide from the toast; declining was
+    /// the only safety action in the app with no way back.
     func acceptRequest() async {
-        guard let convo = conversation, convo.effectiveStatus == .pending else { return }
+        guard let convo = conversation,
+              convo.effectiveStatus == .pending || convo.effectiveStatus == .rejected
+        else { return }
         guard let myId = Auth.auth().currentUser?.uid, convo.initiatorId != myId else { return }
 
         isResponding = true

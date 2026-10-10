@@ -4,6 +4,8 @@ import UIKit
 struct OnboardingFlowView: View {
     @EnvironmentObject private var onboardingState: OnboardingStateManager
     @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
+    @EnvironmentObject private var broadcast: BroadcastManager
+    @StateObject private var account = AccountService.shared
 
     @StateObject private var viewModel = OnboardingViewModel()
 
@@ -21,11 +23,23 @@ struct OnboardingFlowView: View {
                 .padding(.bottom, 24)
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             } else {
-                OnboardingWelcomeView {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        viewModel.hasSeenWelcome = true
-                    }
-                }
+                OnboardingWelcomeView(
+                    onContinue: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            viewModel.hasSeenWelcome = true
+                        }
+                    },
+                    onSignIn: { result in
+                        Task {
+                            await viewModel.signInToExistingAccount(
+                                result, using: account, stopping: broadcast
+                            )
+                        }
+                    },
+                    prepareRequest: { account.prepareAppleRequest($0) },
+                    isWorking: viewModel.isLinkingAccount,
+                    message: viewModel.accountErrorMessage
+                )
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
                 .padding(.bottom, 24)

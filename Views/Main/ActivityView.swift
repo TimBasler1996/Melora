@@ -181,11 +181,17 @@ struct ActivityView: View {
                 onFollow: { Task { await vm.toggleFollow(item.userId) } },
                 onSayHi: {
                     guard let me = vm.myUserId else { return }
-                    chatTarget = ChatTarget(
-                        conversationId: ChatApiService.shared.conversationId(for: me, and: item.userId),
-                        peerId: item.userId
-                    )
-                }
+                    Task {
+                        // Accept first: opening a chat without it would make
+                        // *you* the stranger asking *them* for permission.
+                        guard await vm.acceptLike(item) else { return }
+                        chatTarget = ChatTarget(
+                            conversationId: ChatApiService.shared.conversationId(for: me, and: item.userId),
+                            peerId: item.userId
+                        )
+                    }
+                },
+                isAccepting: vm.acceptingLikeId != nil && vm.acceptingLikeId == item.like?.id
             )
         }
         .buttonStyle(.plain)
@@ -200,6 +206,7 @@ private struct ActivityRow: View {
     let isFollowing: Bool
     let onFollow: () -> Void
     let onSayHi: () -> Void
+    var isAccepting: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -263,14 +270,22 @@ private struct ActivityRow: View {
         switch item.kind {
         case .like:
             Button(action: onSayHi) {
-                Text("Say hi")
-                    .font(.system(size: 13, weight: .heavy))
-                    .foregroundColor(AppColors.background)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(Capsule().fill(AppColors.primary))
+                Group {
+                    if isAccepting {
+                        ProgressView().tint(AppColors.background).scaleEffect(0.7)
+                    } else {
+                        Text("Say hi")
+                            .font(.system(size: 13, weight: .heavy))
+                            .foregroundColor(AppColors.background)
+                    }
+                }
+                .frame(minWidth: 56)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(AppColors.primary))
             }
             .buttonStyle(.pressable)
+            .disabled(isAccepting)
         case .follow:
             Button(action: onFollow) {
                 Text(isFollowing ? "Following" : "Follow back")

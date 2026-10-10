@@ -16,6 +16,8 @@ struct ActivityItem: Identifiable, Equatable {
     var avatarURL: String?
     let kind: Kind
     let date: Date
+    /// The like behind a `.like` row, so "Say hi" can accept it.
+    var like: TrackLike?
 }
 
 /// Loads likes and new followers into one timeline. Likes that carry a
@@ -29,6 +31,8 @@ final class ActivityViewModel: ObservableObject {
     /// Who I follow, so follow rows can offer "Follow back" / "Following".
     @Published private(set) var followingIds: Set<String> = []
     @Published var actionError: String?
+    /// The like currently being accepted, so its pill can show progress.
+    @Published private(set) var acceptingLikeId: String?
 
     /// The last visit, kept per source so the badge logic stays unchanged.
     private let likesSeenKey = "LikesInboxView_lastSeenDate"
@@ -178,6 +182,9 @@ final class ActivityViewModel: ObservableObject {
             do {
                 var likes = try await LikeApiService.shared.fetchLikesReceived(for: myUid)
                 likes = likes.filter { ($0.message ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                // A like that was already accepted or declined must stop
+                // offering "Say hi" as if nothing had happened.
+                likes = likes.filter { $0.status == .pending }
                 likes = await LikeApiService.shared.enrichLikesWithUserData(likes)
                 if Task.isCancelled { return }
                 likeItems = likes.map { like in
@@ -187,7 +194,8 @@ final class ActivityViewModel: ObservableObject {
                         displayName: like.fromUserDisplayName,
                         avatarURL: like.fromUserAvatarURL,
                         kind: .like(trackTitle: like.trackTitle, trackArtist: like.trackArtist, artworkURL: like.trackArtworkURL),
-                        date: like.createdAt
+                        date: like.createdAt,
+                        like: like
                     )
                 }
                 merge()
@@ -226,6 +234,34 @@ final class ActivityViewModel: ObservableObject {
                     self.merge()
                 }
             }
+        }
+    }
+
+    /// "Say hi" on a like accepts it: the person who reached out first does
+    /// not have to approve a request from the person they liked. The chat
+    /// opens already accepted, and the liker gets the "accepted your like"
+    /// push the server already sends.
+    func acceptLike(_ item: ActivityItem) async -> Bool {
+        guard let like = item.like, let myUid = myUserId else { return false }
+        acceptingLikeId = like.id
+        defer { acceptingLikeId = nil }
+
+        do {
+            try await LikeApiService.shared.setLikeStatus(
+                likeId: like.id, toUserId: myUid, status: .accepted
+            )
+            _ = try await ChatApiService.shared.createConversationStubIfNeeded(
+                acceptedLike: like, receiverUserId: myUid
+            )
+            likeItems.removeAll { $0.id == item.id }
+            merge()
+            return true
+        } catch {
+            actionError = UserFacingError.message(
+                for: error,
+                fallback: "Couldn’t open the chat. Please try again."
+            )
+            return false
         }
     }
 }

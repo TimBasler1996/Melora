@@ -1,8 +1,14 @@
+import AuthenticationServices
 import SwiftUI
 
 /// First screen a new user sees: what Melora is, in one breath.
 struct OnboardingWelcomeView: View {
     let onContinue: () -> Void
+    /// Returning users: sign in before setup instead of after it.
+    var onSignIn: (Result<ASAuthorization, Error>) -> Void = { _ in }
+    var prepareRequest: (ASAuthorizationAppleIDRequest) -> Void = { _ in }
+    var isWorking: Bool = false
+    var message: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,11 +44,32 @@ struct OnboardingWelcomeView: View {
                     .background(Capsule().fill(AppColors.live))
             }
 
-            Text("No account needed. You can keep your profile with Apple later.")
-                .font(AppFonts.footnote())
-                .foregroundColor(AppColors.secondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.top, 12)
+            SignInWithAppleButton(.signIn) { request in
+                prepareRequest(request)
+            } onCompletion: { result in
+                onSignIn(result)
+            }
+            .signInWithAppleButtonStyle(.whiteOutline)
+            .frame(height: 48)
+            .clipShape(Capsule())
+            .padding(.top, 10)
+            .disabled(isWorking)
+            .opacity(isWorking ? 0.6 : 1)
+            .accessibilityLabel("Already have a profile? Sign in with Apple")
+
+            if let message, !message.isEmpty {
+                Text(message)
+                    .font(AppFonts.footnote())
+                    .foregroundColor(AppColors.primaryText.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 10)
+            } else {
+                Text("No account needed — or sign in to bring back a profile you already have.")
+                    .font(AppFonts.footnote())
+                    .foregroundColor(AppColors.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 12)
+            }
         }
     }
 

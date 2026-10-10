@@ -458,7 +458,11 @@ private struct CompactBroadcastToggle: View {
             ))
             .labelsHidden()
             .tint(AppColors.live)
-            .disabled(!spotifyAuth.isAuthorized || (!hasTrack && !broadcast.isBroadcasting))
+            // Never lock the toggle while live: a dead Spotify grant used to
+            // leave the user with no way to end their own broadcast.
+            .disabled(broadcast.isBroadcasting
+                      ? false
+                      : (!spotifyAuth.hasStoredLogin || !hasTrack))
             .opacity(hasTrack ? 1.0 : 0.5)
         }
         .padding(.horizontal, 16)
@@ -479,9 +483,15 @@ private struct CompactBroadcastToggle: View {
     /// Why the toggle can't be used right now; nil when it can.
     private var hint: String? {
         if broadcast.isBroadcasting {
-            return locationDenied ? nil : "People nearby can see what you’re playing"
+            if locationDenied { return nil }
+            // Nothing refreshes the session in the background, so say what
+            // the promise actually depends on.
+            return broadcast.isVisibleToOthers
+                ? "People nearby see you while Melora is open"
+                : "Your live session ended while Melora was closed"
         }
-        if !spotifyAuth.isAuthorized { return "Connect Spotify to go live" }
+        if spotifyAuth.loginExpired { return "Reconnect Spotify to go live" }
+        if !spotifyAuth.hasStoredLogin { return "Connect Spotify to go live" }
         if !hasTrack { return "Play something on Spotify to go live" }
         return nil
     }

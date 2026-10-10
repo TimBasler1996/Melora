@@ -398,7 +398,15 @@ export const onNewChatMessage = onDocumentCreated(
     if (!convoDoc.exists) return;
     const convo = convoDoc.data() ?? {};
 
-    if (convo.status === "pending" && convo.initiatorId === senderUid) {
+    // The first message of a request is announced by `onLikeCreated` — but
+    // only when the request grew out of a Discover like. Requests opened from
+    // a profile or from "Say hi" have no like document and no other trigger,
+    // so suppressing their first message meant it arrived in total silence.
+    if (
+      convo.status === "pending" &&
+      convo.initiatorId === senderUid &&
+      convo.createdFromLikeId
+    ) {
       const existing = await convoDoc.ref.collection("messages").limit(2).get();
       if (existing.size <= 1) return;
     }

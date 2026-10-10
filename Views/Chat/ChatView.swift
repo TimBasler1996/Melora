@@ -79,7 +79,7 @@ struct ChatView: View {
                         Button(role: .destructive) {
                             showBlockConfirm = true
                         } label: {
-                            Label("Block User", systemImage: "hand.raised")
+                            Label(BlockCopy.button, systemImage: "hand.raised")
                         }
                     }
                     Button(role: .destructive) {
@@ -94,8 +94,12 @@ struct ChatView: View {
                 }
             }
         }
-        .confirmationDialog("Block this user?", isPresented: $showBlockConfirm, titleVisibility: .visible) {
-            Button("Block User", role: .destructive) {
+        .confirmationDialog(
+            BlockCopy.title(vm.peer?.displayName ?? BlockCopy.fallbackName),
+            isPresented: $showBlockConfirm,
+            titleVisibility: .visible
+        ) {
+            Button(BlockCopy.button, role: .destructive) {
                 Task {
                     if await vm.blockOtherUser(conversationId: conversationId) {
                         dismiss()
@@ -104,7 +108,7 @@ struct ChatView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("They won't appear in your Discover feed, chats or search anymore.")
+            Text(BlockCopy.message)
         }
         .confirmationDialog("Delete this chat?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete Chat", role: .destructive) {
@@ -119,7 +123,7 @@ struct ChatView: View {
             Text("The conversation is removed for both of you.")
         }
         .alert(
-            "Something went wrong",
+            BlockCopy.errorTitle,
             isPresented: Binding(
                 get: { vm.actionError != nil },
                 set: { if !$0 { vm.actionError = nil } }
@@ -235,16 +239,32 @@ struct ChatView: View {
     }
 
     private var declinedFooter: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "hand.raised")
-                .font(.system(size: 12, weight: .bold))
-            Text("You declined this request.")
-                .font(.system(size: 12, weight: .semibold))
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "hand.raised")
+                    .font(.system(size: 12, weight: .bold))
+                Text("You declined this request.")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            .foregroundColor(.white.opacity(0.7))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(Capsule().fill(AppColors.surfaceElevated))
+
+            // Changing your mind must not require deleting the chat.
+            Button {
+                Task {
+                    await vm.acceptRequest()
+                    composerFocused = true
+                }
+            } label: {
+                Text("Message them anyway")
+                    .font(.system(size: 13, weight: .heavy))
+                    .foregroundColor(AppColors.primary)
+            }
+            .buttonStyle(.plain)
+            .disabled(vm.isResponding)
         }
-        .foregroundColor(.white.opacity(0.7))
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(Capsule().fill(AppColors.surfaceElevated))
         .padding(.horizontal, AppLayout.screenPadding)
         .padding(.bottom, 8)
     }

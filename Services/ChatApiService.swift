@@ -143,7 +143,18 @@ actor ChatApiService {
             let existingStatus = (snap.data()?["status"] as? String)
                 .flatMap(Conversation.Status.init(rawValue:)) ?? .accepted
             if existingStatus == .rejected {
-                throw ChatError.requestDeclined
+                // Only the side that was declined is blocked. If *this* user
+                // declined and now writes anyway, that is them changing their
+                // mind — reopen instead of swallowing the message.
+                let initiatorId = snap.data()?["initiatorId"] as? String
+                if initiatorId == senderId {
+                    throw ChatError.requestDeclined
+                }
+                try await convoRef.setData([
+                    "status": Conversation.Status.accepted.rawValue,
+                    "initiatorId": senderId,
+                    "updatedAt": FieldValue.serverTimestamp()
+                ], merge: true)
             }
         }
 

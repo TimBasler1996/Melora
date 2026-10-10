@@ -153,6 +153,41 @@ final class OnboardingViewModel: ObservableObject {
         }
     }
 
+    /// The welcome screen's "I already have a profile" door. Signing out or
+    /// reinstalling used to leave no way back in: the Apple step lived at the
+    /// end of setup, so the only route to an existing profile was to build a
+    /// second one first. `completeAppleSignIn` already switches sessions when
+    /// the Apple ID has an account; here we just offer it before setup.
+    func signInToExistingAccount(
+        _ result: Result<ASAuthorization, Error>,
+        using account: AccountService,
+        stopping broadcast: BroadcastManager
+    ) async {
+        accountErrorMessage = nil
+        isLinkingAccount = true
+        defer { isLinkingAccount = false }
+
+        do {
+            switch try await account.completeAppleSignIn(result, stopping: broadcast) {
+            case .switchedToExistingAccount:
+                // The profile is complete; OnboardingStateManager.reload()
+                // drops straight into the app.
+                didFinish = true
+            case .linked:
+                // A valid Apple ID with no Melora profile behind it. The ID is
+                // now attached to this session, so setup continues and the
+                // account step later is a no-op.
+                accountErrorMessage = "No Melora profile found for this Apple ID — let’s set one up."
+                hasSeenWelcome = true
+            }
+        } catch AccountService.AccountError.cancelled {
+            // Backed out of the Apple sheet; stay on the welcome screen.
+        } catch {
+            print("❌ [Account] Apple sign-in failed: \(error)")
+            accountErrorMessage = "Couldn’t sign you in with Apple. Please try again."
+        }
+    }
+
     // MARK: - Step 3: Spotify connect
 
     func connectSpotify(using spotifyAuth: SpotifyAuthManager) async {

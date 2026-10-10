@@ -69,7 +69,9 @@ struct SettingsContentView: View {
                                 .font(AppFonts.caption())
                                 .foregroundColor(AppColors.secondaryText)
                         }
-                        Text("You’ll be notified when someone goes live within this distance.")
+                        // Nearby alerts are raised in-process (UX-31), so the
+                        // promise only holds while Melora is open.
+                        Text("While Melora is open, you’ll be notified when someone goes live within this distance.")
                             .font(.system(size: 12, weight: .regular))
                             .foregroundColor(AppColors.secondaryText)
                     }
@@ -222,7 +224,7 @@ struct SettingsContentView: View {
                 Text("Account")
             } footer: {
                 Text(account.isLinkedWithApple
-                     ? "Signing out keeps your profile; sign in with Apple again to get it back."
+                     ? "Signing out keeps your profile — sign in with Apple on the welcome screen to get it back."
                      : "Deleting removes your profile, photos, likes, chats and followers for good.")
             }
 
@@ -329,7 +331,7 @@ struct SettingsContentView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("You’ll start with an empty profile until you sign in with Apple again.")
+            Text("You’ll start with an empty profile until you sign in with Apple again on the welcome screen.")
         }
     }
 

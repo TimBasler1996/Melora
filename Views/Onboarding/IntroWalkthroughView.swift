@@ -100,7 +100,7 @@ struct IntroWalkthroughView: View {
     private var goLivePage: some View {
         pageLayout(
             title: "You go live",
-            text: "Play something on Spotify and tap Go live. People nearby see what you’re playing — for as long as it plays."
+            text: "Play something on Spotify and tap Go live. People nearby see what you’re playing while Melora is open."
         ) {
             VStack(spacing: 26) {
                 LiveRipple(size: 120)

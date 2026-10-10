@@ -68,15 +68,19 @@ struct UserProfilePreviewView: View {
                 }
             }
         }
-        .confirmationDialog("Block \(vm.user?.displayName ?? "this person")?", isPresented: $showBlockConfirm, titleVisibility: .visible) {
-            Button("Block", role: .destructive) {
+        .confirmationDialog(
+            BlockCopy.title(vm.user?.displayName ?? BlockCopy.fallbackName),
+            isPresented: $showBlockConfirm,
+            titleVisibility: .visible
+        ) {
+            Button(BlockCopy.button, role: .destructive) {
                 Task {
                     if await vm.block() { dismiss() }
                 }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("They won’t appear in your Discover feed, chats or search. You can unblock them in Settings.")
+            Text(BlockCopy.message)
         }
         .sheet(isPresented: $showReportSheet) {
             ReportUserSheet(userId: userId, userName: vm.user?.displayName ?? "this person")
@@ -380,7 +384,7 @@ final class UserProfilePreviewViewModel: ObservableObject {
             try? await ChatApiService.shared.deleteConversation(conversationId: convoId)
             return true
         } catch {
-            actionError = "Couldn’t block this person. Please try again."
+            actionError = BlockCopy.failure(user?.displayName ?? BlockCopy.fallbackName)
             return false
         }
     }

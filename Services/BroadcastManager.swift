@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 import UserNotifications
@@ -48,6 +49,19 @@ final class BroadcastManager: ObservableObject {
     private var idlePolls = 0
     private static let maxIdlePolls = 40 // ≈ 10 minutes at 15s
 
+    /// How long a broadcast stays visible to others after its last write.
+    /// Viewers apply the same window (DiscoverViewModel), so the two cannot
+    /// drift apart and claim different things about the same session.
+    static let maxLiveAge: TimeInterval = 5 * 60
+
+    /// When the broadcast document was last written successfully — the last
+    /// moment anyone else could have seen this session.
+    private(set) var lastLiveWriteAt: Date?
+
+    /// Polls that threw. Counted against the same ceiling as idle polls, so
+    /// a session nobody can refresh expires instead of being re-asserted.
+    private var failedPolls = 0
+
     /// Whether the Discover document was written in this broadcast session.
     /// The first write stamps `broadcastedAt`, even if it happens after the
     /// start (the track may not be known yet when the toggle flips).
@@ -61,6 +75,32 @@ final class BroadcastManager: ObservableObject {
         // `reconcileAfterLaunch()` cleans that up once auth is available.
         if let saved = UserDefaults.standard.object(forKey: broadcastStartKey) as? Date {
             self.broadcastStartedAt = saved
+        }
+
+        // Nothing refreshes the broadcast while the app is in the background,
+        // so a pocketed phone drops out of everyone's "Live now" after
+        // `maxLiveAge`. Say so on return instead of silently re-asserting it.
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.endSessionIfNoLongerVisible() }
+        }
+    }
+
+    /// True while others can still see this session.
+    var isVisibleToOthers: Bool {
+        guard isBroadcasting else { return false }
+        guard let last = lastLiveWriteAt ?? broadcastStartedAt else { return false }
+        return Date().timeIntervalSince(last) <= Self.maxLiveAge
+    }
+
+    private func endSessionIfNoLongerVisible() {
+        guard isBroadcasting, !isVisibleToOthers else { return }
+        Task {
+            await stopBroadcasting()
+            errorMessage = "Your live session ended while Melora was closed. Play something and go live again."
         }
     }
 
@@ -105,7 +145,9 @@ final class BroadcastManager: ObservableObject {
         UserDefaults.standard.removeObject(forKey: broadcastStartKey)
 
         Task {
-            let minutes = Int(Date().timeIntervalSince(startedAt) / 60)
+            // Credit only minutes someone could have seen.
+            let until = lastLiveWriteAt ?? startedAt
+            let minutes = Int(until.timeIntervalSince(startedAt) / 60)
             if minutes > 0 {
                 userService.addBroadcastMinutes(uid: uid, minutes: min(minutes, 12 * 60))
             }
@@ -136,6 +178,7 @@ final class BroadcastManager: ObservableObject {
 
         isBroadcasting = true
         idlePolls = 0
+        failedPolls = 0
         hasWrittenBroadcastDoc = false
         broadcastStartedAt = Date()
         UserDefaults.standard.set(broadcastStartedAt, forKey: broadcastStartKey)
@@ -178,7 +221,8 @@ final class BroadcastManager: ObservableObject {
         }
 
         if let startedAt {
-            let minutes = Int(Date().timeIntervalSince(startedAt) / 60)
+            let until = lastLiveWriteAt ?? startedAt
+            let minutes = Int(until.timeIntervalSince(startedAt) / 60)
             if minutes > 0 {
                 userService.addBroadcastMinutes(uid: uid, minutes: minutes)
             }
@@ -241,7 +285,9 @@ final class BroadcastManager: ObservableObject {
     private func pollSpotifyAndSync(uid: String) async {
         guard isBroadcasting else { return }
 
-        if let state = try? await SpotifyService.shared.fetchNowPlayingState() {
+        do {
+            let state = try await SpotifyService.shared.fetchNowPlayingState()
+            failedPolls = 0
             if let track = state.track {
                 currentTrack = track
                 idlePolls = 0
@@ -254,6 +300,23 @@ final class BroadcastManager: ObservableObject {
                     return
                 }
             }
+        } catch SpotifyAuthError.notAuthorized, SpotifyAuthError.noRefreshToken {
+            // The grant is gone for good: the session can never be refreshed
+            // again, so end it instead of re-asserting it every 15 s.
+            await stopBroadcasting()
+            errorMessage = "Your Spotify login expired, so your live session ended. Reconnect Spotify to go live again."
+            await notifyAutoEnded()
+            return
+        } catch {
+            // A failed poll must not refresh `updatedAt`: a session nobody can
+            // see should expire on the server, not be kept alive by us.
+            failedPolls += 1
+            if failedPolls >= Self.maxIdlePolls {
+                await stopBroadcasting()
+                errorMessage = "Couldn’t reach Spotify for a while, so your live session ended."
+                await notifyAutoEnded()
+            }
+            return
         }
 
         await syncTrack(uid: uid)
@@ -366,6 +429,7 @@ final class BroadcastManager: ObservableObject {
                 .document(uid)
                 .setData(payload, merge: true)
             hasWrittenBroadcastDoc = true
+            lastLiveWriteAt = Date()
         } catch {
             print("⚠️ [Broadcast] update failed: \(error)")
             errorMessage = "Couldn’t update your live session. Retrying…"
