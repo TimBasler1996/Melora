@@ -1,7 +1,12 @@
 """Kostenbremse. Ein Arbeiter, der im Kreis liest, soll Geld kosten dürfen —
 aber nicht unbemerkt und nicht unbegrenzt."""
 import json
+import os
+import tempfile
+import threading
 from pathlib import Path
+
+_sperre = threading.RLock()
 
 PFAD = Path(__file__).parent / "daten" / "guthaben.json"
 
@@ -19,14 +24,28 @@ GRENZE_PRO_TAG = 8.00    # USD, alle zusammen
 def _laden() -> dict:
     if not PFAD.exists():
         return {"tage": {}}
-    return json.loads(PFAD.read_text())
+    try:
+        return json.loads(PFAD.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {"tage": {}}
 
 
 def buchen(tag: str, usd: float) -> None:
-    d = _laden()
-    d["tage"][tag] = round(d["tage"].get(tag, 0.0) + usd, 4)
+    """Zwei Arbeiter dürfen nicht die Buchung des jeweils anderen verlieren."""
     PFAD.parent.mkdir(exist_ok=True)
-    PFAD.write_text(json.dumps(d, ensure_ascii=False, indent=2))
+    with _sperre:
+        d = _laden()
+        d["tage"][tag] = round(d["tage"].get(tag, 0.0) + usd, 4)
+        fd, vorlaeufig = tempfile.mkstemp(dir=PFAD.parent, prefix=".guthaben-", suffix=".json")
+        try:
+            with os.fdopen(fd, "w") as f:
+                json.dump(d, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(vorlaeufig, PFAD)
+        except BaseException:
+            Path(vorlaeufig).unlink(missing_ok=True)
+            raise
 
 
 def heute(tag: str) -> float:

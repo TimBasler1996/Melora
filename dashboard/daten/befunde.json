@@ -55,9 +55,15 @@
     "bereich": "song-sheet",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "URTEIL: nicht zutreffend\nBEGRÜNDUNG: Die vier \"Done\"-Zustände (Like, Message, Queue-Hinweis entfällt, Save, Follow) nutzen in der gesamten App durchgängig `AppColors.live` als Bestätigungsfarbe (z. B. DiscoverCardView.swift:223/232/241, ProfileView.swift:783, OnboardingWelcomeView.swift:44) – das ist bewusstes, konsistentes Design und kein lokaler Fehler im Song-Sheet. Zudem sind \"Like\" und \"Save\" in `actionRow` (DiscoverTrackSheet.swift:434-468) nicht benachbart (Reihenfolge: Like, Message, Queue, Save, Share), tragen unterschiedliche Icons (heart-fill vs. check) und unterschiedliche Accessibility-Labels. Die behauptete Unklarheit \"wessen Queue/Library\" wird durch die Statusmeldungen direkt nach der Aktion aufgelöst (\"Added to your queue.\" / \"Saved to your Liked Songs.\", Zeilen 648 und 678), sodass dem Nutzer unmittelbar mitgeteilt wird, dass es sein eigenes Spotify-Konto betrifft.\nPATCH:\n```diff\nKEINER\n```\nRISIKO: Keine Änderung vorgeschlagen, daher kein Risiko.",
+      "patch": "",
+      "urteil": "nicht zutreffend",
+      "kosten": 0.2517,
+      "runden": 7
+    },
     "notiz": ""
   },
   {
