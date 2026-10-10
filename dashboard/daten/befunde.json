@@ -334,5 +334,22 @@
     "beleg": "Features/Discover/ViewModels/DiscoverViewModel.swift:599-603,620-630,639-641; Features/Discover/Views/DiscoverView.swift:321-340,444-456; Features/Discover/Views/DiscoverCardView.swift:158-159; Views/Onboarding/IntroWalkthroughView.swift:146-149",
     "vorschlag": null,
     "notiz": "In Build 12 behoben."
+  },
+  {
+    "id": "ee66abf3",
+    "titel": "The two go-live entry points disagree about a paused track: Discover's goLive() requires state.isPlaying, while the Live tab's CompactBroadcastToggle only requires a track to exist — so you can start a broadcast that the new isPlaying check in pollSpotifyAndSync will time out ten minutes later",
+    "bereich": "go-live",
+    "schwere": "medium",
+    "quelle": "Rest aus Flussanalyse-Befund, 10.10.2026",
+    "status": "Vorschlag da",
+    "beleg": "Features/Discover/Views/DiscoverView.swift:305-309 (goLive erfordert isPlaying); Views/Main/NowPlayingView.swift:232,239,463-466 (Toggle prüft nur hasTrack); Services/BroadcastManager.swift:325 (seit bf11d17 verlangt der Poll isPlaying)",
+    "vorschlag": {
+      "text": "URTEIL: zutreffend\nBEGRÜNDUNG: `vm.currentTrack` wird auch bei pausiertem Titel gesetzt (ViewModels/NowPlayingViewModel.swift:66f.), und `content` zeigt den Player-Zweig allein anhand von `vm.currentTrack != nil` (NowPlayingView.swift:94), weshalb `CompactBroadcastToggle(hasTrack: true)` in Zeile 232 auch bei Pause aktiv bleibt; der Toggle sperrt nur anhand `hasTrack`/`hasStoredLogin` (NowPlayingView.swift:463-465), nicht anhand `isPlaying`. Discover bricht bei pausiertem Titel dagegen ab (DiscoverView.swift:306), während `pollSpotifyAndSync` (BroadcastManager.swift:327) bei fehlendem `isPlaying` `idlePolls` hochzählt und nach `maxIdlePolls` (≈10 Min., BroadcastManager.swift:44-50) den Broadcast beendet. Damit kann der Live-Tab einen Broadcast starten, der serverseitig zwangsläufig nach rund zehn Minuten abbricht.\n\nPATCH:\n```diff\n--- a/Views/Main/NowPlayingView.swift\n+++ b/Views/Main/NowPlayingView.swift\n@@ -229,7 +229,9 @@\n \n                 Spacer(minLength: 12)\n \n-                CompactBroadcastToggle(hasTrack: true)\n+                // Match Discover's goLive(): a paused track still satisfies\n+                // `currentTrack`, but pollSpotifyAndSync requires isPlaying\n+                // and would time the session out again within minutes.\n+                CompactBroadcastToggle(hasTrack: vm.isPlaying)\n                     .padding(.horizontal, 20)\n                     .padding(.bottom, 12)\n             }\n```\n\nRISIKO: Der Toggle wird nun auch gesperrt, wenn kurz nach dem Pausieren noch der alte Titel angezeigt wird, was bei flackerndem `isPlaying`-Status (schnelles Pausieren/Fortsetzen) zu einem kurz deaktivierten Schalter führen kann, obwohl ein laufender Broadcast davon unberührt bleibt (`broadcast.isBroadcasting ? false : …`).",
+      "patch": "--- a/Views/Main/NowPlayingView.swift\n+++ b/Views/Main/NowPlayingView.swift\n@@ -229,7 +229,9 @@\n \n                 Spacer(minLength: 12)\n \n-                CompactBroadcastToggle(hasTrack: true)\n+                // Match Discover's goLive(): a paused track still satisfies\n+                // `currentTrack`, but pollSpotifyAndSync requires isPlaying\n+                // and would time the session out again within minutes.\n+                CompactBroadcastToggle(hasTrack: vm.isPlaying)\n                     .padding(.horizontal, 20)\n                     .padding(.bottom, 12)\n             }",
+      "urteil": "zutreffend",
+      "kosten": 0.3612,
+      "runden": 9
+    },
+    "notiz": ""
   }
 ]

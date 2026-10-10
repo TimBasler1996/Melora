@@ -229,7 +229,11 @@ struct NowPlayingView: View {
 
                 Spacer(minLength: 12)
 
-                CompactBroadcastToggle(hasTrack: true)
+                // Match Discover's goLive(): a paused track still satisfies
+                // `currentTrack`, so a hard-coded `true` let the Live tab start
+                // a broadcast that pollSpotifyAndSync times out ten minutes
+                // later for not playing.
+                CompactBroadcastToggle(hasTrack: vm.isPlaying)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
             }
