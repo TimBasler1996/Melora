@@ -10,12 +10,10 @@ _sperre = threading.RLock()
 
 PFAD = Path(__file__).parent / "daten" / "guthaben.json"
 
-# USD pro Million Token. Haiku 4.5 für Nebensächliches …
-PREIS_EIN = 1.00
-PREIS_AUS = 5.00
-# … Opus 5 für die Arbeiter.
-PREIS_EIN_GROSS = 5.00
-PREIS_AUS_GROSS = 25.00
+# Opus 5, USD pro Million Token. Es gibt bewusst nur ein Modell: ein
+# zweites, billigeres hätte stillschweigend schlechtere Urteile geliefert.
+PREIS_EIN = 5.00
+PREIS_AUS = 25.00
 
 # Opus kostet rund das Doppelte von Sonnet pro Token und denkt länger nach,
 # also steigen beide Grenzen mit. Ein Lauf kostete auf Sonnet 20–45 Cent.
@@ -54,9 +52,8 @@ def heute(tag: str) -> float:
     return _laden()["tage"].get(tag, 0.0)
 
 
-def kosten(ein: int, aus: int, gross: bool = True) -> float:
-    pe, pa = (PREIS_EIN_GROSS, PREIS_AUS_GROSS) if gross else (PREIS_EIN, PREIS_AUS)
-    return (ein / 1_000_000) * pe + (aus / 1_000_000) * pa
+def kosten(ein: int, aus: int) -> float:
+    return (ein / 1_000_000) * PREIS_EIN + (aus / 1_000_000) * PREIS_AUS
 
 
 def erlaubt(tag: str) -> tuple[bool, str]:

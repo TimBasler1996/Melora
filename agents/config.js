@@ -106,7 +106,10 @@ module.exports = {
   },
 
   chat: {
-    model: "claude-haiku-4-5",
+    // Opus 5. Die Antworten sollen sich lesen wie die Person, die sie
+    // schreibt — Dialekt, Sprache, Alter, Tonfall. Eine Antwort kostet
+    // rund einen Rappen; die Stundengrenze unten deckelt den Rest.
+    model: "claude-opus-5",
     maxTokens: 200,
     contextMessages: 10,
     replyDelayMinutes: [1, 10],
