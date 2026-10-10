@@ -59,11 +59,11 @@
     "status": "Vorschlag da",
     "beleg": "",
     "vorschlag": {
-      "text": "PATCH:\n```diff\nKEINER\n```\nRISIKO: Entfällt, da keine Änderung vorgenommen wird.",
-      "patch": "",
-      "urteil": "unklar",
-      "kosten": 0.3409,
-      "runden": 10
+      "text": "Die Änderung steht wie gewünscht: ein Geschwister-Observer zum bestehenden `failedTrackId`-Handler, gleiche iOS-17-`onChange`-Signatur, auf diesen Track eingegrenzt.\n\nWarum genau dieser Ort und nicht `handlePreview()`: der Reset greift erst, wenn der Schnipsel wirklich hörbar wird (`PreviewPlayer` setzt `playingTrackId` erst bei `readyToPlay`, Services/PreviewPlayer.swift:153). Ein Reset schon beim Tippen hätte die Fälle „kein Preview vorhanden\" (`.none`) und „Lookup fehlgeschlagen\" (`.failed`) mit zurückgesetzt — dort läuft Spotify unangetastet weiter und „Playing on Spotify\" wäre weiterhin wahr.\n\nURTEIL: zutreffend\nBEGRÜNDUNG: `handlePreview()` (Features/Discover/Views/DiscoverTrackSheet.swift:278–289) fasst `playState` nicht an, während der Schnipsel über `AVAudioSession.setActive(true)` die Bühne von Spotify übernimmt (Services/PreviewPlayer.swift:131–132, dokumentiert in Services/PreviewPlayer.swift:6–15) — der Primärbutton zeigt also weiter Häkchen und „Playing on Spotify\" (DiscoverTrackSheet.swift:378, 407), obwohl der volle Song gerade unterbrochen wurde. Die Umkehrrichtung ist bereits korrekt behandelt: `handlePlay()` stoppt den Schnipsel explizit (DiscoverTrackSheet.swift:595–597), nur die Gegenrichtung fehlte. Der Zusatz „playState never returns to idle\" stimmt nur für diesen Pfad; dass `.opened`/`.openedWeb` nach Rückkehr aus Spotify bestehen bleiben, ist ausweislich der Kommentare in DiscoverTrackSheet.swift:614–616 gewollt und bleibt unangetastet.\nRISIKO: Startet der Nutzer den Schnipsel, während ein `playTrack`-Request noch läuft (`playState == .starting`), kann die in Flucht befindliche Task den Button gleich wieder auf „Playing on Spotify\" setzen — eine bereits vorher bestehende Race, die der Reset sichtbarer machen könnte.",
+      "patch": "--- a/Features/Discover/Views/DiscoverTrackSheet.swift\n+++ b/Features/Discover/Views/DiscoverTrackSheet.swift\n@@ -115,6 +115,12 @@\n         .onChange(of: preview.failedTrackId) { _, failed in\n             guard failed == track.id else { return }\n             show(Status(text: \"Couldn’t play the preview — open it in Spotify.\", kind: .info))\n+        }\n+        .onChange(of: preview.playingTrackId) { _, playing in\n+            // The snippet takes the audio stage from Spotify, so the primary\n+            // button must stop claiming the full song is playing.\n+            guard playing == track.id else { return }\n+            playState = .idle\n         }\n         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: status)\n         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: playState)\n",
+      "urteil": "zutreffend",
+      "kosten": 0.8945,
+      "runden": 9
     },
     "notiz": ""
   },

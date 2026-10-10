@@ -16,7 +16,11 @@ import guthaben
 import protokoll
 import werkzeuge
 
-MODELL = "claude-sonnet-5"
+# Opus 5. Die Arbeiter lesen fremden Code und schlagen Änderungen vor —
+# das ist die Arbeit, bei der das stärkste Modell sich bezahlt macht.
+MODELL = "claude-opus-5"
+# xhigh ist die empfohlene Stufe für Code- und Agentenarbeit auf Opus-Klasse.
+AUFWAND = "xhigh"
 REPO = Path(__file__).resolve().parent.parent
 
 AUFTRAG = """Du arbeitest am iOS-Projekt Melora (SwiftUI, Firebase, Spotify) in {repo}.
@@ -35,22 +39,22 @@ Deine Aufgabe, in dieser Reihenfolge:
    zu glauben — Prüfberichte irren. Wenn er nicht zutrifft, sag das und
    begründe es; das ist ein vollwertiges Ergebnis.
 2. Wenn er zutrifft: schlage genau eine Änderung vor, so klein wie möglich.
+2b. Trage die Änderung mit `aenderung_vorschlagen` ein — so oft, wie nötig.
+   Schreibe KEINEN Diff von Hand: den erzeugt das Dashboard aus deinen
+   Ersetzungen. Zeilennummern musst du nirgends zählen.
 3. Antworte am Ende in genau diesem Format, ohne weitere Überschriften:
 
 URTEIL: zutreffend | nicht zutreffend | unklar
 BEGRÜNDUNG: zwei bis vier Sätze, mit Datei:Zeile belegt.
-PATCH:
-```diff
-(unified diff gegen die Projektwurzel, oder das Wort KEINER)
-```
 RISIKO: ein Satz dazu, was die Änderung kaputtmachen könnte.
 
-Regeln für den Patch:
-- Schreibe echten, anwendbaren `diff -u`-Text mit `--- a/pfad` und `+++ b/pfad`.
-- Kontextzeilen müssen wörtlich dem entsprechen, was du gelesen hast.
-- Fasse dich. Keine Umbenennungen, keine Umbauten, keine neuen Abhängigkeiten.
+Regeln für die Änderung:
+- So klein wie möglich. Keine Umbenennungen, keine Umbauten, keine neuen
+  Abhängigkeiten, keine Formatierungsänderungen nebenbei.
 - Die Sprache des Codes ist Englisch, auch in Kommentaren und UI-Text.
 - Kommentare erklären das Warum, nie das Was.
+- Prüfe am Ende mit `datei_lesen`, ob die Stelle jetzt so dasteht, wie du
+  sie haben wolltest.
 """
 
 
@@ -82,6 +86,7 @@ def ansetzen(befund_id: str) -> None:
     protokoll.log("start", b["titel"][:90], befund=befund_id)
 
     client = _client()
+    sitzung = werkzeuge.Sitzung()
     nachrichten = [{"role": "user", "content": AUFTRAG.format(
         repo=REPO, bereich=b["bereich"], schwere=b["schwere"],
         titel=b["titel"], beleg=b.get("beleg") or "—", notiz=b.get("notiz") or "—",
@@ -92,9 +97,18 @@ def ansetzen(befund_id: str) -> None:
 
     for runde in range(24):
         antwort = client.messages.create(
-            model=MODELL, max_tokens=4000,
-            tools=werkzeuge.WERKZEUGE, messages=nachrichten,
+            model=MODELL,
+            max_tokens=16000,
+            thinking={"type": "adaptive"},
+            output_config={"effort": AUFWAND},
+            tools=werkzeuge.WERKZEUGE,
+            messages=nachrichten,
         )
+        # Ein Refusal kommt als HTTP 200 zurück, nicht als Fehler.
+        if antwort.stop_reason == "refusal":
+            antwort_text = ("URTEIL: unklar\nBEGRÜNDUNG: Das Modell hat die Anfrage "
+                            "abgelehnt.\nRISIKO: —")
+            break
         ein_gesamt += antwort.usage.input_tokens
         aus_gesamt += antwort.usage.output_tokens
 
@@ -115,7 +129,7 @@ def ansetzen(befund_id: str) -> None:
         ergebnisse = []
         for block in antwort.content:
             if block.type == "tool_use":
-                ausgabe = werkzeuge.ausfuehren(block.name, block.input)
+                ausgabe = werkzeuge.ausfuehren(block.name, block.input, sitzung)
                 ergebnisse.append({"type": "tool_result", "tool_use_id": block.id,
                                    "content": ausgabe[:20000]})
         nachrichten.append({"role": "user", "content": ergebnisse})
@@ -123,7 +137,9 @@ def ansetzen(befund_id: str) -> None:
     usd = guthaben.kosten(ein_gesamt, aus_gesamt)
     guthaben.buchen(tag, usd)
 
-    urteil, patch = _zerlegen(antwort_text)
+    urteil, _ = _zerlegen(antwort_text)
+    # Der Patch kommt von difflib, nicht aus dem Antworttext.
+    patch = sitzung.patch()
     befunde.aendern(
         befund_id,
         status="Vorschlag da" if antwort_text else "offen",

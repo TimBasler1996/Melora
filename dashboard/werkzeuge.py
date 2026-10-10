@@ -1,9 +1,15 @@
 """Was ein Arbeiter am Repository tun darf.
 
-Bewusst lesend. Der einzige Weg, wie eine Änderung in den Code kommt, ist
-ein Patch, den der Mensch im Dashboard freigibt — kein Werkzeug schreibt
-in die Arbeitskopie.
+Lesen, suchen — und Änderungen *vorschlagen*. Kein Werkzeug schreibt in die
+Arbeitskopie; Vorschläge sammeln sich in einer Sitzung und werden erst
+angewendet, wenn ein Mensch im Dashboard zustimmt.
+
+Die Vorschläge kommen als Textersetzung, nicht als Diff. Ein Modell, das
+Hunk-Köpfe selbst ausrechnet, verzählt sich — der erste Arbeiter lieferte
+einen Patch, dessen Kopf neun Zeilen auswies für einen Rumpf von zehn.
+`difflib` kann das fehlerfrei, das Modell muss es gar nicht erst versuchen.
 """
+import difflib
 import subprocess
 from pathlib import Path
 
@@ -36,6 +42,26 @@ WERKZEUGE = [
         },
     },
     {
+        "name": "aenderung_vorschlagen",
+        "description": (
+            "Schlägt eine Textersetzung vor. `alt` muss im aktuellen Stand der Datei "
+            "GENAU EINMAL vorkommen — nimm genug Kontextzeilen dazu, damit das stimmt. "
+            "Mehrere Aufrufe sind erlaubt und bauen aufeinander auf. Zeilennummern "
+            "gehören nicht in `alt` oder `neu`: die Einrückung dagegen schon, wörtlich."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "pfad": {"type": "string"},
+                "alt": {"type": "string", "description": "Der zu ersetzende Text, wörtlich."},
+                "neu": {"type": "string", "description": "Der neue Text. Leer lassen, um zu löschen."},
+            },
+            "required": ["pfad", "alt", "neu"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
         "name": "dateien_auflisten",
         "description": "Listet Swift-Dateien unter einem Pfad.",
         "input_schema": {
@@ -58,13 +84,64 @@ def _sicher(pfad: str) -> Path:
     return ziel
 
 
-def ausfuehren(name: str, eingabe: dict) -> str:
+class Sitzung:
+    """Die vorgeschlagenen Dateistände eines Arbeiterlaufs."""
+
+    def __init__(self) -> None:
+        self.stand: dict[str, str] = {}      # Pfad -> vorgeschlagener Inhalt
+        self.original: dict[str, str] = {}   # Pfad -> Inhalt beim ersten Anfassen
+
+    def inhalt(self, pfad: str) -> str:
+        if pfad not in self.stand:
+            text = _sicher(pfad).read_text(errors="replace")
+            self.original[pfad] = text
+            self.stand[pfad] = text
+        return self.stand[pfad]
+
+    def ersetzen(self, pfad: str, alt: str, neu: str) -> str:
+        text = self.inhalt(pfad)
+        treffer = text.count(alt)
+        if treffer == 0:
+            return ("`alt` kommt in dieser Datei nicht vor. Lies die Stelle erneut und "
+                    "übernimm sie wörtlich, mitsamt Einrückung.")
+        if treffer > 1:
+            return (f"`alt` kommt {treffer}-mal vor und ist damit nicht eindeutig. "
+                    "Nimm mehr Kontext dazu.")
+        self.stand[pfad] = text.replace(alt, neu, 1)
+        return f"Übernommen in den Vorschlag für {pfad}."
+
+    def patch(self) -> str:
+        """Ein unified diff, von difflib erzeugt — nicht vom Modell gezählt."""
+        teile = []
+        for pfad, neu in self.stand.items():
+            alt = self.original[pfad]
+            if alt == neu:
+                continue
+            teile.extend(difflib.unified_diff(
+                alt.splitlines(keepends=True), neu.splitlines(keepends=True),
+                fromfile=f"a/{pfad}", tofile=f"b/{pfad}", n=3,
+            ))
+        return "".join(teile)
+
+
+def ausfuehren(name: str, eingabe: dict, sitzung: "Sitzung | None" = None) -> str:
     try:
+        if name == "aenderung_vorschlagen":
+            if sitzung is None:
+                return "In diesem Lauf sind keine Änderungen möglich."
+            _sicher(eingabe["pfad"])
+            return sitzung.ersetzen(eingabe["pfad"], eingabe["alt"], eingabe["neu"])
+
         if name == "datei_lesen":
             ziel = _sicher(eingabe["pfad"])
             if not ziel.exists():
                 return f"Nicht gefunden: {eingabe['pfad']}"
-            zeilen = ziel.read_text(errors="replace").splitlines()
+            # Den vorgeschlagenen Stand zeigen, nicht den alten — sonst liest
+            # der Arbeiter seine eigene vorherige Änderung nicht.
+            if sitzung and eingabe["pfad"] in sitzung.stand:
+                zeilen = sitzung.stand[eingabe["pfad"]].splitlines()
+            else:
+                zeilen = ziel.read_text(errors="replace").splitlines()
             von = max(1, eingabe.get("von", 1))
             bis = min(len(zeilen), eingabe.get("bis", len(zeilen)))
             if bis - von > 600:

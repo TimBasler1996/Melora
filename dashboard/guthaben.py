@@ -10,15 +10,17 @@ _sperre = threading.RLock()
 
 PFAD = Path(__file__).parent / "daten" / "guthaben.json"
 
-# Haiku 4.5, USD pro Million Token (Stand Oktober 2026).
+# USD pro Million Token. Haiku 4.5 für Nebensächliches …
 PREIS_EIN = 1.00
 PREIS_AUS = 5.00
-# Sonnet-Klasse für die Arbeiter.
-PREIS_EIN_GROSS = 3.00
-PREIS_AUS_GROSS = 15.00
+# … Opus 5 für die Arbeiter.
+PREIS_EIN_GROSS = 5.00
+PREIS_AUS_GROSS = 25.00
 
-GRENZE_PRO_LAUF = 0.60   # USD, ein Arbeiter
-GRENZE_PRO_TAG = 8.00    # USD, alle zusammen
+# Opus kostet rund das Doppelte von Sonnet pro Token und denkt länger nach,
+# also steigen beide Grenzen mit. Ein Lauf kostete auf Sonnet 20–45 Cent.
+GRENZE_PRO_LAUF = 1.50   # USD, ein Arbeiter
+GRENZE_PRO_TAG = 15.00   # USD, alle zusammen
 
 
 def _laden() -> dict:
