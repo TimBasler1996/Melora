@@ -22,7 +22,7 @@
     "bereich": "go-live",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "Vorschlag da",
+    "status": "übernommen",
     "beleg": "",
     "vorschlag": {
       "text": "URTEIL: zutreffend\n\nBEGRÜNDUNG: `BroadcastManager.pollSpotifyAndSync` (Services/BroadcastManager.swift:325-329) prüft nur, ob `state.track` existiert, nicht `state.isPlaying` — Spotify liefert bei pausierter Wiedergabe weiterhin den Track mit `is_playing: false`, sodass der Broadcast unbegrenzt als \"live\" weiterläuft, statt wie bei echtem Stillstand in den Idle-Timeout zu laufen. Gleichzeitig verlangt `DiscoverView.goLive()` (Features/Discover/Views/DiscoverView.swift:305-309) explizit `state.isPlaying`, bevor überhaupt live gegangen werden darf, während `CompactBroadcastToggle` in NowPlayingView.swift (Zeilen 232/239, 463-466) nur `hasTrack` (also `vm.currentTrack != nil`, unabhängig von `isPlaying`) prüft und so einen pausierten Song als startfähig behandelt. Beide Einstiegspunkte widersprechen sich also tatsächlich in der Behandlung von \"pausiert\".\n\nPATCH:\n```diff\n--- a/Services/BroadcastManager.swift\n+++ b/Services/BroadcastManager.swift\n@@ -322,7 +322,9 @@ final class BroadcastManager: ObservableObject {\n         do {\n             let state = try await SpotifyService.shared.fetchNowPlayingState()\n             failedPolls = 0\n-            if let track = state.track {\n+            // A paused track is still returned by Spotify's API; treat it like\n+            // nothing playing so a paused broadcast times out instead of staying live forever.\n+            if let track = state.track, state.isPlaying {\n                 currentTrack = track\n                 idlePolls = 0\n             } else {\n```\n\nRISIKO: Nutzer, die Spotify kurz pausieren (z. B. Anruf, Gesprächspause), verlieren nach `maxIdlePolls` (~10 Minuten) automatisch ihren Live-Status, auch wenn sie die Wiedergabe danach fortsetzen wollten.",
@@ -31,7 +31,7 @@
       "kosten": 0.4527,
       "runden": 8
     },
-    "notiz": ""
+    "notiz": "Angewendet. Die Änderung liegt jetzt unverbucht in der Arbeitskopie."
   },
   {
     "id": "132c5a34",

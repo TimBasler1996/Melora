@@ -322,7 +322,9 @@ final class BroadcastManager: ObservableObject {
         do {
             let state = try await SpotifyService.shared.fetchNowPlayingState()
             failedPolls = 0
-            if let track = state.track {
+            // A paused track is still returned by Spotify's API; treat it like
+            // nothing playing so a paused broadcast times out instead of staying live forever.
+            if let track = state.track, state.isPlaying {
                 currentTrack = track
                 idlePolls = 0
             } else {
