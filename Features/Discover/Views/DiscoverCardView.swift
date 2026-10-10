@@ -21,7 +21,7 @@ struct DiscoverCardView: View {
     var isFollowing: Bool = false
 
     @Environment(\.openURL) private var openURL
-    @StateObject private var preview = PreviewPlayer.shared
+    @ObservedObject private var preview = PreviewPlayer.shared
 
     @State private var showHeartAnimation: Bool = false
     @State private var likeBurst: Int = 0
@@ -337,13 +337,13 @@ struct DiscoverCardView: View {
     /// back to opening the song sheet so the tap is never dead.
     private func handlePreview() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        let id = broadcast.track.id
         Task {
-            let found = await preview.toggle(
-                trackId: broadcast.track.id,
-                title: trackTitle,
-                artist: trackArtist
-            )
-            if !found { onOpenTrack() }
+            let found = await preview.toggle(trackId: id, title: trackTitle, artist: trackArtist)
+            // Only fall back for the tap that is still the current one — a
+            // superseded lookup must not yank the user into another sheet.
+            guard !found, preview.playingTrackId == nil, preview.loadingTrackId == nil else { return }
+            onOpenTrack()
         }
     }
 

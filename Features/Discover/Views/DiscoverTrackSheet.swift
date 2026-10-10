@@ -20,7 +20,7 @@ struct DiscoverTrackSheet: View {
     let onHideTrack: () -> Void
 
     @EnvironmentObject private var spotifyAuth: SpotifyAuthManager
-    @StateObject private var preview = PreviewPlayer.shared
+    @ObservedObject private var preview = PreviewPlayer.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -111,7 +111,11 @@ struct DiscoverTrackSheet: View {
             if !Task.isCancelled { coverImage = image }
         }
         .task(id: spotifyAuth.tokens?.refreshToken) { await loadSavedState() }
-        .onDisappear { preview.stop() }
+        .onDisappear { preview.stopIfActive(trackId: track.id) }
+        .onChange(of: preview.failedTrackId) { _, failed in
+            guard failed == track.id else { return }
+            show(Status(text: "Couldn’t play the preview — open it in Spotify.", kind: .info))
+        }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: status)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: playState)
         .animation(.easeInOut(duration: 0.18), value: isQueueing)
@@ -265,6 +269,8 @@ struct DiscoverTrackSheet: View {
     private func handlePreview() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         Task {
+            // false means the catalogues really have nothing; a network
+            // failure reports through failedTrackId instead.
             let found = await preview.toggle(trackId: track.id, title: trackTitle, artist: trackArtist)
             if !found {
                 withAnimation { previewUnavailable = true }
@@ -577,8 +583,9 @@ struct DiscoverTrackSheet: View {
 
     private func handlePlay() {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        // The full song takes over from the snippet.
-        preview.stop()
+        // The full song takes over from the snippet: don't ask Spotify to
+        // resume a fraction of a second before we start it ourselves.
+        preview.stop(notifyOthers: false)
         guard canUseSpotify else {
             if spotifyAuth.loginExpired {
                 show(Status(text: "Your Spotify login expired.", kind: .reconnect), sticky: true)

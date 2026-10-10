@@ -10,13 +10,30 @@ import Foundation
 ///
 /// Results are cached per Spotify track id for the session. Deezer URLs
 /// carry an expiry token, so a lookup is re-run rather than persisted.
+///
+/// A transport failure is never cached as "no preview": one moment of bad
+/// signal would otherwise mark a song snippet-less for the rest of the
+/// session.
 actor TrackPreviewService {
 
     static let shared = TrackPreviewService()
 
+    /// What a lookup can come back with. `none` is a real answer and gets
+    /// cached; `failed` is "ask again".
+    enum Outcome: Equatable {
+        case url(URL)
+        case none
+        case failed
+
+        var url: URL? {
+            if case .url(let url) = self { return url }
+            return nil
+        }
+    }
+
     /// `nil` means "looked, found nothing" — cached so the UI asks once.
     private var cache: [String: URL?] = [:]
-    private var inFlight: [String: Task<URL?, Never>] = [:]
+    private var inFlight: [String: Task<Outcome, Never>] = [:]
 
     private let session: URLSession = {
         let config = URLSessionConfiguration.default
@@ -26,16 +43,21 @@ actor TrackPreviewService {
         return URLSession(configuration: config)
     }()
 
-    /// The preview for a track, or `nil` when no catalogue has one.
-    func previewURL(trackId: String, title: String, artist: String) async -> URL? {
-        if let cached = cache[trackId] { return cached }
+    /// The preview for a track.
+    func preview(trackId: String, title: String, artist: String) async -> Outcome {
+        if let cached = cache[trackId] {
+            return cached.map(Outcome.url) ?? .none
+        }
         if let task = inFlight[trackId] { return await task.value }
 
-        let task = Task<URL?, Never> { [weak self] in
-            guard let self else { return nil }
-            let found = await self.lookup(title: title, artist: artist)
-            await self.store(trackId: trackId, url: found)
-            return found
+        let task = Task<Outcome, Never> { [weak self] in
+            guard let self else { return .failed }
+            let outcome = await self.lookup(title: title, artist: artist)
+            // Only a definitive answer is worth remembering.
+            if case .failed = outcome {} else {
+                await self.store(trackId: trackId, url: outcome.url)
+            }
+            return outcome
         }
         inFlight[trackId] = task
         let result = await task.value
@@ -43,24 +65,45 @@ actor TrackPreviewService {
         return result
     }
 
+    /// Forgets a cached URL, e.g. after a signed Deezer link expired.
+    func invalidate(trackId: String) {
+        cache.removeValue(forKey: trackId)
+    }
+
     private func store(trackId: String, url: URL?) {
-        cache[trackId] = url
+        // updateValue, not `cache[id] = url`: assigning a nil URL through the
+        // subscript would remove the entry instead of caching "none exists".
+        cache.updateValue(url, forKey: trackId)
     }
 
     // MARK: - Lookup
 
-    private func lookup(title: String, artist: String) async -> URL? {
+    private func lookup(title: String, artist: String) async -> Outcome {
         let title = Self.cleanTitle(title)
         // Collaborations list every artist; the first one carries the match.
         let artist = artist.split(separator: ",").first.map(String.init)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? artist
-        guard !title.isEmpty, !artist.isEmpty else { return nil }
+        guard !title.isEmpty, !artist.isEmpty else { return .none }
 
-        if let url = await itunesPreview(title: title, artist: artist) { return url }
-        return await deezerPreview(title: title, artist: artist)
+        var reachedACatalogue = false
+
+        switch await itunesPreview(title: title, artist: artist) {
+        case .url(let url): return .url(url)
+        case .none: reachedACatalogue = true
+        case .failed: break
+        }
+
+        switch await deezerPreview(title: title, artist: artist) {
+        case .url(let url): return .url(url)
+        case .none: reachedACatalogue = true
+        case .failed: break
+        }
+
+        // Neither request got through: that is "ask again", not "none exists".
+        return reachedACatalogue ? .none : .failed
     }
 
-    private func itunesPreview(title: String, artist: String) async -> URL? {
+    private func itunesPreview(title: String, artist: String) async -> Outcome {
         var components = URLComponents(string: "https://itunes.apple.com/search")!
         components.queryItems = [
             URLQueryItem(name: "term", value: "\(title) \(artist)"),
@@ -71,14 +114,15 @@ actor TrackPreviewService {
         guard let url = components.url,
               let data = try? await session.data(from: url).0,
               let root = try? JSONDecoder().decode(ITunesResponse.self, from: data)
-        else { return nil }
+        else { return .failed }
 
-        return root.results
+        let match = root.results
             .first { Self.artistMatches(artist, $0.artistName) && $0.previewUrl != nil }
             .flatMap { $0.previewUrl.flatMap(URL.init(string:)) }
+        return match.map(Outcome.url) ?? .none
     }
 
-    private func deezerPreview(title: String, artist: String) async -> URL? {
+    private func deezerPreview(title: String, artist: String) async -> Outcome {
         var components = URLComponents(string: "https://api.deezer.com/search")!
         components.queryItems = [
             URLQueryItem(name: "q", value: "\(title) \(artist)"),
@@ -87,11 +131,12 @@ actor TrackPreviewService {
         guard let url = components.url,
               let data = try? await session.data(from: url).0,
               let root = try? JSONDecoder().decode(DeezerResponse.self, from: data)
-        else { return nil }
+        else { return .failed }
 
-        return root.data
+        let match = root.data
             .first { Self.artistMatches(artist, $0.artist.name) && !($0.preview ?? "").isEmpty }
             .flatMap { $0.preview.flatMap(URL.init(string:)) }
+        return match.map(Outcome.url) ?? .none
     }
 
     // MARK: - Matching
