@@ -26,7 +26,7 @@ const scheduled = new Map();
 const repliesPerConversation = new Map(); // `${convoId}|${dateKey}` → n
 let repliesThisHour = { hour: -1, n: 0 };
 
-function log(msg) { console.log(`${new Date().toISOString().slice(11, 19)} ${msg}`); }
+function log(msg) { console.log(`${new Date().toLocaleTimeString("de-CH", { timeZone: config.timeZone, hour12: false })} ${msg}`); }
 
 // ─── Scheduling ───────────────────────────────────────────────────────
 

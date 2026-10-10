@@ -37,7 +37,7 @@ const profiles = new Map();
 let profilesLoadedAt = 0;
 
 function log(handle, msg) {
-  console.log(`${new Date().toISOString().slice(11, 19)} ${handle.padEnd(10)} ${msg}`);
+  console.log(`${new Date().toLocaleTimeString("de-CH", { timeZone: config.timeZone, hour12: false })} ${handle.padEnd(10)} ${msg}`);
 }
 
 // ─── State ────────────────────────────────────────────────────────────

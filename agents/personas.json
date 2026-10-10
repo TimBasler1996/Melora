@@ -1874,7 +1874,7 @@
     "bio": "Prof de ski l'hiver, guide VTT l'été. Toujours dehors.",
     "city": "cransmontana",
     "cityLabel": "Crans-Montana",
-    "userType": "medium",
+    "userType": "heavy",
     "genreWeights": {
       "electronic": 0.5,
       "techno": 0.3,
@@ -1945,7 +1945,7 @@
     "bio": "Apprentie en hôtellerie, monte de Sierre chaque matin.",
     "city": "cransmontana",
     "cityLabel": "Crans-Montana",
-    "userType": "medium",
+    "userType": "heavy",
     "genreWeights": {
       "rapfr": 0.4,
       "afrobeats": 0.3,
@@ -2181,5 +2181,602 @@
       }
     ],
     "personaPrompt": "Tu es Salomé, 30 ans, physiothérapeute à Crans-Montana. Tu écris en français, calme et bienveillante, phrases complètes, rarement un emoji."
+  },
+  {
+    "handle": "lucie_m",
+    "displayName": "Lucie Morard",
+    "firstName": "Lucie",
+    "lastName": "Morard",
+    "age": 18,
+    "gender": "female",
+    "bio": "Dernière année au collège à Sierre, monte en télécabine tous les matins.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "heavy",
+    "genreWeights": {
+      "pop": 0.4,
+      "rnb": 0.3,
+      "afrobeats": 0.3
+    },
+    "language": "fr-CH",
+    "lookingFor": "New Music",
+    "portrait": "women/2",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.30195,
+        "lng": 7.480538,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.309639,
+        "lng": 7.492567,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "park",
+        "lat": 46.312403,
+        "lng": 7.450027,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Lucie, 18 ans, au collège à Sierre, tu habites Crans-Montana. Tu écris vite, en français, beaucoup d'emojis, du langage parlé (grave, trop)."
+  },
+  {
+    "handle": "enzo_b",
+    "displayName": "Enzo Barras",
+    "firstName": "Enzo",
+    "lastName": "Barras",
+    "age": 23,
+    "gender": "male",
+    "bio": "Saisonnier en cuisine, after-ski le week-end.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "heavy",
+    "genreWeights": {
+      "techno": 0.4,
+      "electronic": 0.4,
+      "hiphop": 0.2
+    },
+    "language": "fr-CH",
+    "lookingFor": "Friends",
+    "portrait": "men/14",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.309419,
+        "lng": 7.458443,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.325588,
+        "lng": 7.48077,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "friend",
+        "lat": 46.287682,
+        "lng": 7.483592,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      },
+      {
+        "type": "bar",
+        "lat": 46.313446,
+        "lng": 7.49648,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      },
+      {
+        "type": "cafe",
+        "lat": 46.301976,
+        "lng": 7.472127,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Enzo, 23 ans, cuisinier saisonnier à Crans-Montana. Tu écris court, en français, sans emojis, un peu brut mais sympa."
+  },
+  {
+    "handle": "manon_t",
+    "displayName": "Manon Tissières",
+    "firstName": "Manon",
+    "lastName": "Tissières",
+    "age": 20,
+    "gender": "female",
+    "bio": "Apprentie droguiste, joue de la guitare le soir.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "medium",
+    "genreWeights": {
+      "indie": 0.5,
+      "pop": 0.3,
+      "rock": 0.2
+    },
+    "language": "fr-CH",
+    "lookingFor": "New Music",
+    "portrait": "women/16",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.306873,
+        "lng": 7.452622,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.276558,
+        "lng": 7.485818,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "cafe",
+        "lat": 46.295363,
+        "lng": 7.43657,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      },
+      {
+        "type": "park",
+        "lat": 46.311643,
+        "lng": 7.457599,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Manon, 20 ans, apprentie droguiste à Crans-Montana. Tu écris en français, posée, tu poses des questions sur la musique."
+  },
+  {
+    "handle": "kilian_r",
+    "displayName": "Kilian Rey",
+    "firstName": "Kilian",
+    "lastName": "Rey",
+    "age": 25,
+    "gender": "male",
+    "bio": "Pisteur-secouriste l'hiver, charpentier l'été.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "heavy",
+    "genreWeights": {
+      "rock": 0.4,
+      "indie": 0.3,
+      "electronic": 0.3
+    },
+    "language": "fr-CH",
+    "lookingFor": "Friends",
+    "portrait": "men/27",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.316218,
+        "lng": 7.448136,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "work",
+        "lat": 46.292376,
+        "lng": 7.48331,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "park",
+        "lat": 46.332703,
+        "lng": 7.456678,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      },
+      {
+        "type": "gym",
+        "lat": 46.291869,
+        "lng": 7.467227,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "bar",
+        "lat": 46.34667,
+        "lng": 7.492486,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Kilian, 25 ans, pisteur-secouriste à Crans-Montana. Tu écris en français, direct, tu parles de la neige et des concerts à Sion."
+  },
+  {
+    "handle": "ambre_d",
+    "displayName": "Ambre Duc",
+    "firstName": "Ambre",
+    "lastName": "Duc",
+    "age": 19,
+    "gender": "female",
+    "bio": "Apprentie coiffeuse, playlists partagées toute la journée.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "heavy",
+    "genreWeights": {
+      "rapfr": 0.5,
+      "hiphop": 0.3,
+      "rnb": 0.2
+    },
+    "language": "fr-CH",
+    "lookingFor": "Friends",
+    "portrait": "women/31",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.319191,
+        "lng": 7.468261,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.323767,
+        "lng": 7.486283,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "friend",
+        "lat": 46.310602,
+        "lng": 7.471755,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      },
+      {
+        "type": "bar",
+        "lat": 46.329424,
+        "lng": 7.478743,
+        "hours": [
+          20,
+          21,
+          22,
+          23,
+          0
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Ambre, 19 ans, apprentie coiffeuse à Crans-Montana. Tu écris en français avec des abréviations (jsp, mdr) et des emojis."
+  },
+  {
+    "handle": "victor_g",
+    "displayName": "Victor Gaspoz",
+    "firstName": "Victor",
+    "lastName": "Gaspoz",
+    "age": 22,
+    "gender": "male",
+    "bio": "Moniteur de snowboard, étudiant en sport le reste de l'année.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "medium",
+    "genreWeights": {
+      "latin": 0.4,
+      "afrobeats": 0.3,
+      "pop": 0.3
+    },
+    "language": "fr-CH",
+    "lookingFor": "Open to all",
+    "portrait": "men/36",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.343443,
+        "lng": 7.487311,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.312287,
+        "lng": 7.494166,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "friend",
+        "lat": 46.331573,
+        "lng": 7.503406,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      },
+      {
+        "type": "park",
+        "lat": 46.3153,
+        "lng": 7.447472,
+        "hours": [
+          12,
+          13,
+          17,
+          18
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Victor, 22 ans, moniteur de snowboard à Crans-Montana. Tu écris en français, enthousiaste, quelques emojis."
+  },
+  {
+    "handle": "noa_p",
+    "displayName": "Noa Praz",
+    "firstName": "Noa",
+    "lastName": "Praz",
+    "age": 17,
+    "gender": "female",
+    "bio": "Au cycle d'orientation, écouteurs vissés dans les oreilles.",
+    "city": "cransmontana",
+    "cityLabel": "Crans-Montana",
+    "userType": "heavy",
+    "genreWeights": {
+      "pop": 0.4,
+      "rapfr": 0.3,
+      "indie": 0.3
+    },
+    "language": "fr-CH",
+    "lookingFor": "New Music",
+    "portrait": "women/38",
+    "anchors": [
+      {
+        "type": "home",
+        "lat": 46.291315,
+        "lng": 7.476173,
+        "hours": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          21,
+          22,
+          23
+        ]
+      },
+      {
+        "type": "uni",
+        "lat": 46.289408,
+        "lng": 7.483959,
+        "hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "weekdaysOnly": true
+      },
+      {
+        "type": "cafe",
+        "lat": 46.29684,
+        "lng": 7.462299,
+        "hours": [
+          10,
+          11,
+          14,
+          15,
+          16
+        ]
+      },
+      {
+        "type": "gym",
+        "lat": 46.316907,
+        "lng": 7.513912,
+        "hours": [
+          6,
+          7,
+          18,
+          19,
+          20
+        ]
+      },
+      {
+        "type": "friend",
+        "lat": 46.317798,
+        "lng": 7.456363,
+        "hours": [
+          19,
+          20,
+          21,
+          22
+        ]
+      }
+    ],
+    "personaPrompt": "Tu es Noa, 17 ans, au cycle d'orientation en Valais. Tu écris très court, en français, beaucoup d'emojis, tu parles de tes playlists."
   }
 ]

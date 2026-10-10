@@ -20,7 +20,7 @@ module.exports = {
     kilchberg: { name: "Kilchberg", label: "Kilchberg ZH", lat: 47.3225, lng: 8.55, language: "de-CH", count: 12 },
     lausanne: { name: "Lausanne", label: "Lausanne", lat: 46.5197, lng: 6.6323, language: "fr-CH", count: 6 },
     brig: { name: "Brig", label: "Brig VS", lat: 46.3167, lng: 7.9875, language: "de-CH", count: 4 },
-    cransmontana: { name: "Crans-Montana", label: "Crans-Montana", lat: 46.3122, lng: 7.4792, language: "fr-CH", count: 5 },
+    cransmontana: { name: "Crans-Montana", label: "Crans-Montana", lat: 46.3122, lng: 7.4792, language: "fr-CH", count: 12 },
   },
 
   // Anchors are scattered this far from the city centre (metres).
@@ -28,18 +28,23 @@ module.exports = {
   // Per-session jitter on top of the anchor (metres).
   sessionOffsetM: { min: 40, max: 150 },
 
+  // Doubled on 2026-10-10. At the old numbers the whole population produced
+  // 15 live-hours a day, which spread over the active hours is 0.8 agents
+  // live at a time — so Discover was empty more often than not, and that
+  // read as a fault rather than as a setting.
   userTypes: {
-    heavy: { sessionsPerDay: [3, 4], restDayProbability: 0.05 },
-    medium: { sessionsPerDay: [1, 2], restDayProbability: 0.2 },
-    light: { sessionsPerDay: [0, 1], restDayProbability: 0.4 },
+    heavy: { sessionsPerDay: [6, 8], restDayProbability: 0.05 },
+    medium: { sessionsPerDay: [3, 4], restDayProbability: 0.15 },
+    light: { sessionsPerDay: [1, 2], restDayProbability: 0.3 },
   },
   // Share of the population per type (used by genPersonas.js).
   userTypeMix: { heavy: 0.2, medium: 0.5, light: 0.3 },
 
   session: {
-    tracks: [3, 8],
+    tracks: [4, 10],
     trackMinutes: [2.5, 4.5],
-    minGapMinutes: 90,
+    // Shorter gap, or the extra sessions cannot fit into the day.
+    minGapMinutes: 45,
     transitProbability: 0.15,
   },
 

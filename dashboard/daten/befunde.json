@@ -5,9 +5,15 @@
     "bereich": "first-run",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "`OnboardingStepAccountView` rendert bereits `viewModel.accountErrorMessage` (Zeile 43-49); dieses Feld wird aber beim Reload-Fehlschlag nie befüllt. Die kleinste Behebung: Einen zweiten `onChange` auf `onboardingState.errorMessage` ergänzen, der (nur auf Schritt 4) die Meldung in `accountErrorMessage` spiegelt und `didFinish` zurücksetzt, damit der nächste Tap wieder einen echten Zustandswechsel auslöst.\n\nURTEIL: zutreffend\nBEGRÜNDUNG: `didFinish` wird nur auf `true` gesetzt (OnboardingViewModel.swift:133/147/175) und nie zurückgesetzt, während `OnboardingFlowView.swift:53-57` darauf per `onChange` reagiert, der bei gleichbleibendem `true` kein zweites Mal feuert. Schlägt `OnboardingStateManager.reload()` fehl, landet die Fehlermeldung nur in `onboardingState.errorMessage` (OnboardingStateManager.swift:50), das in keiner View gelesen wird, während `OnboardingStepAccountView.swift:43-49` nur `viewModel.accountErrorMessage` anzeigt, das in diesem Fall nie gesetzt wird.\n\nPATCH:\n```diff\n--- a/Views/Onboarding/OnboardingFlowView.swift\n+++ b/Views/Onboarding/OnboardingFlowView.swift\n@@ -53,6 +53,13 @@ struct OnboardingFlowView: View {\n         .onChange(of: viewModel.didFinish) { _, finished in\n             if finished {\n                 onboardingState.reload()\n             }\n         }\n+        .onChange(of: onboardingState.errorMessage) { _, message in\n+            // A failed reload after the last step left `didFinish` latched on\n+            // `true` with no visible error; surface it and let the user retry.\n+            guard let message, viewModel.stepIndex == 4 else { return }\n+            viewModel.accountErrorMessage = message\n+            viewModel.didFinish = false\n+        }\n     }\n```\nRISIKO: Falls `onboardingState.errorMessage` aus einem anderen Grund gesetzt wird während der Nutzer zufällig auf Schritt 4 steht, würde fälschlich `accountErrorMessage` überschrieben und `didFinish` zurückgesetzt.",
+      "patch": "--- a/Views/Onboarding/OnboardingFlowView.swift\n+++ b/Views/Onboarding/OnboardingFlowView.swift\n@@ -53,6 +53,13 @@ struct OnboardingFlowView: View {\n         .onChange(of: viewModel.didFinish) { _, finished in\n             if finished {\n                 onboardingState.reload()\n             }\n         }\n+        .onChange(of: onboardingState.errorMessage) { _, message in\n+            // A failed reload after the last step left `didFinish` latched on\n+            // `true` with no visible error; surface it and let the user retry.\n+            guard let message, viewModel.stepIndex == 4 else { return }\n+            viewModel.accountErrorMessage = message\n+            viewModel.didFinish = false\n+        }\n     }",
+      "urteil": "zutreffend",
+      "kosten": 0.5093,
+      "runden": 10
+    },
     "notiz": ""
   },
   {
@@ -16,9 +22,15 @@
     "bereich": "go-live",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "URTEIL: zutreffend\n\nBEGRÜNDUNG: `BroadcastManager.pollSpotifyAndSync` (Services/BroadcastManager.swift:325-329) prüft nur, ob `state.track` existiert, nicht `state.isPlaying` — Spotify liefert bei pausierter Wiedergabe weiterhin den Track mit `is_playing: false`, sodass der Broadcast unbegrenzt als \"live\" weiterläuft, statt wie bei echtem Stillstand in den Idle-Timeout zu laufen. Gleichzeitig verlangt `DiscoverView.goLive()` (Features/Discover/Views/DiscoverView.swift:305-309) explizit `state.isPlaying`, bevor überhaupt live gegangen werden darf, während `CompactBroadcastToggle` in NowPlayingView.swift (Zeilen 232/239, 463-466) nur `hasTrack` (also `vm.currentTrack != nil`, unabhängig von `isPlaying`) prüft und so einen pausierten Song als startfähig behandelt. Beide Einstiegspunkte widersprechen sich also tatsächlich in der Behandlung von \"pausiert\".\n\nPATCH:\n```diff\n--- a/Services/BroadcastManager.swift\n+++ b/Services/BroadcastManager.swift\n@@ -322,7 +322,9 @@ final class BroadcastManager: ObservableObject {\n         do {\n             let state = try await SpotifyService.shared.fetchNowPlayingState()\n             failedPolls = 0\n-            if let track = state.track {\n+            // A paused track is still returned by Spotify's API; treat it like\n+            // nothing playing so a paused broadcast times out instead of staying live forever.\n+            if let track = state.track, state.isPlaying {\n                 currentTrack = track\n                 idlePolls = 0\n             } else {\n```\n\nRISIKO: Nutzer, die Spotify kurz pausieren (z. B. Anruf, Gesprächspause), verlieren nach `maxIdlePolls` (~10 Minuten) automatisch ihren Live-Status, auch wenn sie die Wiedergabe danach fortsetzen wollten.",
+      "patch": "--- a/Services/BroadcastManager.swift\n+++ b/Services/BroadcastManager.swift\n@@ -322,7 +322,9 @@ final class BroadcastManager: ObservableObject {\n         do {\n             let state = try await SpotifyService.shared.fetchNowPlayingState()\n             failedPolls = 0\n-            if let track = state.track {\n+            // A paused track is still returned by Spotify's API; treat it like\n+            // nothing playing so a paused broadcast times out instead of staying live forever.\n+            if let track = state.track, state.isPlaying {\n                 currentTrack = track\n                 idlePolls = 0\n             } else {",
+      "urteil": "zutreffend",
+      "kosten": 0.4527,
+      "runden": 8
+    },
     "notiz": ""
   },
   {
@@ -44,9 +56,15 @@
     "bereich": "song-sheet",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "PATCH:\n```diff\nKEINER\n```\nRISIKO: Entfällt, da keine Änderung vorgenommen wird.",
+      "patch": "",
+      "urteil": "unklar",
+      "kosten": 0.3409,
+      "runden": 10
+    },
     "notiz": ""
   },
   {
@@ -72,9 +90,15 @@
     "bereich": "social-loop",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "URTEIL: unklar\nBEGRÜNDUNG: Abgebrochen bei $0.69 — die Grenze pro Lauf liegt bei $0.60.\nPATCH:\n```diff\nKEINER\n```\nRISIKO: —",
+      "patch": "",
+      "urteil": "unklar",
+      "kosten": 0.6868,
+      "runden": 12
+    },
     "notiz": ""
   },
   {
@@ -83,9 +107,15 @@
     "bereich": "chat",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "URTEIL: zutreffend\nBEGRÜNDUNG: `pendingRequestRows` in Views/Chat/ChatInboxRow.swift:45-50 zählt jede Konversation mit `status == .pending` unabhängig vom Lesestatus, während der Tab-Badge in ViewModels/ChatBadgeViewModel.swift:57-61 nach `lastReadAt` sinkt, sobald der Nutzer die Anfrage in ChatView öffnet (markAsRead, Views/Chat/ChatViewModel.swift:269). Dadurch zeigt das Banner in Views/Chat/ChatInboxView.swift:227 weiterhin „N new requests“, obwohl der Badge schon zurückgegangen ist – die Anfrage ist gesehen, aber noch nicht akzeptiert/abgelehnt, bleibt im Banner aber dauerhaft als „new“ markiert.\n\nPATCH:\n```diff\n--- a/Views/Chat/ChatInboxView.swift\n+++ b/Views/Chat/ChatInboxView.swift\n@@ -224,7 +224,7 @@ struct ChatInboxView: View {\n                 Text(\"Message Requests\")\n                     .font(.system(size: 15, weight: .semibold))\n                     .foregroundColor(.white)\n-                Text(\"\\(count) new \\(count == 1 ? \"request\" : \"requests\")\")\n+                Text(\"\\(count) \\(count == 1 ? \"pending request\" : \"pending requests\")\")\n                     .font(AppFonts.footnote())\n                     .foregroundColor(.white.opacity(0.7))\n             }\n```\n\nRISIKO: Rein textuelle Änderung, aber falls andere UI-Texte oder Tests auf den exakten String „new request(s)“ prüfen, müssten diese ebenfalls angepasst werden.",
+      "patch": "--- a/Views/Chat/ChatInboxView.swift\n+++ b/Views/Chat/ChatInboxView.swift\n@@ -224,7 +224,7 @@ struct ChatInboxView: View {\n                 Text(\"Message Requests\")\n                     .font(.system(size: 15, weight: .semibold))\n                     .foregroundColor(.white)\n-                Text(\"\\(count) new \\(count == 1 ? \"request\" : \"requests\")\")\n+                Text(\"\\(count) \\(count == 1 ? \"pending request\" : \"pending requests\")\")\n                     .font(AppFonts.footnote())\n                     .foregroundColor(.white.opacity(0.7))\n             }",
+      "urteil": "zutreffend",
+      "kosten": 0.5557,
+      "runden": 13
+    },
     "notiz": ""
   },
   {
@@ -94,9 +124,15 @@
     "bereich": "chat",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "URTEIL: zutreffend\nBEGRÜNDUNG: Der Context-Menü-Button \"Reply\" ruft `vm.startReply` auf, aber die Reply-Vorschau/Composer wird in `footer` nur im letzten `else`-Zweig gerendert (Views/Chat/ChatView.swift:221-238), nicht während `needsAcceptance`/`waitingForAcceptance` (Zeilen 227-230) — der Tap bleibt sichtbar wirkungslos. \"React\" ruft direkt `vm.toggleReaction` (ChatViewModel.swift:353-377), das ungeprüft nach Firestore schreibt, obwohl genau in diesen Zuständen dem Nutzer per `waitingFooter`/`requestBanner` gesagt wird, er solle auf die Annahme warten (ChatView.swift:288-304, 363-371) — die Reaktion ist für die Gegenseite trotzdem sofort sichtbar. Das Kontextmenü in `ChatBubble` (ChatView.swift:664-677) wird unabhängig vom Konversationsstatus immer angeboten.\n\nPATCH:\n```diff\n--- a/Views/Chat/ChatView.swift\n+++ b/Views/Chat/ChatView.swift\n@@ -161,6 +161,7 @@\n                         ChatBubble(\n                             message: msg,\n                             currentUserId: vm.currentUserId,\n+                            isInteractive: vm.conversation?.effectiveStatus == .accepted,\n                             onDoubleTap: {\n                                 Task { await vm.toggleReaction(\"❤️\", on: msg, conversationId: conversationId) }\n                             },\n@@ -619,6 +620,7 @@\n \n     let message: ChatMessage\n     let currentUserId: String?\n+    let isInteractive: Bool\n     let onDoubleTap: () -> Void\n     let onReply: () -> Void\n     let onReact: (String) -> Void\n@@ -662,17 +664,19 @@\n                     )\n                     .onTapGesture(count: 2) { onDoubleTap() }\n                     .contextMenu {\n-                        Section(\"React\") {\n-                            ForEach(Self.availableReactions, id: \\.self) { emoji in\n-                                Button { onReact(emoji) } label: {\n-                                    Text(emoji)\n+                        if isInteractive {\n+                            Section(\"React\") {\n+                                ForEach(Self.availableReactions, id: \\.self) { emoji in\n+                                    Button { onReact(emoji) } label: {\n+                                        Text(emoji)\n+                                    }\n                                 }\n                             }\n+                            Button {\n+                                onReply()\n+                            } label: {\n+                                Label(\"Reply\", systemImage: \"arrowshape.turn.up.left\")\n+                            }\n                         }\n-                        Button {\n-                            onReply()\n-                        } label: {\n-                            Label(\"Reply\", systemImage: \"arrowshape.turn.up.left\")\n-                        }\n                     }\n \n                 if let reactions = message.reactions, !reactions.isEmpty {\n```\n\nRISIKO: Falls `vm.conversation` beim ersten Render noch `nil` ist (z. B. kurz nach dem Öffnen), wäre das Kontextmenü vorübergehend leer, bis der Konversations-Listener den Status geliefert hat.",
+      "patch": "--- a/Views/Chat/ChatView.swift\n+++ b/Views/Chat/ChatView.swift\n@@ -161,6 +161,7 @@\n                         ChatBubble(\n                             message: msg,\n                             currentUserId: vm.currentUserId,\n+                            isInteractive: vm.conversation?.effectiveStatus == .accepted,\n                             onDoubleTap: {\n                                 Task { await vm.toggleReaction(\"❤️\", on: msg, conversationId: conversationId) }\n                             },\n@@ -619,6 +620,7 @@\n \n     let message: ChatMessage\n     let currentUserId: String?\n+    let isInteractive: Bool\n     let onDoubleTap: () -> Void\n     let onReply: () -> Void\n     let onReact: (String) -> Void\n@@ -662,17 +664,19 @@\n                     )\n                     .onTapGesture(count: 2) { onDoubleTap() }\n                     .contextMenu {\n-                        Section(\"React\") {\n-                            ForEach(Self.availableReactions, id: \\.self) { emoji in\n-                                Button { onReact(emoji) } label: {\n-                                    Text(emoji)\n+                        if isInteractive {\n+                            Section(\"React\") {\n+                                ForEach(Self.availableReactions, id: \\.self) { emoji in\n+                                    Button { onReact(emoji) } label: {\n+                                        Text(emoji)\n+                                    }\n                                 }\n                             }\n+                            Button {\n+                                onReply()\n+                            } label: {\n+                                Label(\"Reply\", systemImage: \"arrowshape.turn.up.left\")\n+                            }\n                         }\n-                        Button {\n-                            onReply()\n-                        } label: {\n-                            Label(\"Reply\", systemImage: \"arrowshape.turn.up.left\")\n-                        }\n                     }\n \n                 if let reactions = message.reactions, !reactions.isEmpty {",
+      "urteil": "zutreffend",
+      "kosten": 0.3919,
+      "runden": 9
+    },
     "notiz": ""
   },
   {
@@ -105,9 +141,15 @@
     "bereich": "profile",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "URTEIL: zutreffend\nBEGRÜNDUNG: `ProfilePreviewData` unterstützt `isLive`, `currentTrackTitle` und `currentTrackArtist`, und `SharedProfilePreviewView` rendert damit das LIVE-Badge samt Songtitel (Views/Components/SharedProfilePreviewView.swift:30-32, 293-338). Die eigene Profilvorschau in `ProfileView.swift:149-171` setzt diese drei Felder jedoch nie, obwohl `currentUserStore.user?.isBroadcasting`/`currentTrack` (Model/AppUser.swift:56-57) live verfügbar sind und an derselben Stelle bereits für `taste` genutzt werden (ProfileView.swift:166-170). Damit zeigt \"This is how others see you\" nie LIVE-Status oder laufenden Song an.\n\nPATCH:\n```diff\n--- a/Views/Profile/ProfileView.swift\n+++ b/Views/Profile/ProfileView.swift\n@@ -164,7 +164,12 @@\n                     likesReceivedCount: likesReceivedCount,\n                     userId: profile.uid,\n                     // Live from the user listener, so a fresh Spotify sync\n                     // shows up without reloading the profile.\n                     taste: currentUserStore.user?.spotifyTasheHidden == true\n                         ? nil\n-                        : (currentUserStore.user?.spotifyTaste ?? profile.spotifyTaste)\n+                        : (currentUserStore.user?.spotifyTaste ?? profile.spotifyTaste),\n+                    // Mirror what others see: live badge and currently playing track.\n+                    isLive: currentUserStore.user?.isBroadcasting == true,\n+                    currentTrackTitle: currentUserStore.user?.isBroadcasting == true\n+                        ? currentUserStore.user?.currentTrack?.title : nil,\n+                    currentTrackArtist: currentUserStore.user?.isBroadcasting == true\n+                        ? currentUserStore.user?.currentTrack?.artist : nil\n                 )\n                 SharedProfilePreviewView(\n```\nRISIKO: Falls `currentUserStore.user` beim Laden kurzzeitig veraltete `isBroadcasting`/`currentTrack`-Werte hält, könnte das Badge kurz falsch (nicht) angezeigt werden, bis der Listener aktualisiert.",
+      "patch": "--- a/Views/Profile/ProfileView.swift\n+++ b/Views/Profile/ProfileView.swift\n@@ -164,7 +164,12 @@\n                     likesReceivedCount: likesReceivedCount,\n                     userId: profile.uid,\n                     // Live from the user listener, so a fresh Spotify sync\n                     // shows up without reloading the profile.\n                     taste: currentUserStore.user?.spotifyTasheHidden == true\n                         ? nil\n-                        : (currentUserStore.user?.spotifyTaste ?? profile.spotifyTaste)\n+                        : (currentUserStore.user?.spotifyTaste ?? profile.spotifyTaste),\n+                    // Mirror what others see: live badge and currently playing track.\n+                    isLive: currentUserStore.user?.isBroadcasting == true,\n+                    currentTrackTitle: currentUserStore.user?.isBroadcasting == true\n+                        ? currentUserStore.user?.currentTrack?.title : nil,\n+                    currentTrackArtist: currentUserStore.user?.isBroadcasting == true\n+                        ? currentUserStore.user?.currentTrack?.artist : nil\n                 )\n                 SharedProfilePreviewView(",
+      "urteil": "zutreffend",
+      "kosten": 0.3754,
+      "runden": 10
+    },
     "notiz": ""
   },
   {
@@ -116,9 +158,15 @@
     "bereich": "profile",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "URTEIL: zutreffend\nBEGRÜNDUNG: Der Refresh-Button ruft nur `Task { await SpotifyTasteSync.syncIfNeeded(force: true) }` ohne jeden Lade- oder Ergebniszustand auf (SettingsContentView.swift:170-174), und ein Fehler wird in SpotifyTasteSync.swift:73-75 nur per `print` geloggt, nie dem Nutzer gezeigt. Der dritte Teilbefund zur Footer-Behauptung trifft dagegen nicht zu: `MusicTasteCard` (SharedProfilePreviewView.swift:598-678) zeigt genau Top-Künstler, Top-Tracks und Playlists, und `fetchMyPlaylists` (SpotifyService.swift:340-356) liefert tatsächlich nur öffentliche Playlists, wie der Footer in SettingsContentView.swift:187-193 behauptet.\n\nPATCH:\n```diff\n--- a/Services/SpotifyTasteSync.swift\n+++ b/Services/SpotifyTasteSync.swift\n@@ -49,17 +49,19 @@ enum SpotifyTasteSync {\n         }\n     }\n \n-    static func syncIfNeeded(force: Bool = false) async {\n-        guard let uid = Auth.auth().currentUser?.uid else { return }\n-        guard !hidden else { return }\n+    /// Returns whether a manual refresh actually produced data, so the\n+    /// Settings button can tell the user when it failed instead of staying silent.\n+    @discardableResult\n+    static func syncIfNeeded(force: Bool = false) async -> Bool {\n+        guard let uid = Auth.auth().currentUser?.uid else { return false }\n+        guard !hidden else { return true }\n         // A refresh token is enough; the access token is fetched on demand.\n-        guard force || SpotifyAuthManager.shared.tokens?.refreshToken != nil else { return }\n+        guard force || SpotifyAuthManager.shared.tokens?.refreshToken != nil else { return true }\n \n         let last = UserDefaults.standard.object(forKey: key(uid)) as? Date\n-        if !force, let last, Date().timeIntervalSince(last) < interval { return }\n+        if !force, let last, Date().timeIntervalSince(last) < interval { return true }\n \n         do {\n             async let artists = SpotifyService.shared.fetchTopArtists(limit: 6)\n@@ -70,11 +72,14 @@ enum SpotifyTasteSync {\n             UserApiService.shared.updateProfile(uid: uid, updates: [\"spotifyTaste\": taste.firestoreValue])\n             UserDefaults.standard.set(Date(), forKey: key(uid))\n             needsReconnect = false\n+            return true\n         } catch SpotifyAPIError.insufficientScope {\n             // Logged in before we asked for the taste scopes.\n             needsReconnect = true\n+            return false\n         } catch {\n             print(\"⚠️ [SpotifyTaste] sync failed: \\(error)\")\n+            return false\n         }\n     }\n }\n--- a/Views/Profile/SettingsContentView.swift\n+++ b/Views/Profile/SettingsContentView.swift\n@@ -31,6 +31,8 @@ struct SettingsContentView: View {\n     @State private var serverHold = LiveSessionService.hasConsent\n     /// Mirrors `SpotifyTasteSync.hidden` (uid-scoped, fed by the user document).\n     @State private var spotifyTasteHidden = SpotifyTasteSync.hidden\n+    @State private var isRefreshingTaste = false\n+    @State private var tasteRefreshFailed = false\n \n     var body: some View {\n         List {\n@@ -168,10 +170,21 @@ struct SettingsContentView: View {\n                             }\n                         } else {\n                             Button {\n-                                Task { await SpotifyTasteSync.syncIfNeeded(force: true) }\n+                                isRefreshingTaste = true\n+                                tasteRefreshFailed = false\n+                                Task {\n+                                    let success = await SpotifyTasteSync.syncIfNeeded(force: true)\n+                                    isRefreshingTaste = false\n+                                    tasteRefreshFailed = !success\n+                                }\n                             } label: {\n-                                Label(\"Refresh music taste now\", systemImage: \"arrow.clockwise\")\n+                                Label(isRefreshingTaste ? \"Refreshing…\" : \"Refresh music taste now\", systemImage: \"arrow.clockwise\")\n+                            }\n+                            .disabled(isRefreshingTaste)\n+                            if tasteRefreshFailed {\n+                                Text(\"Couldn’t refresh. Try again in a moment.\")\n+                                    .font(AppFonts.caption())\n+                                    .foregroundColor(AppColors.secondaryText)\n                             }\n                         }\n                     }\n```\n\nRISIKO: Falls andere Aufrufer von `syncIfNeeded` (z. B. der App-Start-Task) den neuen Rückgabewert nicht erwarten, kompiliert das dank `@discardableResult` weiterhin, aber eine spätere Änderung dort könnte den Erfolgszustand fälschlich ignorieren.",
+      "patch": "--- a/Services/SpotifyTasteSync.swift\n+++ b/Services/SpotifyTasteSync.swift\n@@ -49,17 +49,19 @@ enum SpotifyTasteSync {\n         }\n     }\n \n-    static func syncIfNeeded(force: Bool = false) async {\n-        guard let uid = Auth.auth().currentUser?.uid else { return }\n-        guard !hidden else { return }\n+    /// Returns whether a manual refresh actually produced data, so the\n+    /// Settings button can tell the user when it failed instead of staying silent.\n+    @discardableResult\n+    static func syncIfNeeded(force: Bool = false) async -> Bool {\n+        guard let uid = Auth.auth().currentUser?.uid else { return false }\n+        guard !hidden else { return true }\n         // A refresh token is enough; the access token is fetched on demand.\n-        guard force || SpotifyAuthManager.shared.tokens?.refreshToken != nil else { return }\n+        guard force || SpotifyAuthManager.shared.tokens?.refreshToken != nil else { return true }\n \n         let last = UserDefaults.standard.object(forKey: key(uid)) as? Date\n-        if !force, let last, Date().timeIntervalSince(last) < interval { return }\n+        if !force, let last, Date().timeIntervalSince(last) < interval { return true }\n \n         do {\n             async let artists = SpotifyService.shared.fetchTopArtists(limit: 6)\n@@ -70,11 +72,14 @@ enum SpotifyTasteSync {\n             UserApiService.shared.updateProfile(uid: uid, updates: [\"spotifyTaste\": taste.firestoreValue])\n             UserDefaults.standard.set(Date(), forKey: key(uid))\n             needsReconnect = false\n+            return true\n         } catch SpotifyAPIError.insufficientScope {\n             // Logged in before we asked for the taste scopes.\n             needsReconnect = true\n+            return false\n         } catch {\n             print(\"⚠️ [SpotifyTaste] sync failed: \\(error)\")\n+            return false\n         }\n     }\n }\n--- a/Views/Profile/SettingsContentView.swift\n+++ b/Views/Profile/SettingsContentView.swift\n@@ -31,6 +31,8 @@ struct SettingsContentView: View {\n     @State private var serverHold = LiveSessionService.hasConsent\n     /// Mirrors `SpotifyTasteSync.hidden` (uid-scoped, fed by the user document).\n     @State private var spotifyTasteHidden = SpotifyTasteSync.hidden\n+    @State private var isRefreshingTaste = false\n+    @State private var tasteRefreshFailed = false\n \n     var body: some View {\n         List {\n@@ -168,10 +170,21 @@ struct SettingsContentView: View {\n                             }\n                         } else {\n                             Button {\n-                                Task { await SpotifyTasteSync.syncIfNeeded(force: true) }\n+                                isRefreshingTaste = true\n+                                tasteRefreshFailed = false\n+                                Task {\n+                                    let success = await SpotifyTasteSync.syncIfNeeded(force: true)\n+                                    isRefreshingTaste = false\n+                                    tasteRefreshFailed = !success\n+                                }\n                             } label: {\n-                                Label(\"Refresh music taste now\", systemImage: \"arrow.clockwise\")\n+                                Label(isRefreshingTaste ? \"Refreshing…\" : \"Refresh music taste now\", systemImage: \"arrow.clockwise\")\n+                            }\n+                            .disabled(isRefreshingTaste)\n+                            if tasteRefreshFailed {\n+                                Text(\"Couldn’t refresh. Try again in a moment.\")\n+                                    .font(AppFonts.caption())\n+                                    .foregroundColor(AppColors.secondaryText)\n                             }\n                         }\n                     }",
+      "urteil": "zutreffend",
+      "kosten": 0.4918,
+      "runden": 14
+    },
     "notiz": ""
   },
   {
@@ -127,9 +175,15 @@
     "bereich": "consistency",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "Jetzt habe ich genug gesehen, um den Befund sauber zu bewerten.\n\nURTEIL: zutreffend\nBEGRÜNDUNG: In `Features/Discover/Views/DiscoverView.swift` können `goLiveBanner` (Zeile 51), `locationDeniedBanner` (Zeile 56/393) und `nearbyEmptyState` (Zeile 824 ff.) gleichzeitig sichtbar sein und zeigen dort je eine eigenständige Ember-farbene Schaltfläche (\"Go live\", \"Open Settings\", \"Go live\") statt einer einzigen primären Aktion. Zusätzlich wechselt die Beschriftungsfarbe auf identischem Ember/Live-Hintergrund: `AppColors.background` (fast schwarz) bei `goLiveBanner` (Zeile 267) und `DiscoverTrackSheet.swift:386`, aber `.white` bei derselben \"Go live\"-Aktion in `DiscoverView.swift:791` sowie bei \"Open Settings\" (416), \"Widen radius\" (767), \"Find People\" (829) und `ProfileView.swift:751`. Der Befund trifft also in beiden Teilen zu.\n\nPATCH:\n```diff\n--- a/Features/Discover/Views/DiscoverView.swift\n+++ b/Features/Discover/Views/DiscoverView.swift\n@@ -788,7 +788,9 @@ struct DiscoverView: View {\n                 } label: {\n                     Label(\"Go live\", systemImage: \"dot.radiowaves.left.and.right\")\n                         .font(.system(size: 15, weight: .semibold))\n-                        .foregroundColor(.white)\n+                        // Same action as the goLiveBanner above, which uses a\n+                        // near-black label on this exact background color.\n+                        .foregroundColor(AppColors.background)\n                         .padding(.horizontal, 18)\n                         .padding(.vertical, 10)\n                         .background(AppColors.live)\n```\n\nRISIKO: Der Text \"Go live\" könnte auf manchen Geräten/Zuständen minimal schlechter lesbar wirken, falls der Ember-Ton dort dunkler gerendert wird als angenommen — das sollte aber optisch gegen den bereits bestehenden `goLiveBanner` geprüft werden, der dieselbe Kombination verwendet.",
+      "patch": "--- a/Features/Discover/Views/DiscoverView.swift\n+++ b/Features/Discover/Views/DiscoverView.swift\n@@ -788,7 +788,9 @@ struct DiscoverView: View {\n                 } label: {\n                     Label(\"Go live\", systemImage: \"dot.radiowaves.left.and.right\")\n                         .font(.system(size: 15, weight: .semibold))\n-                        .foregroundColor(.white)\n+                        // Same action as the goLiveBanner above, which uses a\n+                        // near-black label on this exact background color.\n+                        .foregroundColor(AppColors.background)\n                         .padding(.horizontal, 18)\n                         .padding(.vertical, 10)\n                         .background(AppColors.live)",
+      "urteil": "zutreffend",
+      "kosten": 0.5005,
+      "runden": 10
+    },
     "notiz": ""
   },
   {
@@ -138,9 +192,15 @@
     "bereich": "consistency",
     "schwere": "medium",
     "quelle": "Flussanalyse 10.10.2026",
-    "status": "offen",
+    "status": "Vorschlag da",
     "beleg": "",
-    "vorschlag": null,
+    "vorschlag": {
+      "text": "URTEIL: unklar\nBEGRÜNDUNG: Abgebrochen bei $0.65 — die Grenze pro Lauf liegt bei $0.60.\nPATCH:\n```diff\nKEINER\n```\nRISIKO: —",
+      "patch": "",
+      "urteil": "unklar",
+      "kosten": 0.6456,
+      "runden": 11
+    },
     "notiz": ""
   },
   {

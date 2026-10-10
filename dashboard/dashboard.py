@@ -5,6 +5,7 @@ Aufruf:  dashboard melora
 import html
 import json
 import subprocess
+import time
 from datetime import date
 from pathlib import Path
 
@@ -179,3 +180,11 @@ with reiter[3]:
             f'<span class="beleg">{p["zeit"][5:16]}</span> '
             + marke(p["art"], "low") + html.escape(p["text"])[:160],
             unsafe_allow_html=True)
+
+# ── Nachführen, solange etwas läuft ─────────────────────────────────
+# Ein Arbeiter braucht ein paar Minuten. Ohne das hier sieht die Seite
+# nach dem Klick aus, als sei nichts passiert, bis jemand von Hand neu
+# lädt — und das liest sich wie ein Defekt.
+if jobs.aktiv():
+    time.sleep(4)
+    st.rerun()
