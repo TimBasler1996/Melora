@@ -29,6 +29,7 @@ struct SettingsContentView: View {
     /// the row updates the moment a sync succeeds.
     @AppStorage("spotifyTaste.needsReconnect") private var needsSpotifyReconnect = false
     @State private var showIntro = false
+    @State private var serverHold = LiveSessionService.hasConsent
     /// Mirrors `SpotifyTasteSync.hidden` (uid-scoped, fed by the user document).
     @State private var spotifyTasteHidden = SpotifyTasteSync.hidden
 
@@ -104,6 +105,24 @@ struct SettingsContentView: View {
             }
 
             // MARK: - Privacy
+            Section {
+                Toggle(isOn: Binding(
+                    get: { serverHold },
+                    set: { newValue in
+                        serverHold = newValue
+                        LiveSessionService.hasConsent = newValue
+                        // Revoking takes effect now, not at the next stop.
+                        if !newValue { Task { await LiveSessionService.end() } }
+                    }
+                )) {
+                    Label("Stay live with the app closed", systemImage: "antenna.radiowaves.left.and.right")
+                }
+            } header: {
+                Text("Live")
+            } footer: {
+                Text("While you’re live, our server asks Spotify what you’re playing so people still see you with the app closed. Every session ends after two hours, and stopping deletes the connection.")
+            }
+
             Section {
                 NavigationLink {
                     HiddenAndBlockedView()

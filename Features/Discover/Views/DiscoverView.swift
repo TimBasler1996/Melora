@@ -17,6 +17,9 @@ struct DiscoverView: View {
     @State private var showNothingPlaying = false
     @State private var expandedCardId: String?
     @State private var chatToOpen: ChatTarget?
+    /// Asked once, before the server may ever hold a session.
+    @State private var showServerHoldConsent = false
+
     /// The person a block was requested for, pending confirmation.
     @State private var blockTarget: BlockTarget?
 
@@ -85,6 +88,18 @@ struct DiscoverView: View {
             }
             .sheet(isPresented: $showUserSearch) {
                 UserSearchView()
+            }
+            .sheet(isPresented: $showServerHoldConsent) {
+                ServerHoldConsentSheet(
+                    onAllow: {
+                        LiveSessionService.hasConsent = true
+                        goLive()
+                    },
+                    onDecline: {
+                        LiveSessionService.hasConsent = false
+                        goLive()
+                    }
+                )
             }
             .sheet(item: $trackSheetBroadcast, onDismiss: {
                 let next = pendingAfterTrackSheet
@@ -275,6 +290,12 @@ struct DiscoverView: View {
         }
         guard spotifyAuth.isAuthorized else {
             spotifyAuth.ensureAuthorized()
+            return
+        }
+        // Decide once, before the first session, whether the server may keep
+        // it alive — handing the token over must never be a side effect.
+        if !LiveSessionService.hasBeenAsked {
+            showServerHoldConsent = true
             return
         }
         guard !goingLive else { return }

@@ -130,6 +130,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ── liveSessions/{uid} ───────────────────────────────────────
+    // Holds a Spotify refresh token while a server-held live session runs.
+    // No client may read or write it: it is written by the startLiveSession
+    // endpoint and deleted by endLiveSession or the keepalive job.
+    match /liveSessions/{uid} {
+      allow read, write: if false;
+    }
+
     // ── blocks/{blockerId_blockedUserId} ─────────────────────────
     match /blocks/{blockId} {
       allow read: if signedIn() && resource.data.blockerId == me();

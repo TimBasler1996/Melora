@@ -5,6 +5,7 @@ import {
   onDocumentWritten,
 } from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
+import {onRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
@@ -530,3 +531,259 @@ export const expireStaleBroadcasts = onSchedule(
     }
   }
 );
+
+// ──────────────────────────────────────────────────
+// Server-held live sessions
+// ──────────────────────────────────────────────────
+//
+// Nothing refreshes a broadcast while the app is in the background, so a
+// pocketed phone used to drop out of everyone's "Live now" after five
+// minutes. The server can keep it alive, but only on terms that stay
+// defensible: the user starts the session explicitly, it has a hard end,
+// and the Spotify refresh token is deleted the moment it stops.
+//
+// Spotify's Developer Terms allow processing "only for as long as is
+// necessary to provide your SDA to the applicable user" (V.7) and require
+// deletion when the user disconnects (V.8). A session-scoped hold matches
+// that; an always-on listener would not.
+
+/** Hard ceiling for one server-held session. */
+const LIVE_SESSION_MAX_MS = 2 * 60 * 60 * 1000;
+/** Consecutive empty polls before the session is ended (≈ 10 min). */
+const LIVE_SESSION_MAX_IDLE_POLLS = 10;
+/** Public PKCE client id — the same one the app authorises with. */
+const SPOTIFY_CLIENT_ID = "cc898154515f4c0e91a1a8952fc4b717";
+
+interface LiveSession {
+  refreshToken: string;
+  accessToken?: string;
+  accessTokenExpiresAt?: number;
+  expiresAt: number;
+  idlePolls?: number;
+  latitude?: number;
+  longitude?: number;
+}
+
+/** Verifies the caller and returns their uid, or null. */
+async function uidFromRequest(req: {
+  headers: Record<string, string | string[] | undefined>;
+}): Promise<string | null> {
+  const header = req.headers.authorization;
+  const value = Array.isArray(header) ? header[0] : header;
+  if (!value?.startsWith("Bearer ")) return null;
+  try {
+    const decoded = await admin.auth().verifyIdToken(value.slice(7));
+    return decoded.uid;
+  } catch {
+    return null;
+  }
+}
+
+/** Exchanges a refresh token for a fresh access token (PKCE: no secret). */
+async function refreshSpotifyToken(
+  refreshToken: string
+): Promise<{accessToken: string; expiresIn: number; refreshToken?: string} | null> {
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    client_id: SPOTIFY_CLIENT_ID,
+  });
+  const res = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: {"Content-Type": "application/x-www-form-urlencoded"},
+    body: body.toString(),
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as {
+    access_token?: string;
+    expires_in?: number;
+    refresh_token?: string;
+  };
+  if (!json.access_token) return null;
+  return {
+    accessToken: json.access_token,
+    expiresIn: json.expires_in ?? 3600,
+    refreshToken: json.refresh_token,
+  };
+}
+
+/** Starts (or extends) a server-held live session. */
+export const startLiveSession = onRequest(async (req, res) => {
+  const uid = await uidFromRequest(req);
+  if (!uid) {
+    res.status(401).json({error: "unauthenticated"});
+    return;
+  }
+  const refreshToken = String(req.body?.refreshToken ?? "");
+  if (!refreshToken) {
+    res.status(400).json({error: "missing refreshToken"});
+    return;
+  }
+  const latitude = Number(req.body?.latitude);
+  const longitude = Number(req.body?.longitude);
+
+  const session: LiveSession = {
+    refreshToken,
+    expiresAt: Date.now() + LIVE_SESSION_MAX_MS,
+    idlePolls: 0,
+  };
+  if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+    session.latitude = latitude;
+    session.longitude = longitude;
+  }
+
+  await db.collection("liveSessions").doc(uid).set(session);
+  logger.info(`live session held for ${uid} until ${new Date(session.expiresAt).toISOString()}`);
+  res.json({expiresAt: session.expiresAt});
+});
+
+/** Ends a server-held session and deletes the token. */
+export const endLiveSession = onRequest(async (req, res) => {
+  const uid = await uidFromRequest(req);
+  if (!uid) {
+    res.status(401).json({error: "unauthenticated"});
+    return;
+  }
+  await db.collection("liveSessions").doc(uid).delete();
+  res.json({ok: true});
+});
+
+/** Drops the session and marks the broadcast ended. */
+async function endSession(uid: string, reason: string): Promise<void> {
+  await db.collection("liveSessions").doc(uid).delete();
+  const batch = db.batch();
+  batch.set(
+    db.collection("broadcasts").doc(uid),
+    {
+      isLive: false,
+      endedAt: admin.firestore.FieldValue.serverTimestamp(),
+      latitude: admin.firestore.FieldValue.delete(),
+      longitude: admin.firestore.FieldValue.delete(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    {merge: true}
+  );
+  batch.set(
+    db.collection("users").doc(uid),
+    {
+      isBroadcasting: false,
+      currentTrack: admin.firestore.FieldValue.delete(),
+      lastLocation: admin.firestore.FieldValue.delete(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    {merge: true}
+  );
+  await batch.commit();
+  logger.info(`live session ended for ${uid}: ${reason}`);
+}
+
+/**
+ * Keeps held sessions visible while their owner is still playing. Runs every
+ * minute; the client's own 15 s loop takes over whenever the app is open.
+ */
+export const keepLiveSessionsAlive = onSchedule("every 1 minutes", async () => {
+  const now = Date.now();
+  const sessions = await db.collection("liveSessions").get();
+  if (sessions.empty) return;
+
+  await Promise.all(
+    sessions.docs.map(async (doc) => {
+      const uid = doc.id;
+      const session = doc.data() as LiveSession;
+
+      if (!session.expiresAt || session.expiresAt <= now) {
+        await endSession(uid, "reached its two-hour limit");
+        return;
+      }
+
+      try {
+        let accessToken = session.accessToken;
+        const updates: Partial<LiveSession> = {};
+
+        if (!accessToken || (session.accessTokenExpiresAt ?? 0) <= now + 30_000) {
+          const refreshed = await refreshSpotifyToken(session.refreshToken);
+          if (!refreshed) {
+            // The grant is gone: nothing can revive this session.
+            await endSession(uid, "Spotify refused the refresh token");
+            return;
+          }
+          accessToken = refreshed.accessToken;
+          updates.accessToken = refreshed.accessToken;
+          updates.accessTokenExpiresAt = now + refreshed.expiresIn * 1000;
+          // Spotify rotates refresh tokens; keep the newest one.
+          if (refreshed.refreshToken) updates.refreshToken = refreshed.refreshToken;
+        }
+
+        const playing = await fetch(
+          "https://api.spotify.com/v1/me/player/currently-playing",
+          {headers: {Authorization: `Bearer ${accessToken}`}}
+        );
+
+        if (playing.status === 401) {
+          await endSession(uid, "Spotify rejected the access token");
+          return;
+        }
+
+        // 204 = nothing playing right now.
+        const item =
+          playing.status === 200 ?
+            ((await playing.json()) as {item?: Record<string, unknown> | null}).item :
+            null;
+
+        if (!item) {
+          const idle = (session.idlePolls ?? 0) + 1;
+          if (idle >= LIVE_SESSION_MAX_IDLE_POLLS) {
+            await endSession(uid, "nothing played for ten minutes");
+            return;
+          }
+          await doc.ref.set({...updates, idlePolls: idle}, {merge: true});
+          return;
+        }
+
+        const album = item.album as {images?: {url?: string}[]} | undefined;
+        const artists = item.artists as {name?: string}[] | undefined;
+        const track = {
+          id: String(item.id ?? ""),
+          title: String(item.name ?? ""),
+          artist: artists?.[0]?.name ?? "",
+          album: (album as {name?: string} | undefined)?.name ?? null,
+          artworkURL: album?.images?.[0]?.url ?? null,
+        };
+
+        const broadcast: Record<string, unknown> = {
+          userId: uid,
+          isLive: true,
+          trackId: track.id,
+          trackTitle: track.title,
+          trackArtist: track.artist,
+          trackAlbum: track.album,
+          trackArtworkURL: track.artworkURL,
+          endedAt: admin.firestore.FieldValue.delete(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        // The position is the one the user was at when they went live; the
+        // server never learns a new one while the app is closed.
+        if (session.latitude !== undefined && session.longitude !== undefined) {
+          broadcast.latitude = session.latitude;
+          broadcast.longitude = session.longitude;
+        }
+
+        const batch = db.batch();
+        batch.set(db.collection("broadcasts").doc(uid), broadcast, {merge: true});
+        batch.set(
+          db.collection("users").doc(uid),
+          {
+            isBroadcasting: true,
+            currentTrack: track,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          {merge: true}
+        );
+        await batch.commit();
+        await doc.ref.set({...updates, idlePolls: 0}, {merge: true});
+      } catch (err) {
+        logger.error(`keepLiveSessionsAlive failed for ${uid}`, err);
+      }
+    })
+  );
+});

@@ -58,6 +58,10 @@ final class BroadcastManager: ObservableObject {
     /// moment anyone else could have seen this session.
     private(set) var lastLiveWriteAt: Date?
 
+    /// When a server-held session ends by itself. `nil` while the session
+    /// lives only as long as the app is open.
+    @Published private(set) var serverHoldUntil: Date?
+
     /// Polls that threw. Counted against the same ceiling as idle polls, so
     /// a session nobody can refresh expires instead of being re-asserted.
     private var failedPolls = 0
@@ -92,6 +96,8 @@ final class BroadcastManager: ObservableObject {
     /// True while others can still see this session.
     var isVisibleToOthers: Bool {
         guard isBroadcasting else { return false }
+        // A server-held session stays visible without this app writing.
+        if let until = serverHoldUntil, until > Date() { return true }
         guard let last = lastLiveWriteAt ?? broadcastStartedAt else { return false }
         return Date().timeIntervalSince(last) <= Self.maxLiveAge
     }
@@ -199,10 +205,38 @@ final class BroadcastManager: ObservableObject {
         // 3) Periodic sync loops.
         startLocationSync(uid: uid)
         startTrackSync(uid: uid)
+
+        // 4) Ask the server to hold the session while the app is closed.
+        await requestServerHold()
+    }
+
+    /// Hands the session to the server, if the user agreed to it. Failing is
+    /// not fatal: the session then simply lives as long as the app is open,
+    /// which is what the copy falls back to.
+    private func requestServerHold() async {
+        serverHoldUntil = nil
+        guard LiveSessionService.hasConsent,
+              let refreshToken = SpotifyAuthManager.shared.refreshTokenForServerHold
+        else { return }
+
+        do {
+            serverHoldUntil = try await LiveSessionService.start(
+                refreshToken: refreshToken,
+                location: sharedLocation
+            )
+        } catch {
+            print("⚠️ [Broadcast] server hold not established: \(error)")
+        }
     }
 
     func stopBroadcasting() async {
         errorMessage = nil
+
+        // Stop means stop: the server drops the token, it is not just flagged.
+        if serverHoldUntil != nil {
+            serverHoldUntil = nil
+            await LiveSessionService.end()
+        }
 
         locationSyncTask?.cancel()
         locationSyncTask = nil

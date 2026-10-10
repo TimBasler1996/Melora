@@ -24,6 +24,11 @@ final class SpotifyAuthManager: NSObject, ObservableObject {
     /// screens should gate on.
     var hasStoredLogin: Bool { tokens?.refreshToken != nil }
 
+    /// The refresh token, for handing a live session to the server. Named
+    /// for its one legitimate caller so it does not become a general door
+    /// out of the Keychain.
+    var refreshTokenForServerHold: String? { tokens?.refreshToken }
+
     /// Why the last interactive login did not end with tokens. Cleared when a
     /// new login starts, so screens waiting on `isAuthorized` can stop
     /// waiting as soon as the user closes the sheet.
