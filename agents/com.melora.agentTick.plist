@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key><string>com.melora.agentTick</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/local/bin/node</string>
+		<string>/Users/timbasler/Developer/SocialSound/agents/agentTick.js</string>
+	</array>
+	<key>WorkingDirectory</key><string>/Users/timbasler/Developer/SocialSound/agents</string>
+	<key>RunAtLoad</key><true/>
+	<!-- Startet nach Absturz, Speicherkill und Neustart des Macs wieder. -->
+	<key>KeepAlive</key><true/>
+	<!-- Nicht in einer Schleife neu starten, wenn er sofort wieder stirbt. -->
+	<key>ThrottleInterval</key><integer>30</integer>
+	<key>StandardOutPath</key><string>/Users/timbasler/Library/Logs/melora/agentTick.log</string>
+	<key>StandardErrorPath</key><string>/Users/timbasler/Library/Logs/melora/agentTick.log</string>
+</dict>
+</plist>

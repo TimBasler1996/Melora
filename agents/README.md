@@ -55,3 +55,22 @@ and restart the scripts.
   probability (10 % declined, 20 % ignored), never between 01:00 and 07:00.
 - Chats: answers after 1–10 min, at night not before 08:00–10:00, in the
   agent's language (Zürich/Brig German, Lausanne French).
+
+## Dauerbetrieb
+
+Die beiden Loops laufen als launchd-Dienste, damit sie einen Absturz, einen
+Speicherkill und einen Neustart des Macs überleben:
+
+    cp agents/com.melora.*.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.melora.agentTick.plist
+    launchctl load ~/Library/LaunchAgents/com.melora.agentChat.plist
+
+Logs: `~/Library/Logs/melora/agentTick.log` und `agentChat.log`.
+Stoppen: `launchctl unload ~/Library/LaunchAgents/com.melora.agentChat.plist`
+(oder den Kill-Switch `config/agents.enabled` auf `false` setzen).
+
+Die plists enthalten absichtlich keinen API-Schlüssel — `agentChat.js` liest
+ihn aus `dashboard/daten/api_key`, wenn `ANTHROPIC_API_KEY` nicht gesetzt ist.
+
+Vorher liefen sie von Hand im Terminal. Der Chat-Loop starb dann einmal zwei
+Sekunden nach dem Start und blieb 2,5 Stunden unbemerkt tot.

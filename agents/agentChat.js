@@ -7,6 +7,15 @@
 // Stops immediately when config/agents.enabled becomes false.
 
 const Anthropic = require("@anthropic-ai/sdk");
+
+// Der Schlüssel darf nicht in einer launchd-plist stehen: dort läge er im
+// Klartext in einer Datei, die jeder Prozess des Nutzers lesen kann.
+if (!process.env.ANTHROPIC_API_KEY) {
+  const schluessel = require("path").join(__dirname, "..", "dashboard", "daten", "api_key");
+  if (require("fs").existsSync(schluessel)) {
+    process.env.ANTHROPIC_API_KEY = require("fs").readFileSync(schluessel, "utf8").trim();
+  }
+}
 const config = require("./config");
 const personas = require("./lib/personas");
 const time = require("./lib/time");
@@ -205,20 +214,49 @@ function handle(doc, startedAt) {
   schedule(doc.id, agentUid, at);
 }
 
+const agentUidSet = new Set(agentUids);
+let listenerFehler = 0;
+
+/** Subscribes, and resubscribes itself when the stream dies. */
+function listen(startedAt) {
+  const stop = db().collection("conversations").onSnapshot(
+    (snap) => {
+      listenerFehler = 0;
+      snap.docChanges().forEach((ch) => {
+        if (ch.type === "removed") return;
+        const teilnehmer = ch.doc.data().participantIds || [];
+        if (!teilnehmer.some((uid) => agentUidSet.has(uid))) return;
+        handle(ch.doc, startedAt);
+      });
+    },
+    (err) => {
+      // A dropped stream is normal on a laptop that sleeps. Exiting on it
+      // meant the agents went quiet until someone noticed hours later.
+      stop();
+      listenerFehler += 1;
+      const wartenMs = Math.min(60000, 2000 * 2 ** (listenerFehler - 1));
+      console.error(`listener failed (${listenerFehler}), retrying in ${wartenMs / 1000}s:`, err.message);
+      if (listenerFehler > 8) {
+        console.error("listener keeps failing, exiting so launchd can restart us");
+        process.exit(1);
+      }
+      setTimeout(() => listen(startedAt), wartenMs);
+    }
+  );
+}
+
 function main() {
   const startedAt = Date.now();
   log(`agentChat: ${agentUids.length} agents, model ${config.chat.model}`);
 
-  // array-contains-any takes at most 30 values per query.
-  for (let i = 0; i < agentUids.length; i += 30) {
-    const chunk = agentUids.slice(i, i + 30);
-    db().collection("conversations")
-      .where("participantIds", "array-contains-any", chunk)
-      .onSnapshot(
-        (snap) => snap.docChanges().forEach((ch) => { if (ch.type !== "removed") handle(ch.doc, startedAt); }),
-        (err) => { console.error("listener failed", err); process.exit(1); }
-      );
-  }
+  // One listener over the whole collection, filtered in code.
+  //
+  // This used to shard by `array-contains-any`, which takes at most 30
+  // values — so growing past 30 personas silently created a second watch
+  // stream, and two streams on one Firestore client share an exponential
+  // backoff: "A backoff operation is already in progress", and the process
+  // died two seconds after start. One listener has no such ceiling.
+  listen(startedAt);
 
   db().doc(config.killSwitchPath).onSnapshot((snap) => {
     if (!snap.exists || snap.data().enabled !== true) {
