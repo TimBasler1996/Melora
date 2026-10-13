@@ -4,7 +4,7 @@ Product-level findings from the UX review of Dev3 (September 2026), grouped by e
 
 Priorities: **P0** must ship before launch · **P1** next · **P2** later · **P3** someday. Effort: S ≤ 1 day · M 2–4 days · L 1–2 weeks.
 
-Totals: 65 items — P0 16 · P1 29 · P2 16 · P3 4 · done 62
+Totals: 66 items — P0 17 · P1 29 · P2 16 · P3 4 · done 62
 
 ## Your to-dos (need the project owner)
 
@@ -30,6 +30,7 @@ Totals: 65 items — P0 16 · P1 29 · P2 16 · P3 4 · done 62
 ## Suggested order of work
 
 1. Done: account model (UX-08), declined-request policy (UX-16), and the P0 set except the remaining P1/P2 work.
+0. First: UX-66 — blocking is not enforced anywhere but on the blocker's own phone.
 2. Next: P1 items epic by epic — blocked/hidden lists, report, welcome screen, Spotify step honesty, inbox fixes.
 3. Then P2 polish, starting with the Discover card redesign.
 
@@ -163,6 +164,19 @@ _Anonymous auth, exact locations and no report path are launch blockers for a da
 - **Problem:** Settings admits 'Your broadcast is always visible to everyone' and has no privacy policy, terms or support link.
 - **Fix:** Privacy section (who can see me, distance precision) and Legal / Support rows.
 - **Progress:** Settings → About: Privacy policy, Terms and Contact rows appear once the URLs are set in Utils/LegalLinks.swift (hidden until then), plus version and a one-line location/privacy note. Blocked list and delete already live in Privacy/Account.
+
+### UX-66 · Enforce blocks on the server, both ways
+
+**P0 · before launch** · effort medium (2–4 days)
+
+- **Problem:** A block is only a `blocks/{blocker_blocked}` doc that the blocker's own app reads to filter Discover, search, chats and profiles (`Services/BlockService.swift`: "one-directional … hidden on the blocker's device"). The blocked person cannot read that doc and nothing checks it: `firestore.rules` lets them create a new conversation (block deleted the old one), send messages, like and follow; no Cloud Function looks at blocks before pushing. So after A blocks B, B still sees A in Discover, can open A's profile and find A in search, and B's next message, like or follow lands on A's lock screen as a push with B's name and text (Activity does not filter blocks either). The app and the privacy policy promise the opposite: "They won't appear in Discover, chats or search" (`Utils/BlockCopy.swift`), "People you block cannot see you in Discover, message you or find you in search" (`hosting/privacy.html`). For a 13+ audience this is the harassment case blocking exists for.
+- **Fix:**
+  1. Rules: refuse creating conversations, messages, `likesReceived`/`likesGiven` and follows when `blocks/{me}_{other}` or `blocks/{other}_{me}` exists (ids are predictable, so `exists()` works).
+  2. Functions: skip every push (like, like message, accepted, chat message, follower) when a block exists in either direction.
+  3. Activity: filter blocked users out of likes and followers.
+  4. Blocked side: give B's app the set of people who blocked B (e.g. a callable function, without making block docs readable) and filter Discover, search and profiles with it. Client-side only, so a modified app can get around it; rules can't filter list queries per document.
+  5. Until step 4 ships, change the privacy policy and `BlockCopy` so they don't promise what isn't enforced.
+- **Needs:** Steps 1–2 close the hole and are small; step 4 is the larger part. Compile and test with two devices (OWN-4), then deploy rules and functions (OWN-3).
 
 ## Like → request → chat loop
 
