@@ -29,10 +29,10 @@ Totals: 66 items — P0 17 · P1 29 · P2 16 · P3 4 · done 62
 
 ## Suggested order of work
 
-1. Done: account model (UX-08), declined-request policy (UX-16), and the P0 set except the remaining P1/P2 work.
-0. First: UX-66 — blocking is not enforced anywhere but on the blocker's own phone.
-2. Next: P1 items epic by epic — blocked/hidden lists, report, welcome screen, Spotify step honesty, inbox fixes.
-3. Then P2 polish, starting with the Discover card redesign.
+1. First: UX-66 — blocking is not enforced anywhere but on the blocker's own phone.
+2. Done: account model (UX-08), declined-request policy (UX-16), and the P0 set except the remaining P1/P2 work.
+3. Next: P1 items epic by epic — blocked/hidden lists, report, welcome screen, Spotify step honesty, inbox fixes.
+4. Then P2 polish, starting with the Discover card redesign.
 
 ## Discover & cold start
 
